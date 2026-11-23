@@ -17,6 +17,8 @@ public sealed class CourtGeo
     public readonly Aabb[] Board = new Aabb[2];
     public readonly Vector3[] PoleBase = new Vector3[2];
     public float PoleRadius = 0.16f, PoleHeight;
+    /// <summary>Quadrado da tabela (tabelinha): metade da largura e faixa de altura.</summary>
+    public float BankHalfWidth, BankMinY, BankMaxY;
 
     public static int MaxPlayers(CourtSize s) => s switch { CourtSize.Small => 6, CourtSize.Medium => 8, _ => 10 };
     public static string Name(CourtSize s) => s switch { CourtSize.Small => "Pequena", CourtSize.Medium => "Média", _ => "Grande" };
@@ -39,6 +41,9 @@ public sealed class CourtGeo
         float boardThick = 0.08f, boardW = t.BoardWidth, boardH = t.BoardHeight;
         float boardBottom = t.HoopHeight - t.RimRadius * 0.5f;
         g.PoleHeight = boardBottom + boardH;
+        g.BankHalfWidth = t.RimRadius * 1.6f;
+        g.BankMinY = t.HoopHeight + 0.05f;
+        g.BankMaxY = Mathf.Min(t.HoopHeight + t.RimRadius * 2.4f, boardBottom + boardH - 0.05f);
         for (int h = 0; h < 2; h++)
         {
             float s = HoopSign(h);

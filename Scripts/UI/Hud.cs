@@ -8,7 +8,8 @@ public partial class Hud : CanvasLayer
 
     Label _scoreA, _scoreB, _info, _countdown, _msg;
     ProgressBar _stamina, _power;
-    Label _powerLabel;
+    Label _powerLabel, _status;
+    HBoxContainer _dribblePips;
     Control _powerBox, _endPanel;
     Label _endTitle, _endScore;
     Button _rematchBtn;
@@ -60,8 +61,17 @@ public partial class Hud : CanvasLayer
         bottom.AddChild(_powerBox);
         _stamina = Bar(new Color("5ad17a"), 14);
         bottom.AddChild(_stamina);
+        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center };
+        row.AddThemeConstantOverride("separation", 10);
+        row.AddChild(UiKit.Outlined("DRIBLE", 18, Colors.White, outline: 6));
+        _dribblePips = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
+        _dribblePips.AddThemeConstantOverride("separation", 6);
+        row.AddChild(_dribblePips);
+        _status = UiKit.Outlined("", 18, new Color("ffd23f"), outline: 6);
+        row.AddChild(_status);
+        bottom.AddChild(row);
 
-        var hint = UiKit.Outlined("WASD mover · Shift correr · Segure Botão Esq. arremessar (câmera p/ baixo = mais curto) · Esc pausa · F5 recarrega tuning",
+        var hint = UiKit.Outlined("Esq. arremesso (câmera define distância) · Dir. passe (R = alto) · Espaço salto · Q drible · E roubo · Shift correr · Esc pausa · F5 tuning",
             18, new Color(1, 1, 1, 0.85f), HorizontalAlignment.Left, 6);
         UiKit.Anchor(hint, 0, 1, 0, 1, 20, -44, 1500, -12);
         root.AddChild(hint);
@@ -99,6 +109,29 @@ public partial class Hud : CanvasLayer
         pc.AddChild(hb);
         parent.AddChild(pc);
         return score;
+    }
+
+    void UpdateDribblePips(Player p)
+    {
+        int max = Mathf.RoundToInt(Tuning.I.DribbleCharges);
+        while (_dribblePips.GetChildCount() < max)
+        {
+            var pip = new Panel { CustomMinimumSize = new Vector2(18, 18), MouseFilter = Control.MouseFilterEnum.Ignore };
+            _dribblePips.AddChild(pip);
+        }
+        for (int i = 0; i < _dribblePips.GetChildCount(); i++)
+        {
+            var pip = _dribblePips.GetChild<Panel>(i);
+            pip.Visible = i < max;
+            bool full = i < p.DribbleCharges;
+            var sb = UiKit.Box(full ? new Color("ffb020") : new Color(0.1f, 0.12f, 0.18f, 0.7f), 9, 0, 0);
+            if (!full && i == p.DribbleCharges)
+            {
+                float k = p.DribbleRecharge / Mathf.Max(Tuning.I.DribbleRecharge, 0.1f);
+                sb.BgColor = new Color(0.1f, 0.12f, 0.18f, 0.7f).Lerp(new Color("ffb020"), k * 0.6f);
+            }
+            pip.AddThemeStyleboxOverride("panel", sb);
+        }
     }
 
     static ProgressBar Bar(Color fill, int height)
@@ -155,7 +188,12 @@ public partial class Hud : CanvasLayer
             _powerBox.Visible = p.ChargingShot;
             _power.Value = p.ShotPower;
             if (p.GetShotPlan(out var plan))
-                _powerLabel.Text = plan.Close ? "BANDEJA" : $"ALCANCE {plan.Distance:0.0} m";
+                _powerLabel.Text = plan.Close ? "BANDEJA" : $"{plan.Distance:0.0} m   (máx. {plan.MaxRange:0.0} m{(plan.Capped ? " — carregue mais" : "")})";
+            UpdateDribblePips(p);
+            _status.Text = p.ChargingPass ? (p.PassHigh ? "PASSE ALTO" : "PASSE") + (p.PassTarget != null ? $" → {p.PassTarget.PlayerName}" : "")
+                : p.StealFail > 0 ? "LENTO (errou o roubo)"
+                : p.LandLock > 0 ? "POUSANDO"
+                : p.IsDribbling ? "DRIBLANDO (imune)" : "";
         }
 
         if (_countT > 0)

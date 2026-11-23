@@ -13,14 +13,19 @@ public sealed class MatchConfig
     public WinMode Mode = WinMode.Points;
     public int TargetScore = 21;
     public float TimeMinutes = 5f;
-    public bool SmokeTest;
+    public int AllyDummies = 1;      // bonecos de treino no seu time
+    public int EnemyDummies = 1;     // bonecos de treino no time adversário
+    public bool SmokeTest;           // --smoke-test (arremessos)
+    public bool SmokeE2;             // --smoke-e2 (passe, drible, bloqueio, roubo)
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
-    public string ScreenshotPath;    // se definido: tira print durante a carga do arremesso e fecha
+    public string ScreenshotPath;    // se definido: tira prints e fecha
+
+    public MatchConfig Clone() => (MatchConfig)MemberwiseClone();
 }
 
 /// <summary>
 /// Partida: regras, rounds, placar. Roda como AUTORIDADE (host / offline).
-/// Todos os jogadores são simulados aqui a partir de PlayerInput.
+/// Todos os jogadores são simulados aqui a partir de PlayerInput (humano, boneco, bot ou remoto).
 /// </summary>
 public partial class Match : Node3D
 {
@@ -41,17 +46,22 @@ public partial class Match : Node3D
     public int Winner = -1;
 
     TrajectoryPreview _preview;
+    MeshInstance3D _passMarker;
+    StandardMaterial3D _passMarkerMat;
     readonly LocalInputReader _reader = new();
+    readonly Dictionary<Player, DummyBrain> _dummies = new();
     PauseMenu _pause;
     AutoPilot _smoke;
+    ScenarioPilot _scenario;
     int _lastCountShown = -1;
     float _stuckTimer;
     float _smokeTime;
-    int _nextScoringTeamPossession;
+    int _nextPossession;
 
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
+    bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.AutoPilotLocal;
 
     public override void _Ready()
     {
@@ -63,11 +73,17 @@ public partial class Match : Node3D
         AddChild(Ball);
 
         LocalPlayer = SpawnPlayer(0, "Você", isLocal: true);
+        int max = CourtGeo.MaxPlayers(Cfg.Size);
+        int allies = Mathf.Clamp(Cfg.AllyDummies, 0, max - 1);
+        int enemies = Mathf.Clamp(Cfg.EnemyDummies, 0, max - 1 - allies);
+        for (int i = 0; i < allies; i++) AddDummy(0, $"Aliado {i + 1}");
+        for (int i = 0; i < enemies; i++) AddDummy(1, $"Adversário {i + 1}");
 
         Cam = new CameraRig { Target = LocalPlayer, Name = "CameraRig" };
         AddChild(Cam);
         _preview = new TrajectoryPreview { Name = "Trajectory" };
         AddChild(_preview);
+        BuildPassMarker();
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
         _pause = new PauseMenu { M = this, Name = "Pause" };
@@ -75,15 +91,16 @@ public partial class Match : Node3D
 
         Clock = Cfg.TimeMinutes * 60f;
         if (Cfg.SmokeTest || Cfg.AutoPilotLocal) _smoke = new AutoPilot(this, LocalPlayer);
-        StartRound(0, null);
-        if (!Cfg.SmokeTest && !Cfg.AutoPilotLocal) Input.MouseMode = Input.MouseModeEnum.Captured;
+        if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
+        StartRound(0, null, countdown: true);
+        if (!Automated) Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isBot = false)
+    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false)
     {
         var p = new Player
         {
-            Id = Players.Count + 1, Team = team, PlayerName = name, IsLocalHuman = isLocal, IsBot = isBot, M = this,
+            Id = Players.Count + 1, Team = team, PlayerName = name, IsLocalHuman = isLocal, IsDummy = isDummy, M = this,
             Name = "Player" + (Players.Count + 1),
         };
         AddChild(p);
@@ -91,23 +108,33 @@ public partial class Match : Node3D
         return p;
     }
 
+    void AddDummy(int team, string name)
+    {
+        var p = SpawnPlayer(team, name, isDummy: true);
+        _dummies[p] = new DummyBrain(this, p);
+    }
+
     public IEnumerable<Player> TeamPlayers(int team) => Players.Where(p => p.Team == team);
 
     // ------------------------------------------------------------------ rounds
 
-    void StartRound(int team, Player carrier)
+    /// <summary>Reinicia o round. A contagem regressiva só acontece no início da partida.</summary>
+    void StartRound(int team, Player carrier, bool countdown)
     {
-        if (!TeamPlayers(team).Any()) team = 1 - team; // treino solo: bola sempre volta para quem existe
+        if (!TeamPlayers(team).Any()) team = 1 - team;
         Possession = team;
-        carrier ??= TeamPlayers(team).First();
+        carrier ??= TeamPlayers(team).OrderBy(p => p.IsLocalHuman ? 0 : 1).First();
 
         PlaceTeams(team, carrier);
         Ball.GiveTo(carrier);
-        Phase = MatchPhase.Countdown;
-        PhaseTimer = Tuning.I.CountdownSeconds;
-        _lastCountShown = -1;
         if (LocalPlayer != null) Cam.SnapBehind(LocalPlayer.Yaw);
-        if (PhaseTimer <= 0) BeginPlay();
+        if (countdown && Tuning.I.CountdownSeconds > 0)
+        {
+            Phase = MatchPhase.Countdown;
+            PhaseTimer = Tuning.I.CountdownSeconds;
+            _lastCountShown = -1;
+        }
+        else Phase = MatchPhase.Playing;
     }
 
     void PlaceTeams(int offenseTeam, Player carrier)
@@ -117,18 +144,18 @@ public partial class Match : Node3D
             bool offense = team == offenseTeam;
             float attackSign = CourtGeo.HoopSign(CourtGeo.AttackHoop(team));
             float yaw = ShotMath.YawOf(new Vector3(attackSign, 0, 0));
-            var list = TeamPlayers(team).OrderBy(p => p == carrier ? 0 : 1).ToList();
+            var list = TeamPlayers(team).OrderBy(p => p == carrier ? 0 : p.IsLocalHuman ? 1 : 2).ToList();
             for (int i = 0; i < list.Count; i++)
             {
                 float x, z;
                 if (offense)
                 {
-                    x = -attackSign * (i == 0 ? 1.5f : 0.6f);
+                    x = -attackSign * (i == 0 ? 2.0f : 0.5f) + attackSign * (i > 0 ? 3f : 0f);
                     z = i == 0 ? 0 : Spread(i, Geo.HalfW);
                 }
                 else
                 {
-                    x = -attackSign * 3.2f; // na própria metade, entre o centro e a cesta que defendem
+                    x = attackSign * -(Geo.HalfL * 0.45f); // na própria metade, perto da cesta que defendem
                     z = Spread(i + 1, Geo.HalfW);
                     if (list.Count == 1) z = 0;
                 }
@@ -139,8 +166,7 @@ public partial class Match : Node3D
 
     static float Spread(int i, float halfW)
     {
-        // 1 -> +2.2, 2 -> -2.2, 3 -> +4.4, ...
-        float step = Mathf.Min(2.2f, halfW * 0.4f);
+        float step = Mathf.Min(4f, halfW * 0.35f);
         int k = (i + 1) / 2;
         float sign = i % 2 == 1 ? 1f : -1f;
         return Mathf.Clamp(sign * k * step, -halfW + 0.5f, halfW - 0.5f);
@@ -183,7 +209,7 @@ public partial class Match : Node3D
                 if (PhaseTimer <= 0)
                 {
                     if (Winner >= 0) EndMatch();
-                    else StartRound(_nextScoringTeamPossession, null);
+                    else StartRound(_nextPossession, null, countdown: false);
                 }
                 break;
         }
@@ -192,16 +218,23 @@ public partial class Match : Node3D
         {
             PlayerInput inp = default;
             if (p == LocalPlayer)
-                inp = _smoke != null ? _smoke.Build(dt) : _reader.Build(Cam, !InputBlocked);
+            {
+                if (_scenario != null) inp = _scenario.Build(dt);
+                else if (_smoke != null) inp = _smoke.Build(dt);
+                else inp = _reader.Build(Cam, !InputBlocked);
+            }
+            else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
             p.ServerTick(inp, dt);
         }
 
         var hit = Ball.ServerTick(dt);
         HandleBallHit(hit);
+        if (CanMove && Ball.State is BallState.Shot or BallState.HighPass) CheckBlocks();
         if (CanAct && Ball.State != BallState.Held) TryPickup();
         CheckStuckBall(dt);
 
         if (Cfg.SmokeTest) SmokeTick(dt);
+        if (Cfg.SmokeE2) SmokeE2Tick(dt);
     }
 
     void HandleBallHit(BallHit hit)
@@ -211,6 +244,8 @@ public partial class Match : Node3D
         if (hit.Rim) Sfx.Play3D(this, "rim", pos, vol(hit.Impact) + 2);
         else if (hit.Board || hit.Pole) Sfx.Play3D(this, "board", pos, vol(hit.Impact));
         if (hit.Floor && hit.Impact > 1.0f) Sfx.Play3D(this, "bounce", pos, vol(hit.Impact));
+        if (hit.Rim) LogEvent("RIM", null);
+        if (hit.Board) LogEvent("BOARD", null);
         if (hit.ScoredHoop >= 0 && Phase == MatchPhase.Playing) OnScore(hit.ScoredHoop);
     }
 
@@ -227,7 +262,7 @@ public partial class Match : Node3D
         Hud?.ShowMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, color: Palette.Team[team]);
         GD.Print($"[SCORE] time {team} +{pts} ({(three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
 
-        _nextScoringTeamPossession = 1 - team;
+        _nextPossession = 1 - team;
         Phase = MatchPhase.Scored;
         PhaseTimer = t.PostScoreDelay;
         if ((Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime))
@@ -253,7 +288,30 @@ public partial class Match : Node3D
         Phase = MatchPhase.Ended;
         Sfx.Play2D(this, "win", -5);
         Hud?.ShowEnd(Winner);
-        if (!Cfg.SmokeTest) Input.MouseMode = Input.MouseModeEnum.Visible;
+        if (!Automated) Input.MouseMode = Input.MouseModeEnum.Visible;
+    }
+
+    // ------------------------------------------------------------------ bola: bloqueio e recepção
+
+    /// <summary>Jogador no ar bloqueia arremessos e passes altos do adversário: a bola quica nele e cai.</summary>
+    void CheckBlocks()
+    {
+        var t = Tuning.I;
+        foreach (var p in Players)
+        {
+            if (!p.Airborne || p.Team == Ball.ThrowTeam) continue;
+            var rel = Ball.GlobalPosition - p.GlobalPosition;
+            float hd = new Vector2(rel.X, rel.Z).Length();
+            if (hd > t.BlockRadius + t.BallRadius || rel.Y < 0.8f || rel.Y > t.BlockReach + t.BallRadius) continue;
+            var away = new Vector3(rel.X, 0, rel.Z);
+            away = away.LengthSquared() > 1e-4f ? away.Normalized() : -p.Forward;
+            Ball.Drop(Ball.GlobalPosition, away * t.BlockBounceSpeed + Vector3.Up * 1.2f);
+            p.BallLockoutTimer = 0.5f; // o bloqueador não pega a bola
+            Sfx.Play3D(this, "board", Ball.GlobalPosition, -2, 0.8f);
+            if (p.IsLocalHuman) Hud?.ShowMessage("TOCO!", 1.0f, color: new Color("ffd23f"));
+            LogEvent("BLOCK", p);
+            return;
+        }
     }
 
     void TryPickup()
@@ -267,8 +325,34 @@ public partial class Match : Node3D
             if (d < bestD) { bestD = d; best = p; }
         }
         if (best == null) return;
+        bool intercepted = Ball.State == BallState.Pass && Ball.ThrowTeam != best.Team;
         Ball.GiveTo(best);
         Sfx.Play3D(this, "catch", Ball.GlobalPosition, -4);
+        if (intercepted && best.IsLocalHuman) Hud?.ShowMessage("INTERCEPTADO!", 1.0f, color: new Color("ffd23f"));
+        LogEvent("CATCH", best);
+    }
+
+    public void OnSteal(Player thief, Player victim)
+    {
+        Sfx.Play3D(this, "catch", thief.GlobalPosition + Vector3.Up, 0, 1.3f);
+        if (thief.IsLocalHuman) Hud?.ShowMessage("ROUBOU!", 1.0f, color: new Color("ffd23f"));
+        if (victim.IsLocalHuman) Hud?.ShowMessage("Roubaram a bola!", 1.0f, small: true);
+        LogEvent("STEAL", thief, victim);
+    }
+
+    public void OnStealFailed(Player thief, Player immuneTarget)
+    {
+        if (thief.IsLocalHuman)
+            Hud?.ShowMessage(immuneTarget != null ? "Não deu! Ele estava protegido" : "Errou o roubo!", 0.9f, small: true);
+        LogEvent("STEAL_FAIL", thief, immuneTarget);
+    }
+
+    public void OnLanded(Player p) => LogEvent("LAND", p);
+
+    public void LogEvent(string kind, Player a, Player b = null)
+    {
+        if (Automated) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
+        _scenario?.OnEvent(kind, a, b);
     }
 
     void CheckStuckBall(float dt)
@@ -282,9 +366,45 @@ public partial class Match : Node3D
         }
     }
 
+    // ------------------------------------------------------------------ visual local
+
+    void BuildPassMarker()
+    {
+        _passMarkerMat = Mat.Unshaded(new Color("ffd23f"));
+        _passMarkerMat.NoDepthTest = true;
+        _passMarker = new MeshInstance3D
+        {
+            Mesh = new TorusMesh { InnerRadius = 0.42f, OuterRadius = 0.55f, Rings = 24, RingSegments = 6 },
+            MaterialOverride = _passMarkerMat,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            Visible = false,
+            TopLevel = true,
+        };
+        var arrow = new MeshInstance3D
+        {
+            Mesh = new CylinderMesh { TopRadius = 0.22f, BottomRadius = 0f, Height = 0.4f, RadialSegments = 12 },
+            MaterialOverride = _passMarkerMat,
+            Position = new Vector3(0, 0.45f, 0),
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+        };
+        _passMarker.AddChild(arrow);
+        AddChild(_passMarker);
+    }
+
     public override void _Process(double delta)
     {
-        _preview.UpdateFor(LocalPlayer != null && LocalPlayer.ChargingShot && !Cfg.SmokeTest ? LocalPlayer : null, Geo);
+        var lp = LocalPlayer;
+        _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
+
+        var target = lp != null && lp.ChargingPass ? lp.PassTarget : null;
+        _passMarker.Visible = target != null;
+        if (target != null)
+        {
+            _passMarkerMat.AlbedoColor = lp.PassHigh ? new Color("ff7ad9") : new Color("ffd23f");
+            float bob = Mathf.Sin((float)Time.GetTicksMsec() / 180f) * 0.08f;
+            _passMarker.GlobalPosition = target.GetGlobalTransformInterpolated().Origin + Vector3.Up * (2.75f + bob);
+            _passMarker.RotateY((float)delta * 3f);
+        }
         if (Cfg.ScreenshotPath != null) ScreenshotTick((float)delta);
     }
 
@@ -304,10 +424,10 @@ public partial class Match : Node3D
 
         bool take = _shotIdx switch
         {
-            0 => _shotT > 2.0f,                                                    // parado quicando (contagem)
-            1 => CanAct && lp.HasBall && !lp.ChargingShot && lp.Velocity.Length() > 2.5f, // andando
-            2 => lp.ChargingShot && lp.ShotCharge > 0.3f,                          // carregando
-            3 => _sinceRelease > 0.12f && _sinceRelease < 0.4f,                    // soltando
+            0 => _shotT > 2.0f,
+            1 => CanAct && lp.HasBall && !lp.ChargingShot && lp.Velocity.Length() > 2.5f,
+            2 => lp.ChargingShot && lp.ShotCharge > 0.3f,
+            3 => _sinceRelease > 0.12f && _sinceRelease < 0.4f,
             _ => false,
         };
         if (_shotT > 40f) take = true;
@@ -322,17 +442,17 @@ public partial class Match : Node3D
     /// <summary>Janela perdeu o foco (alt-tab): pausa a partida offline.</summary>
     public void OnFocusLost()
     {
-        if (Cfg.SmokeTest || Cfg.AutoPilotLocal || Phase == MatchPhase.Ended || _pause == null || _pause.IsOpen) return;
+        if (Automated || Phase == MatchPhase.Ended || _pause == null || _pause.IsOpen) return;
         _pause.Open();
     }
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (e is InputEventMouseButton mb && mb.Pressed && !InputBlocked && Input.MouseMode != Input.MouseModeEnum.Captured && !Cfg.SmokeTest)
+        if (e is InputEventMouseButton mb && mb.Pressed && !InputBlocked && Input.MouseMode != Input.MouseModeEnum.Captured && !Automated)
             Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
-    // ------------------------------------------------------------------ teste automático
+    // ------------------------------------------------------------------ testes automáticos
 
     void SmokeTick(float dt)
     {
@@ -345,5 +465,17 @@ public partial class Match : Node3D
             GetTree().Quit(ok ? 0 : 1);
             Cfg.SmokeTest = false;
         }
+    }
+
+    void SmokeE2Tick(float dt)
+    {
+        _smokeTime += dt;
+        if (!_scenario.Done && _smokeTime < 70f) return;
+        var s = _scenario;
+        bool ok = s.PassOk && s.ReturnOk && s.DribbleOk && s.JumpOk && s.StealOk;
+        GD.Print($"[E2] passe={s.PassOk} devolução={s.ReturnOk} drible={s.DribbleOk} boneco_pulou={s.JumpOk} toco={s.BlockOk} " +
+                 $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} -> {(ok ? "OK" : "FALHOU")}");
+        GetTree().Quit(ok ? 0 : 1);
+        Cfg.SmokeE2 = false;
     }
 }

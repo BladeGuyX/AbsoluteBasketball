@@ -101,11 +101,25 @@ public static class BallPhys
                     v -= (1f + t.RimBounce) * vn * n;
                     v *= 0.97f;
                     hit.Rim = true;
+                    // "aro amigável": bola por dentro do aro perde a velocidade para fora e tende a cair
+                    if (fl < t.RimRadius)
+                    {
+                        float vOut = v.X * dir.X + v.Z * dir.Z;
+                        if (vOut > 0) { v.X -= dir.X * vOut * t.RimFriendliness; v.Z -= dir.Z * vOut * t.RimFriendliness; }
+                        if (v.Y > 0) v.Y *= 1f - 0.5f * t.RimFriendliness;
+                    }
                 }
             }
 
             // tabela (AABB)
-            if (CollideBox(ref p, ref v, g.Board[hoop], r, t.BoardBounce, hoop, ref hit)) hit.Board = true;
+            if (CollideBox(ref p, ref v, g.Board[hoop], r, t.BoardBounce, hoop, ref hit, out var boardNormal))
+            {
+                hit.Board = true;
+                // tabelinha: bateu na face da frente, dentro do quadrado → desvia para cair na cesta
+                bool front = boardNormal.X * CourtGeo.HoopSign(hoop) < -0.5f;
+                if (front && Mathf.Abs(p.Z - c.Z) <= g.BankHalfWidth && p.Y >= g.BankMinY && p.Y <= g.BankMaxY && t.BankAssist > 0)
+                    BankAssist(ref v, p, c, t);
+            }
 
             // poste (cilindro vertical)
             var pb = g.PoleBase[hoop];
@@ -134,14 +148,28 @@ public static class BallPhys
         return hit;
     }
 
-    static bool CollideBox(ref Vector3 p, ref Vector3 v, Aabb box, float r, float bounce, int hoop, ref BallHit hit)
+    static void BankAssist(ref Vector3 v, Vector3 p, Vector3 rim, Tuning t)
+    {
+        float g = t.BallGravity;
+        float vy = Mathf.Min(v.Y, 1.5f);
+        float drop = p.Y - rim.Y;
+        float disc = vy * vy + 2f * g * drop;
+        if (disc < 0) return;
+        float time = (vy + Mathf.Sqrt(disc)) / g;
+        if (time < 0.05f) return;
+        var want = new Vector3((rim.X - p.X) / time, vy, (rim.Z - p.Z) / time);
+        v = v.Lerp(want, t.BankAssist);
+    }
+
+    static bool CollideBox(ref Vector3 p, ref Vector3 v, Aabb box, float r, float bounce, int hoop, ref BallHit hit, out Vector3 n)
     {
         var min = box.Position; var max = box.End;
         var q = new Vector3(Mathf.Clamp(p.X, min.X, max.X), Mathf.Clamp(p.Y, min.Y, max.Y), Mathf.Clamp(p.Z, min.Z, max.Z));
         var d = p - q;
         float dist = d.Length();
+        n = Vector3.Zero;
         if (dist >= r) return false;
-        Vector3 n = dist > 1e-5f ? d / dist : new Vector3(-CourtGeo.HoopSign(hoop), 0, 0); // dentro: empurra para a quadra
+        n = dist > 1e-5f ? d / dist : new Vector3(-CourtGeo.HoopSign(hoop), 0, 0); // dentro: empurra para a quadra
         p = q + n * r;
         float vn = v.Dot(n);
         if (vn < 0)
@@ -170,22 +198,41 @@ public static class ShotMath
         public Vector3 Pos, Vel;
         public float Distance;   // distância horizontal até cruzar a altura do aro
         public bool Close;       // bandeja (dentro da área de perto da cesta adversária)
+        public float MaxRange;   // limite liberado pela carga
+        public bool Capped;      // a câmera pede mais do que a carga libera
     }
 
-    /// <summary>Alcance máximo liberado pela carga atual.</summary>
+    /// <summary>Alcance máximo liberado pela carga atual (a carga só muda o LIMITE, não a distância).</summary>
     public static float MaxRange(float charge)
     {
         var t = Tuning.I;
         return Mathf.Lerp(t.ShotRangeMin, t.ShotRangeMax, Mathf.Clamp(charge / Mathf.Max(t.ShotChargeTime, 0.01f), 0, 1));
     }
 
-    /// <summary>0..1: quanto do alcance carregado a inclinação da câmera libera.</summary>
-    public static float PitchFactor(float pitch)
+    /// <summary>Distância pedida pela inclinação da câmera: meio da tela = alcance inicial; acima = mais longe; abaixo = mais curto.</summary>
+    public static float PitchDistance(float pitch)
     {
         var t = Tuning.I;
-        float lo = Mathf.DegToRad(t.ShotPitchMinDeg), hi = Mathf.DegToRad(t.ShotPitchFullDeg);
-        float k = hi > lo ? Mathf.Clamp((pitch - lo) / (hi - lo), 0, 1) : 1f;
-        return Mathf.Lerp(t.ShotPitchMinRangeFactor, 1f, k);
+        float deg = Mathf.RadToDeg(pitch);
+        if (deg >= t.ShotPitchBaseDeg)
+        {
+            float k = Mathf.Clamp((deg - t.ShotPitchBaseDeg) / Mathf.Max(t.ShotPitchTopDeg - t.ShotPitchBaseDeg, 0.1f), 0, 1);
+            return Mathf.Lerp(t.ShotRangeMin, t.ShotRangeMax, k);
+        }
+        float kb = Mathf.Clamp((deg - t.ShotPitchBottomDeg) / Mathf.Max(t.ShotPitchBaseDeg - t.ShotPitchBottomDeg, 0.1f), 0, 1);
+        return Mathf.Lerp(t.ShotRangeClosest, t.ShotRangeMin, kb);
+    }
+
+    /// <summary>Inverso de PitchDistance (usado por bots/piloto).</summary>
+    public static float PitchForDistance(float d)
+    {
+        var t = Tuning.I;
+        float deg;
+        if (d >= t.ShotRangeMin)
+            deg = Mathf.Lerp(t.ShotPitchBaseDeg, t.ShotPitchTopDeg, Mathf.Clamp((d - t.ShotRangeMin) / Mathf.Max(t.ShotRangeMax - t.ShotRangeMin, 0.01f), 0, 1));
+        else
+            deg = Mathf.Lerp(t.ShotPitchBottomDeg, t.ShotPitchBaseDeg, Mathf.Clamp((d - t.ShotRangeClosest) / Mathf.Max(t.ShotRangeMin - t.ShotRangeClosest, 0.01f), 0, 1));
+        return Mathf.DegToRad(deg);
     }
 
     public static Vector3 ReleasePos(Vector3 feet, float yaw) => feet + Vector3.Up * Tuning.I.ShotReleaseHeight + Dir(yaw) * 0.25f;
@@ -196,8 +243,10 @@ public static class ShotMath
         var to = rim - feet; to.Y = 0;
         if (to.LengthSquared() < 0.01f) return aimYaw;
         float diff = WrapAngle(YawOf(to) - aimYaw);
-        if (Mathf.Abs(diff) > Mathf.DegToRad(Tuning.I.ShotAimAssistMaxAngleDeg)) return aimYaw;
-        return aimYaw + diff * Tuning.I.ShotAimAssist;
+        float max = Mathf.DegToRad(Tuning.I.ShotAimAssistMaxAngleDeg);
+        if (max <= 0 || Mathf.Abs(diff) >= max) return aimYaw;
+        float w = 1f - Mathf.Abs(diff) / max; // suave: forte perto do centro, zero na borda
+        return aimYaw + diff * Tuning.I.ShotAimAssist * w;
     }
 
     /// <summary>Velocidade para a bola cruzar a altura dh (descendo) a uma distância horizontal d.</summary>
@@ -233,10 +282,19 @@ public static class ShotMath
             return plan;
         }
 
-        float d = MaxRange(charge) * PitchFactor(aimPitch);
+        plan.MaxRange = MaxRange(charge);
+        float wanted = PitchDistance(aimPitch);
+        plan.Capped = wanted > plan.MaxRange;
+        float d = Mathf.Min(wanted, plan.MaxRange);
+        // assistência de distância (altura): só perto do ideal e só mirando a cesta adversária
         float yawErr = Mathf.Abs(WrapAngle(YawOf(new Vector3(rim.X - plan.Pos.X, 0, rim.Z - plan.Pos.Z)) - yaw));
-        if (yawErr < Mathf.DegToRad(t.ShotAimAssistMaxAngleDeg) && Mathf.Abs(d - rimDist) <= t.ShotDistAssistMeters)
-            d = Mathf.Lerp(d, rimDist, t.ShotDistAssistStrength);
+        float delta = rimDist - d;
+        if (yawErr < Mathf.DegToRad(t.ShotAimAssistMaxAngleDeg) && t.ShotDistAssistMeters > 0 && Mathf.Abs(delta) < t.ShotDistAssistMeters)
+        {
+            float w = 1f - Mathf.Abs(delta) / t.ShotDistAssistMeters;
+            float nd = d + delta * t.ShotDistAssistStrength * w;
+            if (nd <= plan.MaxRange) d = nd;
+        }
         plan.Distance = d;
         float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
         plan.Vel = Ballistic(yaw, d, dh, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));

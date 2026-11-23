@@ -54,6 +54,16 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - O jogador **quica a bola mesmo parado**; som do quique sutil.
 - **Multiplayer será pela Steam** (sem publicar o jogo — usar o AppID de teste 480/Spacewar como em outro projeto do usuário). Etapa 5.
 
+## Revisões do usuário (v0.3) — prevalecem sobre as anteriores
+- Assistência **sutil**: só corrige quando a mira já está bem perto (direção e distância/altura), sem "teletransportar" a mira.
+- **Distância do arremesso = inclinação da câmera.** O meio da tela pede o alcance inicial; subir a câmera pede mais longe;
+  descer pede mais curto. A carga **só aumenta o limite máximo** (a distância não cresce sozinha). Carga um pouco mais rápida.
+- Quadras ainda maiores, com diferença bem maior entre tamanhos (P 44×24, M 58×32, G 80×44 m).
+- Menos bola batendo no aro sem entrar (ainda possível de vez em quando).
+- **Contagem de 3 s só no início da partida**; depois de cesta/falta o round recomeça direto.
+- **Quadrado da tabela útil:** acertar nele é um bom jeito de fazer cesta (tabelinha, como no basquete real).
+- Corrida um pouco mais rápida.
+
 ## Decisões de implementação (Claude)
 - **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
   (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.
@@ -64,6 +74,18 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   (a bola é grande; sem isso raspa no aro). Prévia desenha até o primeiro contato.
 - **Pontuação:** bola que entra na cesta vale 3 se o arremesso saiu de fora da linha (posição dos pés na soltura) e
   a bola ainda estava "em arremesso" (não tocou o chão). Qualquer outra entrada vale 2. Ponto vai para o time que ataca aquela cesta.
-- **Treino solo:** sem adversários, a bola sempre volta para o jogador após a cesta.
+- **Treino:** sem adversários, a bola sempre volta para o jogador após a cesta. Bonecos de treino configuráveis no menu
+  (aliado devolve passes; adversário pula contra arremessos, dribla quando você chega perto e ataca com a bola).
+- **Aro amigável / tabelinha:** batidas por dentro do aro perdem velocidade para fora; bola que bate no quadrado da tabela
+  (área desenhada = área ativa) é desviada para a cesta (`BankAssist`).
+- **Passe:** toque (< `PassTapTime`) = aliado livre mais próximo; segurando = aliado mais na direção da câmera (marcador
+  amarelo; rosa = passe alto). Corredor bloqueado por jogador a menos de `PassLaneRadius` da linha. Passe normal: qualquer um
+  que tocar pega (interceptação). Passe alto: arco até `HighPassApex`, só pega caindo; bloqueável por quem está no ar.
+- **Salto:** sem a bola. Toque = salto rápido; segurar agacha (parado) e salta mais alto ao soltar. Direção = movimento antes
+  de pular. Bloqueia arremessos e passes altos do adversário (bola quica e cai; bloqueador não pega). Trava ao pousar.
+- **Roubo:** bote para frente; acerta quem tem a bola dentro de `StealReach`/`StealAngleDeg`. Alvo driblando, no ar ou
+  carregando arremesso = falha. Falha = penalidade (lento, sem correr/pular/roubar).
+- **Drible especial:** botão de drible com a bola (cargas; recarga contínua). A bola troca de mão; imune a roubo; mais lento;
+  sem outras ações.
 - **Por tempo empatado:** prorrogação "próxima cesta vence".
 - Cesta 0 fica em −X, cesta 1 em +X. Time 0 (AZUL) ataca a cesta 1; time 1 (LARANJA) ataca a cesta 0.

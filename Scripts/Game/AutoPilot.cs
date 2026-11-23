@@ -47,9 +47,9 @@ public sealed class AutoPilot
         float yaw = ShotMath.YawOf(toRim);
         inp.AimYaw = yaw;
 
-        inp.AimPitch = 0f;
         var rel = ShotMath.ReleasePos(P.GlobalPosition, yaw);
         float rimDist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
+        inp.AimPitch = ShotMath.PitchForDistance(rimDist);
         bool close = toRim.Length() <= Tuning.I.CloseShotRadius;
 
         if (!P.ChargingShot)
@@ -66,7 +66,7 @@ public sealed class AutoPilot
         else
         {
             Shots++;
-            var pl = ShotMath.Plan(P.GlobalPosition, P.Team, P.ShotCharge + dt, yaw, 0f, M.Geo);
+            var pl = ShotMath.Plan(P.GlobalPosition, P.Team, P.ShotCharge + dt, yaw, inp.AimPitch, M.Geo);
             var sp = pl.Pos; var sv = pl.Vel; string res = "nada";
             for (int i = 0; i < 400; i++) { var h = BallPhys.Simulate(ref sp, ref sv, 1f / 60f, M.Geo); if (h.ScoredHoop >= 0) { res = "CESTA"; break; } if ((h.Rim || h.Board) && res == "nada") { res = (h.Rim ? "aro" : "tabela") + $"@{sp - M.Geo.RimCenter[hoop]}"; } if (h.Floor) break; }
             GD.Print($"[SMOKE]   plano d={pl.Distance:0.00} rimDist={rimDist:0.00} carga={P.ShotCharge + dt:0.000} alvo={_holdTarget:0.000} vel={pl.Vel} sim={res}");

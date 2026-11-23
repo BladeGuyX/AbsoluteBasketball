@@ -19,6 +19,9 @@ try {
         Write-Host "== smoke test ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-test 2>&1 | Select-String "SMOKE|SCORE|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test falhou" }
+        Write-Host "== smoke test etapa 2 ==" -ForegroundColor Cyan
+        & $godot --headless --path . -- --smoke-e2 2>&1 | Select-String "\[E2\] passe|ERROR" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 2 falhou" }
     }
 
     Write-Host "== export ==" -ForegroundColor Cyan

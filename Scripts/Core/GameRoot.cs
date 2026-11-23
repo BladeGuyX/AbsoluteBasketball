@@ -41,6 +41,8 @@ public partial class GameRoot : Node
             return;
         }
 
+        if (args.Contains("--shot-stats")) { ShotStats(); GetTree().Quit(); return; }
+
         _ui = new CanvasLayer { Layer = 20 };
         AddChild(_ui);
         _toast = UiKit.Outlined("", 22, Colors.White, HorizontalAlignment.Right, 8);
@@ -72,17 +74,59 @@ public partial class GameRoot : Node
                 };
                 return;
             }
-            StartMatch(new MatchConfig { AutoPilotLocal = true, ScreenshotPath = args[si + 1], Size = CourtSize.Medium });
+            StartMatch(new MatchConfig { AutoPilotLocal = true, ScreenshotPath = args[si + 1], Size = CourtSize.Small, AllyDummies = 1, EnemyDummies = 1 });
             return;
         }
         if (args.Contains("--smoke-test"))
         {
             Engine.TimeScale = 2.0;
-            StartMatch(new MatchConfig { SmokeTest = true, Size = CourtSize.Medium, TargetScore = 99 });
+            StartMatch(new MatchConfig { SmokeTest = true, Size = CourtSize.Medium, TargetScore = 99, AllyDummies = 0, EnemyDummies = 0 });
+            return;
+        }
+        if (args.Contains("--smoke-e2"))
+        {
+            Engine.TimeScale = 2.0;
+            StartMatch(new MatchConfig { SmokeE2 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 1 });
             return;
         }
         ShowMainMenu();
         Toast(tuningMsg);
+    }
+
+    /// <summary>Estatística de arremessos com erro humano simulado (diagnóstico de tuning).</summary>
+    static void ShotStats()
+    {
+        var g = CourtGeo.Build(CourtSize.Medium);
+        var rng = new RandomNumberGenerator { Seed = 42 };
+        int hoop = CourtGeo.AttackHoop(0);
+        var rim = g.RimCenter[hoop];
+        foreach (float dist in new[] { 4f, 7f, 10f, 13f })
+        {
+            int made = 0, rimHits = 0, bank = 0, n = 400;
+            for (int i = 0; i < n; i++)
+            {
+                float ang = rng.RandfRange(-0.6f, 0.6f);
+                var feet = new Vector3(rim.X - CourtGeo.HoopSign(hoop) * dist * Mathf.Cos(ang), 0, dist * Mathf.Sin(ang));
+                var toRim = (rim - feet) with { Y = 0 };
+                float yaw = ShotMath.YawOf(toRim) + Mathf.DegToRad(rng.RandfRange(-5f, 5f));
+                var rel = ShotMath.ReleasePos(feet, yaw);
+                float d = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length() + rng.RandfRange(-1.5f, 1.5f);
+                var plan = ShotMath.Plan(feet, 0, 99f, yaw, ShotMath.PitchForDistance(d), g);
+                var pos = plan.Pos; var vel = plan.Vel;
+                bool hitRim = false, hitBoard = false, scored = false;
+                for (int k = 0; k < 400; k++)
+                {
+                    var h = BallPhys.Simulate(ref pos, ref vel, 1f / 60f, g);
+                    hitRim |= h.Rim; hitBoard |= h.Board;
+                    if (h.ScoredHoop == hoop) { scored = true; break; }
+                    if (h.Floor) break;
+                }
+                if (scored) made++;
+                if (hitRim) rimHits++;
+                if (hitBoard && scored) bank++;
+            }
+            GD.Print($"[STATS] {dist,4:0}m: cestas {100f * made / n:0}%  tocou aro {100f * rimHits / n:0}%  tabelinhas convertidas {100f * bank / n:0}%");
+        }
     }
 
     public void ShowMainMenu()
@@ -103,10 +147,7 @@ public partial class GameRoot : Node
         AddChild(_match);
     }
 
-    public void Rematch() => StartMatch(new MatchConfig
-    {
-        Size = _lastCfg.Size, Mode = _lastCfg.Mode, TargetScore = _lastCfg.TargetScore, TimeMinutes = _lastCfg.TimeMinutes,
-    });
+    public void Rematch() => StartMatch(_lastCfg.Clone());
 
     void FreeMatch()
     {

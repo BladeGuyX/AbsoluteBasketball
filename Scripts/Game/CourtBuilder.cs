@@ -170,7 +170,9 @@ public static class CourtBuilder
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = board.Size }, Mat.ToonOutlined(new Color("f7fbff"), 0.015f), board.GetCenter()));
         var frontX = board.GetCenter().X - s * (board.Size.X / 2f + 0.002f);
         var sq = Mat.Toon(Palette.Rim, 0);
-        float sqW = t.RimRadius * 2.6f, sqH = t.RimRadius * 1.9f, sqY = t.HoopHeight + 0.08f + sqH / 2f, lw = 0.07f;
+        float sqW = g.BankHalfWidth * 2f, sqH = g.BankMaxY - g.BankMinY, sqY = (g.BankMinY + g.BankMaxY) / 2f, lw = 0.08f;
+        // preenchimento leve do quadrado para ficar claro que é um alvo
+        root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.005f, sqH, sqW) }, Mat.Toon(new Color("ffe3cf"), 0), new Vector3(frontX + s * 0.001f, sqY, 0), false));
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.01f, lw, sqW) }, sq, new Vector3(frontX, sqY - sqH / 2f, 0), false));
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.01f, lw, sqW) }, sq, new Vector3(frontX, sqY + sqH / 2f, 0), false));
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.01f, sqH, lw) }, sq, new Vector3(frontX, sqY, -sqW / 2f), false));

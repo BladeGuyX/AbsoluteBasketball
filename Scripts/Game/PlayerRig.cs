@@ -12,6 +12,14 @@ public struct RigState
     public float Charge;       // segundos carregando
     public float Release;      // 1 → 0 durante o "follow-through" do arremesso
     public Vector3 BallPos;    // posição da bola quando está na mão
+    public bool PassCharging;
+    public float PassRelease;  // 1 → 0 depois de passar
+    public bool JumpCharging;
+    public bool Airborne;
+    public bool Dashing;       // bote do roubo
+    public bool Slowed;        // penalidade do roubo
+    public bool Landing;       // travado após pousar
+    public float BallSide;     // +1 direita, −1 esquerda
 }
 
 /// <summary>
@@ -82,8 +90,11 @@ public sealed class PlayerRig
         _stride += s.Speed * dt / StrideLen * Mathf.Pi;
         float swing = Mathf.Sin(_stride) * (0.3f + 0.5f * move) * walking;
 
-        // agacha carregando o arremesso; "pulinho" e esticada ao soltar
-        float crouchTarget = s.Charging ? Mathf.Clamp(s.Charge / 0.25f, 0, 1) : 0f;
+        // agacha carregando arremesso/salto e ao pousar; "pulinho" e esticada ao soltar
+        float crouchTarget = 0f;
+        if (s.Charging) crouchTarget = Mathf.Clamp(s.Charge / 0.25f, 0, 1);
+        if (s.JumpCharging) crouchTarget = 1.3f;
+        if (s.Landing) crouchTarget = 0.8f;
         _crouch = Mathf.Lerp(_crouch, crouchTarget, k);
         float rel = Mathf.Clamp(s.Release, 0, 1);
         float relWave = rel > 0 ? Mathf.Sin(Mathf.Pi * (1f - rel)) : 0f;
@@ -92,32 +103,51 @@ public sealed class PlayerRig
 
         Root.Rotation = new Vector3(0, s.Yaw, 0);
         Root.Position = new Vector3(0, bob + hop, 0);
-        float sy = 1f - 0.09f * _crouch + 0.1f * relWave;
-        float sxz = 1f + 0.05f * _crouch - 0.04f * relWave;
+        float stretch = relWave + (s.Airborne ? 0.6f : 0f);
+        float sy = 1f - 0.09f * _crouch + 0.1f * stretch;
+        float sxz = 1f + 0.05f * _crouch - 0.04f * stretch;
         Root.Scale = new Vector3(sxz, sy, sxz);
 
-        _lean = Mathf.Lerp(_lean, -0.2f * move + 0.12f * _crouch - 0.08f * relWave, k);
+        float leanTarget = -0.2f * move + 0.12f * _crouch - 0.08f * relWave;
+        if (s.Dashing) leanTarget = -0.55f;
+        if (s.Slowed) leanTarget = 0.25f;
+        _lean = Mathf.Lerp(_lean, leanTarget, k);
         _upper.Rotation = new Vector3(_lean, Mathf.Sin(_stride) * 0.08f * walking, 0);
 
         float legBend = _crouch * 0.25f;
-        _legL.Rotation = new Vector3(swing + legBend, 0, 0);
-        _legR.Rotation = new Vector3(-swing + legBend, 0, 0);
+        if (s.Airborne)
+        {
+            _legL.Rotation = new Vector3(Mathf.Lerp(_legL.Rotation.X, 0.35f, k), 0, -0.08f);
+            _legR.Rotation = new Vector3(Mathf.Lerp(_legR.Rotation.X, -0.15f, k), 0, 0.08f);
+        }
+        else if (s.Dashing)
+        {
+            _legL.Rotation = new Vector3(0.7f, 0, 0);
+            _legR.Rotation = new Vector3(-0.6f, 0, 0);
+        }
+        else
+        {
+            _legL.Rotation = new Vector3(swing + legBend, 0, 0);
+            _legR.Rotation = new Vector3(-swing + legBend, 0, 0);
+        }
 
         float r = t.BallRadius;
         var right = new Vector3(Mathf.Cos(s.Yaw), 0, -Mathf.Sin(s.Yaw));
-        if (s.HasBall && s.Charging)
+        if (s.HasBall && (s.Charging || s.PassCharging))
         {
             PointArm(_armL, s.BallPos - right * (r + 0.03f), right);
             PointArm(_armR, s.BallPos + right * (r + 0.03f), right);
         }
         else if (s.HasBall)
         {
-            // mão direita acompanha o topo da bola no quique; esquerda protege a bola
+            // a mão do lado da bola acompanha o topo dela; a outra protege
             var top = s.BallPos + Vector3.Up * r;
-            var shoulder = _armR.GlobalPosition;
-            top.Y = Mathf.Max(top.Y, shoulder.Y - ArmLen);
-            PointArm(_armR, top, right);
-            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, 0.7f - swing * 0.3f, k), 0, -0.35f);
+            var ballArm = s.BallSide >= 0 ? _armR : _armL;
+            var otherArm = s.BallSide >= 0 ? _armL : _armR;
+            float side = s.BallSide >= 0 ? -1f : 1f;
+            top.Y = Mathf.Max(top.Y, ballArm.GlobalPosition.Y - ArmLen);
+            PointArm(ballArm, top, right);
+            otherArm.Rotation = new Vector3(Mathf.Lerp(otherArm.Rotation.X, 0.7f - swing * 0.3f, k), 0, side * 0.35f);
         }
         else if (rel > 0)
         {
@@ -125,10 +155,27 @@ public sealed class PlayerRig
             _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, up, 0.5f), 0, -0.08f);
             _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, up, 0.5f), 0, 0.08f);
         }
+        else if (s.PassRelease > 0)
+        {
+            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, 1.55f, 0.5f), 0, -0.05f);
+            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, 1.55f, 0.5f), 0, 0.05f);
+        }
+        else if (s.Airborne || s.JumpCharging)
+        {
+            float up = s.Airborne ? 3.0f : 0.4f; // braços para cima para bloquear
+            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, up, k), 0, -0.18f);
+            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, up, k), 0, 0.18f);
+        }
+        else if (s.Dashing)
+        {
+            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, 1.3f, 0.6f), 0, 0.1f);
+            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, 1.5f, 0.6f), 0, -0.1f);
+        }
         else
         {
-            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, -swing * 1.1f, k), 0, -0.1f);
-            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, swing * 1.1f, k), 0, 0.1f);
+            float amp = s.Slowed ? 0.3f : 1.1f;
+            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, -swing * amp, k), 0, -0.1f);
+            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, swing * amp, k), 0, 0.1f);
         }
     }
 

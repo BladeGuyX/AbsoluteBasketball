@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.2 — Etapas 0 e 1 concluídas e revisadas pelo usuário. Próxima: Etapa 2.**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.3 — Etapas 0, 1 e 2 concluídas. Próxima: Etapa 3 (enterrada).**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -19,7 +19,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Decisões do usuário a lembrar
 - **Multiplayer pela Steam** (Steamworks, sem publicar: AppID de teste 480/Spacewar, como já foi feito em outro jogo do usuário). Só na Etapa 5.
 - Controle de versão: **git** neste diretório (commits só quando o usuário pedir ou ao fechar uma entrega combinada).
-- Revisões de regras da v0.2 estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
+- Revisões de regras (v0.2, v0.3) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
 
 ## Ferramentas instaladas
 - Godot: `%LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine.Mono_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe`
@@ -28,7 +28,9 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Comandos
 - Build completo (compila, importa, teste automático, exporta): `powershell -ExecutionPolicy Bypass -File tools\build.ps1` (`-SkipSmoke` pula o teste)
 - Só compilar: `dotnet build`
-- Teste automático: `<godot_console> --headless --path . -- --smoke-test` → sai com código 0 se marcou pontos (piloto arremessa de 2,5 m / 4 m / 3 pts).
+- Teste automático de arremesso: `<godot_console> --headless --path . -- --smoke-test` (bandeja / meia distância / 3 pts).
+- Teste automático da Etapa 2: `... -- --smoke-e2` (passe + devolução, drible, pulo/toco do boneco, roubo falhando por imunidade e roubo certo). O build.ps1 roda os dois.
+- Estatística de arremesso com erro humano simulado: `... -- --shot-stats` (use para calibrar assistências/aro/tabelinha).
 - Prints para verificar visual: `<godot_console> --path . -- --screenshot <arquivo.png>` → salva `_0` parado quicando, `_1` andando, `_2` carregando, `_3` soltando. Menu: `... --screenshot <png> --menu`.
 - Diagnóstico de janela: `<godot_console> --path . -- --video-test` (liga/desliga tela cheia e imprime o modo).
 - Artifact de tuning:
@@ -41,9 +43,12 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - `Scripts/Core/`: `Tuning` (valores + esquema), `UserSettings` (user://settings.json: volume, fullscreen, sensibilidade, corrida alternar, binds), `InputSetup` (InputMap em código, remapeamento com troca automática de conflitos), `Mat` (materiais toon + contorno, paleta), `Sfx` (sons procedurais placeholder).
 - `Scripts/Game/`:
   - `Match` — **autoridade** (host/offline). Fases Countdown→Playing→Scored→(Ended). Lê `PlayerInput` de cada jogador, chama `Player.ServerTick`, `Ball.ServerTick`, pontuação, posse, relógio, pickups.
-  - `Player` (CharacterBody3D) — movimento, estamina, carga/soltura do arremesso (sem cancelar; auto em 3 s), quique automático (sempre, inclusive parado).
+  - `Player` (CharacterBody3D) — movimento, estamina, arremesso (sem cancelar; auto em 3 s), passe, salto, roubo, drible especial, quique automático (sempre).
+  - `Passing` — alvos de passe (toque = mais próximo livre; segurando = na direção da câmera), corredor livre, trajetória normal/alta.
+  - `DummyBrain` — bonecos de treino (precursor dos bots). `ScenarioPilot` — roteiro do `--smoke-e2`.
+  - Bola: estados Held/Loose/Shot/Pass/HighPass. `Match.CheckBlocks` (no ar bloqueia Shot/HighPass do adversário), `TryPickup` (recepção/interceptação), `LogEvent` (eventos impressos em modos automáticos).
   - `PlayerRig` (classe C# comum) — boneco placeholder + animação procedural (passada, balanço, IK simples dos braços até a bola, agachar na carga, pulinho ao soltar). Trocar pelo modelo do Blender na Etapa 7.
-  - `Ball` + `BallPhys` — física própria (gravidade, quiques, aro em toro, tabela AABB, poste, paredes) e detecção de cesta. `ShotMath.Plan()` = arremesso (alcance da carga × inclinação da câmera, assistência só na cesta adversária, bandeja dentro de `CloseShotRadius`, ângulo mínimo de entrada) — compartilhado por jogador, prévia, HUD e bots.
+  - `Ball` + `BallPhys` — física própria (gravidade, quiques, aro em toro, tabela AABB, poste, paredes) e detecção de cesta. `ShotMath.Plan()` = arremesso (distância = `PitchDistance(câmera)` limitada por `MaxRange(carga)`; assistências suaves só na cesta adversária; bandeja dentro de `CloseShotRadius`; ângulo mínimo de entrada). `BallPhys`: aro amigável e tabelinha (`CourtGeo.Bank*`) — compartilhado por jogador, prévia, HUD e bots.
   - `CourtGeo` (geometria lógica, 3 tamanhos, `IsThree`) e `CourtBuilder` (visual + colisores + ambiente).
   - `CameraRig` (+ `LocalInputReader`), `TrajectoryPreview`, `AutoPilot` (piloto do teste; base para os bots).
 - `Scripts/UI/`: `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
@@ -58,5 +63,11 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - `tuning.json`: no editor fica na raiz do projeto; na build fica **ao lado do .exe** (criado automaticamente; campos novos são acrescentados mantendo os valores do usuário). Não vai para o .pck.
 - Settings do jogador: `%APPDATA%\Godot\app_userdata\Absolute Basketball\settings.json`.
 
-## Próximos passos (Etapa 2)
+## Próximos passos (Etapa 3 — enterrada)
+Com a bola, correndo em direção à cesta adversária e a menos de 3 m: salto vira enterrada (voo roteirizado até o aro).
+Skill check estilo Dead by Daylight (mais difícil) com o botão de arremesso no momento de tocar a cesta. Erro: bola cai ao lado,
+jogador atordoado 2 s. Bloqueio de enterrada por salto = falta: round reinicia com o jogador que sofreu a falta com a bola
+(`StartRound(time, carrier, countdown:false)`). Depois: Etapa 4 (bots, evoluindo `DummyBrain`/`AutoPilot`).
+
+## (histórico) Etapa 2 — já feita
 Passe (toque = aliado livre mais próximo; segurar = aliado na direção da câmera com marcador; variação = passe alto; checagem de linha livre; interceptação por qualquer jogador no caminho), salto (carga, bloqueio de arremessos subindo e passes altos → bola quica e cai; 0,5 s de trava ao pousar), roubo (impulso, falha = 2 s a 20% sem correr/pular/roubar; imune: driblando, no ar, carregando arremesso), drible (2 cargas, 1 s, 50% mais lento, recarga 10 s contínua). Adicionar estados ao `Ball` (Pass/HighPass) e flags no `Player`. Para testar sem bots, considerar bonecos parados (dummies) no time adversário.

@@ -46,12 +46,17 @@ public sealed class Tuning
     const string SShot = "Arremesso";
     const string SCourt = "Quadra";
     const string SRules = "Regras";
+    const string SPass = "Passe";
+    const string SJump = "Salto e bloqueio";
+    const string SSteal = "Roubo";
+    const string SDrib = "Drible";
+    const string SDummy = "Bonecos de treino";
 
     // ---------------- Movimento ----------------
     [Param(SMove, "Velocidade andando", "Velocidade máxima andando (m/s).", 1, 10, 0.1f)]
     public float WalkSpeed = 4.0f;
     [Param(SMove, "Velocidade correndo", "Velocidade máxima correndo (m/s).", 1, 14, 0.1f)]
-    public float RunSpeed = 6.0f;
+    public float RunSpeed = 6.8f;
     [Param(SMove, "Aceleração", "Quão rápido chega na velocidade máxima (m/s²).", 1, 120, 1)]
     public float Acceleration = 28f;
     [Param(SMove, "Desaceleração", "Quão rápido para ao soltar o direcional (m/s²).", 1, 120, 1)]
@@ -103,7 +108,11 @@ public sealed class Tuning
     [Param(SBall, "Quique no chão", "Fração da velocidade vertical mantida ao quicar no chão.", 0, 1, 0.01f)]
     public float FloorBounce = 0.72f;
     [Param(SBall, "Quique no aro", "Elasticidade do aro.", 0, 1, 0.01f)]
-    public float RimBounce = 0.5f;
+    public float RimBounce = 0.35f;
+    [Param(SBall, "Aro amigável", "Quando a bola bate no aro por dentro, quanto ela perde a velocidade para fora (0 = física pura, 1 = quase sempre cai dentro).", 0, 1, 0.01f)]
+    public float RimFriendliness = 0.6f;
+    [Param(SBall, "Tabelinha: ajuda", "Bola que bate no quadrado da tabela é desviada para cair na cesta (0 = física pura, 1 = sempre).", 0, 1, 0.01f)]
+    public float BankAssist = 0.85f;
     [Param(SBall, "Quique na tabela", "Elasticidade da tabela.", 0, 1, 0.01f)]
     public float BoardBounce = 0.55f;
     [Param(SBall, "Quique nas paredes invisíveis", "Elasticidade dos limites da área de jogo.", 0, 1, 0.01f)]
@@ -124,38 +133,40 @@ public sealed class Tuning
     public float DribbleSoundDb = -18f;
 
     // ---------------- Arremesso ----------------
-    [Param(SShot, "Alcance com carga mínima", "Distância (m) do arremesso logo no início da carga.", 0.5f, 15, 0.1f)]
+    [Param(SShot, "Alcance inicial", "Distância máxima (m) logo no início da carga. É a distância com a câmera no meio da tela.", 0.5f, 15, 0.1f)]
     public float ShotRangeMin = 3f;
-    [Param(SShot, "Alcance com carga máxima", "Distância máxima (m) que um arremesso alcança (até a altura do aro).", 2, 40, 0.1f)]
-    public float ShotRangeMax = 13f;
-    [Param(SShot, "Tempo para carga total", "Segundos segurando até o alcance máximo.", 0.2f, 6, 0.05f)]
-    public float ShotChargeTime = 2.0f;
+    [Param(SShot, "Alcance com carga máxima", "Distância máxima (m) liberada com carga total. Para usar, suba a câmera.", 2, 40, 0.1f)]
+    public float ShotRangeMax = 14f;
+    [Param(SShot, "Tempo para carga total", "Segundos segurando até liberar o alcance máximo.", 0.2f, 6, 0.05f)]
+    public float ShotChargeTime = 1.6f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
     public float ShotAutoReleaseTime = 3f;
-    [Param(SShot, "Câmera: inclinação de alcance total", "Com a câmera nesta inclinação ou acima (graus), o arremesso usa todo o alcance carregado.", -89, 45, 1)]
-    public float ShotPitchFullDeg = -15f;
-    [Param(SShot, "Câmera: inclinação de alcance mínimo", "Com a câmera nesta inclinação ou abaixo (graus), o arremesso fica no mais curto.", -89, 45, 1)]
-    public float ShotPitchMinDeg = -50f;
-    [Param(SShot, "Câmera: fração mínima do alcance", "Fração do alcance carregado usada com a câmera totalmente para baixo.", 0, 1, 0.01f)]
-    public float ShotPitchMinRangeFactor = 0.15f;
+    [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela' = alcance inicial.", -60, 30, 1)]
+    public float ShotPitchBaseDeg = -12f;
+    [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
+    public float ShotPitchTopDeg = 22f;
+    [Param(SShot, "Câmera: inclinação do mais curto", "Inclinação da câmera (graus) que pede o arremesso mais curto.", -89, 0, 1)]
+    public float ShotPitchBottomDeg = -50f;
+    [Param(SShot, "Distância mais curta", "Distância (m) pedida com a câmera totalmente para baixo.", 0.2f, 10, 0.1f)]
+    public float ShotRangeClosest = 1.0f;
     [Param(SShot, "Ângulo de perto", "Ângulo vertical (graus) em arremessos curtos. Mais alto = mais curva.", 15, 85, 0.5f)]
     public float ShotAngleNearDeg = 55f;
     [Param(SShot, "Ângulo de longe", "Ângulo vertical (graus) no alcance máximo. Mais baixo = bola mais rápida e reta.", 15, 85, 0.5f)]
     public float ShotAngleFarDeg = 44f;
     [Param(SShot, "Ângulo mínimo de entrada", "Inclinação mínima (graus) com que a bola desce na altura do aro. Maior = arcos mais altos, mais fácil entrar.", 10, 80, 0.5f)]
-    public float ShotMinEntryAngleDeg = 38f;
+    public float ShotMinEntryAngleDeg = 42f;
     [Param(SShot, "Altura de soltura", "Altura de onde a bola sai no arremesso (m).", 1, 4, 0.05f)]
     public float ShotReleaseHeight = 2.35f;
     [Param(SShot, "Velocidade carregando", "Multiplicador de velocidade enquanto carrega o arremesso.", 0, 1, 0.01f)]
     public float ShotChargeMoveMult = 0.35f;
-    [Param(SShot, "Assistência de direção", "Quanto a direção é puxada para a cesta adversária (0 = nenhuma, 1 = total). Nunca na própria cesta.", 0, 1, 0.01f)]
-    public float ShotAimAssist = 0.6f;
-    [Param(SShot, "Ângulo da assistência", "A assistência só age mirando dentro deste ângulo da cesta adversária (graus).", 0, 90, 1)]
-    public float ShotAimAssistMaxAngleDeg = 30f;
-    [Param(SShot, "Assistência de distância: alcance", "Se o arremesso cairia a até esta distância (m) da cesta adversária, ele é puxado para ela.", 0, 5, 0.05f)]
-    public float ShotDistAssistMeters = 1.5f;
+    [Param(SShot, "Assistência de direção", "Correção da direção quando a mira já está perto da cesta adversária (diminui suavemente até zero na borda do ângulo). Nunca na própria cesta.", 0, 1, 0.01f)]
+    public float ShotAimAssist = 0.85f;
+    [Param(SShot, "Ângulo da assistência", "A assistência de direção só age mirando dentro deste ângulo da cesta adversária (graus).", 0, 45, 0.5f)]
+    public float ShotAimAssistMaxAngleDeg = 7f;
+    [Param(SShot, "Assistência de distância: alcance", "Se a distância/altura do arremesso estiver a até isso (m) do ideal, ela é corrigida (suavemente, mais forte quanto mais perto).", 0, 5, 0.05f)]
+    public float ShotDistAssistMeters = 1.0f;
     [Param(SShot, "Assistência de distância: força", "Quanto a distância é corrigida (0 = nada, 1 = acerto exato).", 0, 1, 0.01f)]
-    public float ShotDistAssistStrength = 0.6f;
+    public float ShotDistAssistStrength = 0.85f;
     [Param(SShot, "Área de perto (bandeja)", "Dentro deste raio (m) da cesta adversária o arremesso vira bandeja: mira e distância automáticas.", 0, 8, 0.1f)]
     public float CloseShotRadius = 3f;
     [Param(SShot, "Ângulo da bandeja", "Ângulo vertical (graus) do arremesso de perto.", 30, 85, 0.5f)]
@@ -169,38 +180,38 @@ public sealed class Tuning
     [Param(SCourt, "Altura do aro", "Altura do aro (m). Real = 3.05.", 1.5f, 7, 0.05f)]
     public float HoopHeight = 4.0f;
     [Param(SCourt, "Raio do aro", "Raio interno do aro (m). Real ≈ 0.23.", 0.15f, 1.2f, 0.01f)]
-    public float RimRadius = 0.5f;
+    public float RimRadius = 0.55f;
     [Param(SCourt, "Largura da tabela", "Largura da tabela (m).", 0.5f, 8, 0.05f)]
     public float BoardWidth = 3.4f;
     [Param(SCourt, "Altura da tabela", "Altura da tabela (m).", 0.5f, 5, 0.05f)]
     public float BoardHeight = 2.0f;
     [Param(SCourt, "Tolerância da cesta", "Quanto (fração do raio da bola) ela pode encostar no aro e ainda contar ao passar.", 0, 1, 0.05f)]
-    public float ScoreTolerance = 0.35f;
+    public float ScoreTolerance = 0.5f;
     [Param(SCourt, "Distância do aro à linha de fundo", "Distância do centro do aro até a linha de fundo (m).", 0.5f, 5, 0.05f)]
     public float HoopInset = 1.8f;
-    [Param(SCourt, "Pequena: comprimento", "Comprimento da quadra pequena (m).", 10, 80, 0.5f)]
-    public float CourtSmallLength = 28f;
-    [Param(SCourt, "Pequena: largura", "Largura da quadra pequena (m).", 6, 50, 0.5f)]
-    public float CourtSmallWidth = 16f;
+    [Param(SCourt, "Pequena: comprimento", "Comprimento da quadra pequena (m).", 10, 150, 0.5f)]
+    public float CourtSmallLength = 44f;
+    [Param(SCourt, "Pequena: largura", "Largura da quadra pequena (m).", 6, 100, 0.5f)]
+    public float CourtSmallWidth = 24f;
     [Param(SCourt, "Pequena: raio dos 3 pontos", "Raio da linha de 3 na quadra pequena (m).", 2, 20, 0.1f)]
-    public float ThreePtSmall = 7.0f;
+    public float ThreePtSmall = 8.5f;
     [Param(SCourt, "Média: comprimento", "Comprimento da quadra média (m).", 10, 80, 0.5f)]
-    public float CourtMediumLength = 34f;
-    [Param(SCourt, "Média: largura", "Largura da quadra média (m).", 6, 50, 0.5f)]
-    public float CourtMediumWidth = 19f;
+    public float CourtMediumLength = 58f;
+    [Param(SCourt, "Média: largura", "Largura da quadra média (m).", 6, 100, 0.5f)]
+    public float CourtMediumWidth = 32f;
     [Param(SCourt, "Média: raio dos 3 pontos", "Raio da linha de 3 na quadra média (m).", 2, 20, 0.1f)]
-    public float ThreePtMedium = 8.0f;
+    public float ThreePtMedium = 9.5f;
     [Param(SCourt, "Grande: comprimento", "Comprimento da quadra grande (m).", 10, 80, 0.5f)]
-    public float CourtLargeLength = 40f;
-    [Param(SCourt, "Grande: largura", "Largura da quadra grande (m).", 6, 50, 0.5f)]
-    public float CourtLargeWidth = 22f;
+    public float CourtLargeLength = 80f;
+    [Param(SCourt, "Grande: largura", "Largura da quadra grande (m).", 6, 100, 0.5f)]
+    public float CourtLargeWidth = 44f;
     [Param(SCourt, "Grande: raio dos 3 pontos", "Raio da linha de 3 na quadra grande (m).", 2, 20, 0.1f)]
-    public float ThreePtLarge = 9.0f;
+    public float ThreePtLarge = 10.5f;
     [Param(SCourt, "Margem além das linhas", "Espaço jogável além das linhas antes das paredes invisíveis (não existe 'fora').", 0.2f, 6, 0.1f)]
     public float BoundsMargin = 1.5f;
 
     // ---------------- Regras ----------------
-    [Param(SRules, "Contagem regressiva", "Segundos de contagem antes de cada round.", 0, 10, 0.5f)]
+    [Param(SRules, "Contagem regressiva", "Segundos de contagem no início da partida (rounds seguintes começam direto).", 0, 10, 0.5f)]
     public float CountdownSeconds = 3f;
     [Param(SRules, "Pausa após cesta", "Segundos de comemoração antes de reiniciar o round.", 0, 6, 0.1f)]
     public float PostScoreDelay = 1.6f;
@@ -208,6 +219,77 @@ public sealed class Tuning
     public float PointsInside = 2f;
     [Param(SRules, "Pontos de fora", "Pontos de uma cesta de fora da linha de 3.", 1, 10, 1)]
     public float PointsOutside = 3f;
+
+
+    // ---------------- Passe ----------------
+    [Param(SPass, "Alcance do passe", "Distância máxima (m) até o aliado que recebe.", 2, 60, 0.5f)]
+    public float PassRange = 18f;
+    [Param(SPass, "Tempo do toque rápido", "Soltando antes disso (s), passa para o aliado livre mais próximo; depois, para o aliado na direção da câmera.", 0.05f, 1, 0.01f)]
+    public float PassTapTime = 0.2f;
+    [Param(SPass, "Velocidade do passe", "Velocidade horizontal (m/s) do passe normal.", 4, 40, 0.5f)]
+    public float PassSpeed = 15f;
+    [Param(SPass, "Altura de recepção", "Altura (m) do peito do recebedor, mirada pelo passe.", 0.5f, 2.5f, 0.05f)]
+    public float PassReceiveHeight = 1.3f;
+    [Param(SPass, "Ângulo do passe mirado", "Aliados dentro deste ângulo (graus) da direção da câmera podem ser alvo do passe mirado.", 10, 180, 1)]
+    public float PassAimMaxAngleDeg = 70f;
+    [Param(SPass, "Largura do corredor", "Um jogador a menos disso (m) da linha do passe bloqueia o alvo (passe normal).", 0.1f, 2, 0.05f)]
+    public float PassLaneRadius = 0.9f;
+    [Param(SPass, "Altura do passe alto", "Altura máxima (m) que o passe alto atinge.", 3, 12, 0.1f)]
+    public float HighPassApex = 5.5f;
+    [Param(SPass, "Bloqueio de repegar", "Segundos em que quem passou não pode pegar a própria bola.", 0, 2, 0.05f)]
+    public float PassLockout = 0.3f;
+
+    // ---------------- Salto e bloqueio ----------------
+    [Param(SJump, "Impulso do salto rápido", "Velocidade vertical (m/s) de um toque no salto. Altura ≈ v²/(2·gravidade).", 1, 20, 0.1f)]
+    public float JumpVelMin = 6.2f;
+    [Param(SJump, "Impulso do salto carregado", "Velocidade vertical (m/s) segurando o salto até o fim da carga.", 1, 20, 0.1f)]
+    public float JumpVelMax = 7.6f;
+    [Param(SJump, "Tempo de carga do salto", "Segundos segurando para o salto mais alto (parado enquanto carrega).", 0.05f, 2, 0.01f)]
+    public float JumpChargeTime = 0.3f;
+    [Param(SJump, "Controle de direção do salto", "Fração da velocidade de movimento levada para o salto (direção escolhida antes de pular).", 0, 1.5f, 0.01f)]
+    public float JumpCarry = 0.7f;
+    [Param(SJump, "Travamento ao pousar", "Segundos sem mover nem agir depois de pousar.", 0, 2, 0.05f)]
+    public float LandLockTime = 0.5f;
+    [Param(SJump, "Raio do bloqueio", "Alcance horizontal (m) do corpo/braços para bloquear no ar.", 0.2f, 2, 0.05f)]
+    public float BlockRadius = 0.6f;
+    [Param(SJump, "Altura do bloqueio", "Até que altura (m acima dos pés) os braços bloqueiam.", 1, 4, 0.05f)]
+    public float BlockReach = 2.6f;
+    [Param(SJump, "Velocidade do rebote do bloqueio", "Velocidade (m/s) com que a bola quica no bloqueador.", 0.5f, 15, 0.1f)]
+    public float BlockBounceSpeed = 3.5f;
+
+    // ---------------- Roubo ----------------
+    [Param(SSteal, "Velocidade do bote", "Velocidade (m/s) do impulso para frente ao tentar roubar.", 1, 30, 0.5f)]
+    public float StealDashSpeed = 9f;
+    [Param(SSteal, "Duração do bote", "Duração (s) do impulso do roubo.", 0.05f, 1, 0.01f)]
+    public float StealDashTime = 0.25f;
+    [Param(SSteal, "Alcance do roubo", "Distância (m) até quem está com a bola para acertar o roubo.", 0.3f, 3, 0.05f)]
+    public float StealReach = 1.1f;
+    [Param(SSteal, "Ângulo do roubo", "O alvo precisa estar dentro deste ângulo (graus) à frente.", 10, 180, 1)]
+    public float StealAngleDeg = 70f;
+    [Param(SSteal, "Penalidade por errar", "Segundos lento (sem correr, pular ou roubar) após errar o roubo.", 0, 6, 0.1f)]
+    public float StealFailTime = 2f;
+    [Param(SSteal, "Velocidade na penalidade", "Multiplicador de velocidade durante a penalidade.", 0, 1, 0.01f)]
+    public float StealFailSpeedMult = 0.2f;
+
+    // ---------------- Drible ----------------
+    [Param(SDrib, "Cargas de drible", "Quantas cargas de drible o jogador tem.", 1, 6, 1)]
+    public float DribbleCharges = 2f;
+    [Param(SDrib, "Duração do drible", "Segundos de drible (imune a roubo).", 0.2f, 4, 0.05f)]
+    public float DribbleDuration = 1f;
+    [Param(SDrib, "Velocidade driblando", "Multiplicador de velocidade durante o drible.", 0.1f, 1.5f, 0.01f)]
+    public float DribbleSpeedMult = 0.5f;
+    [Param(SDrib, "Recarga por carga", "Segundos para recuperar 1 carga (conta sempre que falta alguma).", 1, 60, 0.5f)]
+    public float DribbleRecharge = 10f;
+
+    // ---------------- Bonecos de treino ----------------
+    [Param(SDummy, "Reação do boneco", "Atraso (s) para o boneco adversário pular contra um arremesso.", 0, 2, 0.05f)]
+    public float DummyReactionTime = 0.3f;
+    [Param(SDummy, "Distância para pular", "Boneco adversário pula se alguém carregar arremesso a até isso (m).", 0.5f, 10, 0.1f)]
+    public float DummyJumpRange = 4f;
+    [Param(SDummy, "Espera para devolver", "Segundos que o boneco aliado segura a bola antes de passar de volta.", 0, 5, 0.1f)]
+    public float DummyPassBackDelay = 0.8f;
+    [Param(SDummy, "Velocidade do boneco", "Multiplicador de velocidade dos bonecos quando andam.", 0, 1.5f, 0.01f)]
+    public float DummySpeedMult = 0.6f;
 
     // =====================================================================
 
