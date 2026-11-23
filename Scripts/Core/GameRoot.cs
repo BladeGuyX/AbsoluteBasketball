@@ -111,12 +111,12 @@ public partial class GameRoot : Node
                 float yaw = ShotMath.YawOf(toRim) + Mathf.DegToRad(rng.RandfRange(-5f, 5f));
                 var rel = ShotMath.ReleasePos(feet, yaw);
                 float d = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length() + rng.RandfRange(-1.5f, 1.5f);
-                var plan = ShotMath.Plan(feet, 0, 99f, yaw, ShotMath.PitchForDistance(d), g);
+                var plan = ShotMath.Plan(feet, 0, yaw, ShotMath.PitchForDistance(d), g);
                 var pos = plan.Pos; var vel = plan.Vel;
                 bool hitRim = false, hitBoard = false, scored = false;
                 for (int k = 0; k < 400; k++)
                 {
-                    var h = BallPhys.Simulate(ref pos, ref vel, 1f / 60f, g);
+                    var h = BallPhys.Simulate(ref pos, ref vel, 1f / 60f, g, hoop);
                     hitRim |= h.Rim; hitBoard |= h.Board;
                     if (h.ScoredHoop == hoop) { scored = true; break; }
                     if (h.Floor) break;
@@ -127,13 +127,29 @@ public partial class GameRoot : Node
             }
             GD.Print($"[STATS] {dist,4:0}m: cestas {100f * made / n:0}%  tocou aro {100f * rimHits / n:0}%  tabelinhas convertidas {100f * bank / n:0}%");
         }
+        // cesta por baixo não pode valer: bola jogada para cima por dentro do aro
+        int under = 0, wouldScore = 0;
+        for (int i = 0; i < 50; i++)
+        {
+            var pos = rim + new Vector3(rng.RandfRange(-0.2f, 0.2f), -2.2f, rng.RandfRange(-0.2f, 0.2f));
+            var vel = new Vector3(rng.RandfRange(-0.3f, 0.3f), rng.RandfRange(8f, 11f), rng.RandfRange(-0.3f, 0.3f));
+            int block = -1;
+            for (int k = 0; k < 300; k++)
+            {
+                var h = BallPhys.Simulate(ref pos, ref vel, 1f / 60f, g, hoop);
+                if (h.UpThroughHoop >= 0) block = h.UpThroughHoop;
+                if (h.ScoredHoop >= 0 && h.ScoredHoop == block) { wouldScore++; break; }
+                if (h.ScoredHoop >= 0) { under++; break; }
+                if (h.Floor) break;
+            }
+        }
+        GD.Print($"[STATS] cestas por baixo que valeriam (deve ser 0): {under}/50 · bloqueadas pela regra: {wouldScore}");
     }
 
     public void ShowMainMenu()
     {
         FreeMatch();
         CloseMenu();
-        Input.MouseMode = Input.MouseModeEnum.Visible;
         _menu = new MainMenu { Name = "MainMenu" };
         _ui.AddChild(_menu);
     }
@@ -185,19 +201,43 @@ public partial class GameRoot : Node
 
     public override void _Notification(int what)
     {
+        // Não mexe no modo do mouse com a janela sem foco (isso deixava o cursor "congelado" ao voltar do alt-tab);
+        // o modo certo é aplicado em UpdateMouse() quando o foco volta.
         if (what == NotificationApplicationFocusOut)
         {
-            Input.MouseMode = Input.MouseModeEnum.Visible;
             if (_match != null && IsInstanceValid(_match)) _match.OnFocusLost();
         }
         else if (what == NotificationApplicationFocusIn)
         {
             CameraRig.IgnoreMouseUntilMs = Time.GetTicksMsec() + 250;
+            _mouseRefresh = 3;
         }
+    }
+
+    int _mouseRefresh;
+
+    /// <summary>Único lugar que define o modo do mouse: preso/escondido jogando; visível em menus, pausa e fim de jogo.</summary>
+    void UpdateMouse()
+    {
+        if (!DisplayServer.WindowIsFocused()) return;
+        bool capture = _match != null && IsInstanceValid(_match) && _match.WantsCapturedMouse;
+        var want = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
+        if (_mouseRefresh > 0)
+        {
+            // ao voltar do alt-tab: força o Windows a redesenhar o cursor (esconde 1 quadro, mostra e reposiciona)
+            _mouseRefresh--;
+            if (!capture)
+            {
+                if (_mouseRefresh == 2) { Input.MouseMode = Input.MouseModeEnum.Hidden; return; }
+                if (_mouseRefresh == 1) { Input.MouseMode = Input.MouseModeEnum.Visible; Input.WarpMouse(GetViewport().GetMousePosition()); return; }
+            }
+        }
+        if (Input.MouseMode != want) Input.MouseMode = want;
     }
 
     public override void _Process(double delta)
     {
+        UpdateMouse();
         if (_toastT > 0)
         {
             _toastT -= (float)delta;

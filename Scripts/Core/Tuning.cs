@@ -70,11 +70,11 @@ public sealed class Tuning
 
     // ---------------- Estamina ----------------
     [Param(SStam, "Estamina máxima", "Quantidade total de estamina.", 10, 500, 1)]
-    public float StaminaMax = 100f;
+    public float StaminaMax = 140f;
     [Param(SStam, "Gasto por segundo correndo", "Estamina gasta por segundo enquanto corre.", 1, 200, 1)]
     public float StaminaDrainPerSec = 28f;
     [Param(SStam, "Recarga por segundo", "Estamina recuperada por segundo sem correr.", 1, 300, 1)]
-    public float StaminaRegenPerSec = 45f;
+    public float StaminaRegenPerSec = 36f;
     [Param(SStam, "Atraso da recarga", "Segundos após parar de correr até começar a recarregar.", 0, 3, 0.05f)]
     public float StaminaRegenDelay = 0.35f;
     [Param(SStam, "Mínimo para começar a correr", "Estamina mínima para iniciar uma corrida.", 0, 100, 1)]
@@ -111,8 +111,8 @@ public sealed class Tuning
     public float RimBounce = 0.35f;
     [Param(SBall, "Aro amigável", "Quando a bola bate no aro por dentro, quanto ela perde a velocidade para fora (0 = física pura, 1 = quase sempre cai dentro).", 0, 1, 0.01f)]
     public float RimFriendliness = 0.6f;
-    [Param(SBall, "Tabelinha: ajuda", "Bola que bate no quadrado da tabela é desviada para cair na cesta (0 = física pura, 1 = sempre).", 0, 1, 0.01f)]
-    public float BankAssist = 0.85f;
+    [Param(SBall, "Tabelinha: ajuda", "Arremesso que bate no quadrado da tabela é desviado um pouco em direção à cesta (0 = física pura, 1 = sempre entra). Só em arremessos na cesta adversária.", 0, 1, 0.01f)]
+    public float BankAssist = 0.35f;
     [Param(SBall, "Quique na tabela", "Elasticidade da tabela.", 0, 1, 0.01f)]
     public float BoardBounce = 0.55f;
     [Param(SBall, "Quique nas paredes invisíveis", "Elasticidade dos limites da área de jogo.", 0, 1, 0.01f)]
@@ -133,15 +133,13 @@ public sealed class Tuning
     public float DribbleSoundDb = -18f;
 
     // ---------------- Arremesso ----------------
-    [Param(SShot, "Alcance inicial", "Distância máxima (m) logo no início da carga. É a distância com a câmera no meio da tela.", 0.5f, 15, 0.1f)]
+    [Param(SShot, "Distância no meio da tela", "Distância (m) do arremesso com a câmera no meio da tela. Suba a câmera para ir mais longe.", 0.5f, 15, 0.1f)]
     public float ShotRangeMin = 3f;
-    [Param(SShot, "Alcance com carga máxima", "Distância máxima (m) liberada com carga total. Para usar, suba a câmera.", 2, 40, 0.1f)]
+    [Param(SShot, "Alcance máximo", "Distância máxima (m) do arremesso, disponível desde o início (não depende de segurar). Para usar, suba a câmera.", 2, 40, 0.1f)]
     public float ShotRangeMax = 14f;
-    [Param(SShot, "Tempo para carga total", "Segundos segurando até liberar o alcance máximo.", 0.2f, 6, 0.05f)]
-    public float ShotChargeTime = 1.6f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
-    public float ShotAutoReleaseTime = 3f;
-    [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela' = alcance inicial.", -60, 30, 1)]
+    public float ShotAutoReleaseTime = 4f;
+    [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
     public float ShotPitchTopDeg = 22f;
@@ -167,10 +165,6 @@ public sealed class Tuning
     public float ShotDistAssistMeters = 1.0f;
     [Param(SShot, "Assistência de distância: força", "Quanto a distância é corrigida (0 = nada, 1 = acerto exato).", 0, 1, 0.01f)]
     public float ShotDistAssistStrength = 0.85f;
-    [Param(SShot, "Área de perto (bandeja)", "Dentro deste raio (m) da cesta adversária o arremesso vira bandeja: mira e distância automáticas.", 0, 8, 0.1f)]
-    public float CloseShotRadius = 3f;
-    [Param(SShot, "Ângulo da bandeja", "Ângulo vertical (graus) do arremesso de perto.", 30, 85, 0.5f)]
-    public float CloseShotAngleDeg = 66f;
     [Param(SShot, "Bloqueio de repegar", "Segundos em que quem arremessou não pode pegar a própria bola.", 0, 2, 0.05f)]
     public float ShotPickupLockout = 0.35f;
     [Param(SShot, "Duração da trajetória mostrada", "Segundos de voo desenhados no indicador de trajetória.", 0.3f, 5, 0.1f)]
@@ -222,20 +216,30 @@ public sealed class Tuning
 
 
     // ---------------- Passe ----------------
-    [Param(SPass, "Alcance do passe", "Distância máxima (m) até o aliado que recebe.", 2, 60, 0.5f)]
-    public float PassRange = 18f;
-    [Param(SPass, "Tempo do toque rápido", "Soltando antes disso (s), passa para o aliado livre mais próximo; depois, para o aliado na direção da câmera.", 0.05f, 1, 0.01f)]
+    [Param(SPass, "Alcance do passe rápido", "Distância máxima (m) até o aliado no passe rápido (toque).", 2, 60, 0.5f)]
+    public float PassRange = 22f;
+    [Param(SPass, "Tempo do toque rápido", "Soltando antes disso (s) = passe rápido para o aliado livre mais próximo; segurando mais = passe carregado na direção da câmera.", 0.05f, 1, 0.01f)]
     public float PassTapTime = 0.2f;
-    [Param(SPass, "Velocidade do passe", "Velocidade horizontal (m/s) do passe normal.", 4, 40, 0.5f)]
-    public float PassSpeed = 15f;
-    [Param(SPass, "Altura de recepção", "Altura (m) do peito do recebedor, mirada pelo passe.", 0.5f, 2.5f, 0.05f)]
+    [Param(SPass, "Velocidade do passe rápido", "Velocidade horizontal (m/s) do passe rápido normal. Maior = mais rápido e mais reto.", 4, 50, 0.5f)]
+    public float PassSpeed = 21f;
+    [Param(SPass, "Altura de recepção", "Altura (m) do peito do recebedor, mirada pelo passe rápido.", 0.5f, 2.5f, 0.05f)]
     public float PassReceiveHeight = 1.3f;
-    [Param(SPass, "Ângulo do passe mirado", "Aliados dentro deste ângulo (graus) da direção da câmera podem ser alvo do passe mirado.", 10, 180, 1)]
-    public float PassAimMaxAngleDeg = 70f;
-    [Param(SPass, "Largura do corredor", "Um jogador a menos disso (m) da linha do passe bloqueia o alvo (passe normal).", 0.1f, 2, 0.05f)]
+    [Param(SPass, "Largura do corredor", "Um jogador a menos disso (m) da linha do passe rápido bloqueia o alvo.", 0.1f, 2, 0.05f)]
     public float PassLaneRadius = 0.9f;
-    [Param(SPass, "Altura do passe alto", "Altura máxima (m) que o passe alto atinge.", 3, 12, 0.1f)]
-    public float HighPassApex = 5.5f;
+    [Param(SPass, "Altura do passe alto", "Altura máxima (m) que o passe rápido alto atinge.", 3, 12, 0.1f)]
+    public float HighPassApex = 5.0f;
+    [Param(SPass, "Passe carregado: velocidade", "Velocidade (m/s) da bola no passe carregado normal (lançado na direção da câmera).", 4, 50, 0.5f)]
+    public float AimPassSpeed = 22f;
+    [Param(SPass, "Passe carregado: elevação", "Graus somados à inclinação da câmera no passe carregado normal (compensa a gravidade).", -20, 45, 0.5f)]
+    public float AimPassLiftDeg = 6f;
+    [Param(SPass, "Passe carregado alto: velocidade", "Velocidade (m/s) da bola no passe carregado alto.", 4, 50, 0.5f)]
+    public float AimHighPassSpeed = 14f;
+    [Param(SPass, "Passe carregado alto: elevação", "Graus somados à inclinação da câmera no passe carregado alto.", 0, 80, 0.5f)]
+    public float AimHighPassLiftDeg = 32f;
+    [Param(SPass, "Passe automático", "Segurando o passe por esse tempo (s), o jogador passa sozinho na direção da câmera.", 0.5f, 10, 0.1f)]
+    public float PassAutoReleaseTime = 4f;
+    [Param(SPass, "Velocidade carregando o passe", "Multiplicador de velocidade enquanto carrega o passe (não pode ter a bola roubada).", 0, 1, 0.01f)]
+    public float PassChargeMoveMult = 0.25f;
     [Param(SPass, "Bloqueio de repegar", "Segundos em que quem passou não pode pegar a própria bola.", 0, 2, 0.05f)]
     public float PassLockout = 0.3f;
 
@@ -280,6 +284,10 @@ public sealed class Tuning
     public float DribbleSpeedMult = 0.5f;
     [Param(SDrib, "Recarga por carga", "Segundos para recuperar 1 carga (conta sempre que falta alguma).", 1, 60, 0.5f)]
     public float DribbleRecharge = 10f;
+    [Param(SDrib, "Quique driblando", "Multiplicador da velocidade do quique durante o drible (maior = quica mais rápido).", 1, 5, 0.1f)]
+    public float DribbleBounceMult = 2.6f;
+    [Param(SDrib, "Agachamento driblando", "Quanto o boneco agacha durante o drible (0 = nada, 1 = como carregando o salto).", 0, 1.3f, 0.05f)]
+    public float DribbleCrouch = 0.8f;
 
     // ---------------- Bonecos de treino ----------------
     [Param(SDummy, "Reação do boneco", "Atraso (s) para o boneco adversário pular contra um arremesso.", 0, 2, 0.05f)]

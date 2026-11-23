@@ -48,7 +48,6 @@ public partial class PauseMenu : Control
     {
         Visible = true;
         GetTree().Paused = true;
-        Input.MouseMode = Input.MouseModeEnum.Visible;
         _first.GrabFocus();
     }
 
@@ -58,6 +57,5 @@ public partial class PauseMenu : Control
         Visible = false;
         GetTree().Paused = false;
         CameraRig.IgnoreMouseUntilMs = Time.GetTicksMsec() + 150;
-        Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 }

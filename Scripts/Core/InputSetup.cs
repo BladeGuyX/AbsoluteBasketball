@@ -33,7 +33,7 @@ public static class InputSetup
         [Act.Shoot] = new("mouse", (int)MouseButton.Left),
         [Act.Pass] = new("mouse", (int)MouseButton.Right),
         [Act.Jump] = new("key", (int)Key.Space),
-        [Act.Dribble] = new("key", (int)Key.Q),
+        [Act.Dribble] = new("key", (int)Key.E), // mesmo do roubo: drible só com a bola, roubo só sem
         [Act.Steal] = new("key", (int)Key.E),
         [Act.Variation] = new("key", (int)Key.R),
     };
@@ -63,6 +63,10 @@ public static class InputSetup
         UserSettings.I.PadBinds.Clear();
     }
 
+    /// <summary>Ações que podem dividir o mesmo botão (nunca valem ao mesmo tempo).</summary>
+    static bool Compatible(string a, string b) =>
+        (a == Act.Dribble && b == Act.Steal) || (a == Act.Steal && b == Act.Dribble);
+
     /// <summary>Define o bind e, se outra ação usava o mesmo, troca (swap) para não haver conflito.</summary>
     public static void SetBind(string action, Bind b, bool pad)
     {
@@ -70,7 +74,7 @@ public static class InputSetup
         var old = pad ? GetPad(action) : GetKb(action);
         foreach (var (other, _, _) in Act.Rebindable)
         {
-            if (other == action) continue;
+            if (other == action || Compatible(action, other)) continue;
             var ob = pad ? GetPad(other) : GetKb(other);
             if (ob != null && ob.SameAs(b)) dict[other] = old?.Clone();
         }

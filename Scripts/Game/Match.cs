@@ -46,8 +46,6 @@ public partial class Match : Node3D
     public int Winner = -1;
 
     TrajectoryPreview _preview;
-    MeshInstance3D _passMarker;
-    StandardMaterial3D _passMarkerMat;
     readonly LocalInputReader _reader = new();
     readonly Dictionary<Player, DummyBrain> _dummies = new();
     PauseMenu _pause;
@@ -61,7 +59,7 @@ public partial class Match : Node3D
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.AutoPilotLocal;
 
     public override void _Ready()
     {
@@ -83,7 +81,6 @@ public partial class Match : Node3D
         AddChild(Cam);
         _preview = new TrajectoryPreview { Name = "Trajectory" };
         AddChild(_preview);
-        BuildPassMarker();
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
         _pause = new PauseMenu { M = this, Name = "Pause" };
@@ -93,7 +90,6 @@ public partial class Match : Node3D
         if (Cfg.SmokeTest || Cfg.AutoPilotLocal) _smoke = new AutoPilot(this, LocalPlayer);
         if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
         StartRound(0, null, countdown: true);
-        if (!Automated) Input.MouseMode = Input.MouseModeEnum.Captured;
     }
 
     Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false)
@@ -288,7 +284,6 @@ public partial class Match : Node3D
         Phase = MatchPhase.Ended;
         Sfx.Play2D(this, "win", -5);
         Hud?.ShowEnd(Winner);
-        if (!Automated) Input.MouseMode = Input.MouseModeEnum.Visible;
     }
 
     // ------------------------------------------------------------------ bola: bloqueio e recepção
@@ -308,7 +303,6 @@ public partial class Match : Node3D
             Ball.Drop(Ball.GlobalPosition, away * t.BlockBounceSpeed + Vector3.Up * 1.2f);
             p.BallLockoutTimer = 0.5f; // o bloqueador não pega a bola
             Sfx.Play3D(this, "board", Ball.GlobalPosition, -2, 0.8f);
-            if (p.IsLocalHuman) Hud?.ShowMessage("TOCO!", 1.0f, color: new Color("ffd23f"));
             LogEvent("BLOCK", p);
             return;
         }
@@ -328,22 +322,18 @@ public partial class Match : Node3D
         bool intercepted = Ball.State == BallState.Pass && Ball.ThrowTeam != best.Team;
         Ball.GiveTo(best);
         Sfx.Play3D(this, "catch", Ball.GlobalPosition, -4);
-        if (intercepted && best.IsLocalHuman) Hud?.ShowMessage("INTERCEPTADO!", 1.0f, color: new Color("ffd23f"));
-        LogEvent("CATCH", best);
+        LogEvent(intercepted ? "INTERCEPT" : "CATCH", best);
+        if (intercepted) LogEvent("CATCH", best);
     }
 
     public void OnSteal(Player thief, Player victim)
     {
         Sfx.Play3D(this, "catch", thief.GlobalPosition + Vector3.Up, 0, 1.3f);
-        if (thief.IsLocalHuman) Hud?.ShowMessage("ROUBOU!", 1.0f, color: new Color("ffd23f"));
-        if (victim.IsLocalHuman) Hud?.ShowMessage("Roubaram a bola!", 1.0f, small: true);
         LogEvent("STEAL", thief, victim);
     }
 
     public void OnStealFailed(Player thief, Player immuneTarget)
     {
-        if (thief.IsLocalHuman)
-            Hud?.ShowMessage(immuneTarget != null ? "Não deu! Ele estava protegido" : "Errou o roubo!", 0.9f, small: true);
         LogEvent("STEAL_FAIL", thief, immuneTarget);
     }
 
@@ -368,43 +358,11 @@ public partial class Match : Node3D
 
     // ------------------------------------------------------------------ visual local
 
-    void BuildPassMarker()
-    {
-        _passMarkerMat = Mat.Unshaded(new Color("ffd23f"));
-        _passMarkerMat.NoDepthTest = true;
-        _passMarker = new MeshInstance3D
-        {
-            Mesh = new TorusMesh { InnerRadius = 0.42f, OuterRadius = 0.55f, Rings = 24, RingSegments = 6 },
-            MaterialOverride = _passMarkerMat,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-            Visible = false,
-            TopLevel = true,
-        };
-        var arrow = new MeshInstance3D
-        {
-            Mesh = new CylinderMesh { TopRadius = 0.22f, BottomRadius = 0f, Height = 0.4f, RadialSegments = 12 },
-            MaterialOverride = _passMarkerMat,
-            Position = new Vector3(0, 0.45f, 0),
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
-        };
-        _passMarker.AddChild(arrow);
-        AddChild(_passMarker);
-    }
-
     public override void _Process(double delta)
     {
         var lp = LocalPlayer;
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
 
-        var target = lp != null && lp.ChargingPass ? lp.PassTarget : null;
-        _passMarker.Visible = target != null;
-        if (target != null)
-        {
-            _passMarkerMat.AlbedoColor = lp.PassHigh ? new Color("ff7ad9") : new Color("ffd23f");
-            float bob = Mathf.Sin((float)Time.GetTicksMsec() / 180f) * 0.08f;
-            _passMarker.GlobalPosition = target.GetGlobalTransformInterpolated().Origin + Vector3.Up * (2.75f + bob);
-            _passMarker.RotateY((float)delta * 3f);
-        }
         if (Cfg.ScreenshotPath != null) ScreenshotTick((float)delta);
     }
 
@@ -446,11 +404,8 @@ public partial class Match : Node3D
         _pause.Open();
     }
 
-    public override void _UnhandledInput(InputEvent e)
-    {
-        if (e is InputEventMouseButton mb && mb.Pressed && !InputBlocked && Input.MouseMode != Input.MouseModeEnum.Captured && !Automated)
-            Input.MouseMode = Input.MouseModeEnum.Captured;
-    }
+    /// <summary>O cursor deve ficar escondido/preso (jogando, sem pausa nem tela de fim). Aplicado pelo GameRoot.</summary>
+    public bool WantsCapturedMouse => !Automated && !InputBlocked;
 
     // ------------------------------------------------------------------ testes automáticos
 
@@ -472,8 +427,8 @@ public partial class Match : Node3D
         _smokeTime += dt;
         if (!_scenario.Done && _smokeTime < 70f) return;
         var s = _scenario;
-        bool ok = s.PassOk && s.ReturnOk && s.DribbleOk && s.JumpOk && s.StealOk;
-        GD.Print($"[E2] passe={s.PassOk} devolução={s.ReturnOk} drible={s.DribbleOk} boneco_pulou={s.JumpOk} toco={s.BlockOk} " +
+        bool ok = s.PassOk && s.ReturnOk && s.AimPassOk && s.DribbleOk && s.JumpOk && s.StealOk;
+        GD.Print($"[E2] passe={s.PassOk} devolução={s.ReturnOk} passe_carregado={s.AimPassOk} drible={s.DribbleOk} boneco_pulou={s.JumpOk} toco={s.BlockOk} " +
                  $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE2 = false;

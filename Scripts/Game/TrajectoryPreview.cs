@@ -40,7 +40,7 @@ public partial class TrajectoryPreview : MultiMeshInstance3D
         {
             for (int k = 0; k < 2; k++)
             {
-                var hit = BallPhys.Simulate(ref pos, ref vel, dt, g);
+                var hit = BallPhys.Simulate(ref pos, ref vel, dt, g, CourtGeo.AttackHoop(p.Team));
                 time += dt;
                 if (hit.Any || hit.ScoredHoop >= 0) { stop = true; break; }
             }

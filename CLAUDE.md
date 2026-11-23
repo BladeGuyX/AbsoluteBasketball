@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.3 — Etapas 0, 1 e 2 concluídas. Próxima: Etapa 3 (enterrada).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.4 — Etapas 0, 1 e 2 concluídas (Etapa 2 revisada). Próxima: Etapa 3 (enterrada).**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -19,7 +19,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Decisões do usuário a lembrar
 - **Multiplayer pela Steam** (Steamworks, sem publicar: AppID de teste 480/Spacewar, como já foi feito em outro jogo do usuário). Só na Etapa 5.
 - Controle de versão: **git** neste diretório (commits só quando o usuário pedir ou ao fechar uma entrega combinada).
-- Revisões de regras (v0.2, v0.3) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
+- Revisões de regras (v0.2, v0.3, v0.4) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
 
 ## Ferramentas instaladas
 - Godot: `%LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine.Mono_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe`
@@ -38,17 +38,22 @@ O usuário fala português (pt-BR) — responda em pt-BR.
   2. `python tools/build_tuning_artifact.py "vX.Y · Etapa N"`
   3. Publicar `docs/tuning_editor.html` com a ferramenta Artifact usando `url` = URL acima (outro chat: ler antes com action read).
 
+- **Sem avisos de texto no meio do jogo** (tipo "ROUBOU!", "TOCO!", metros do arremesso). Só placar/ponto/prorrogação/fim.
+  Não adicionar novos sem o usuário pedir. Feedback via animação/som/HUD gráfico.
+- **Mouse:** o modo do cursor é definido SÓ em `GameRoot.UpdateMouse()` (preso jogando = `Match.WantsCapturedMouse`;
+  visível em menus/pausa/fim). Nunca mudar `Input.MouseMode` com a janela sem foco (causava cursor congelado após alt-tab).
+
 ## Arquitetura
 - `Scenes/Main.tscn` → `Scripts/Core/GameRoot.cs`: inicializa settings/input/tuning, menus ↔ partida, F5 recarrega tuning, args de linha de comando.
 - `Scripts/Core/`: `Tuning` (valores + esquema), `UserSettings` (user://settings.json: volume, fullscreen, sensibilidade, corrida alternar, binds), `InputSetup` (InputMap em código, remapeamento com troca automática de conflitos), `Mat` (materiais toon + contorno, paleta), `Sfx` (sons procedurais placeholder).
 - `Scripts/Game/`:
   - `Match` — **autoridade** (host/offline). Fases Countdown→Playing→Scored→(Ended). Lê `PlayerInput` de cada jogador, chama `Player.ServerTick`, `Ball.ServerTick`, pontuação, posse, relógio, pickups.
-  - `Player` (CharacterBody3D) — movimento, estamina, arremesso (sem cancelar; auto em 3 s), passe, salto, roubo, drible especial, quique automático (sempre).
-  - `Passing` — alvos de passe (toque = mais próximo livre; segurando = na direção da câmera), corredor livre, trajetória normal/alta.
+  - `Player` (CharacterBody3D) — movimento, estamina, arremesso (segurar não muda nada; distância = câmera; auto em 4 s), passe (toque = aliado; carregado = lança na direção da câmera, 25% de velocidade, imune a roubo, auto em 4 s), salto (corpo vira para a câmera carregando), roubo, drible especial (agachado, quique rápido), quique automático (sempre).
+  - `Passing` — passe rápido (aliado livre mais próximo, corredor livre, trajetória normal/alta) e `AimedVelocity` (passe carregado sem alvo).
   - `DummyBrain` — bonecos de treino (precursor dos bots). `ScenarioPilot` — roteiro do `--smoke-e2`.
   - Bola: estados Held/Loose/Shot/Pass/HighPass. `Match.CheckBlocks` (no ar bloqueia Shot/HighPass do adversário), `TryPickup` (recepção/interceptação), `LogEvent` (eventos impressos em modos automáticos).
   - `PlayerRig` (classe C# comum) — boneco placeholder + animação procedural (passada, balanço, IK simples dos braços até a bola, agachar na carga, pulinho ao soltar). Trocar pelo modelo do Blender na Etapa 7.
-  - `Ball` + `BallPhys` — física própria (gravidade, quiques, aro em toro, tabela AABB, poste, paredes) e detecção de cesta. `ShotMath.Plan()` = arremesso (distância = `PitchDistance(câmera)` limitada por `MaxRange(carga)`; assistências suaves só na cesta adversária; bandeja dentro de `CloseShotRadius`; ângulo mínimo de entrada). `BallPhys`: aro amigável e tabelinha (`CourtGeo.Bank*`) — compartilhado por jogador, prévia, HUD e bots.
+  - `Ball` + `BallPhys` — física própria (gravidade, quiques, aro em toro, tabela AABB, poste, paredes) e detecção de cesta. `ShotMath.Plan()` = arremesso (distância = `PitchDistance(câmera)` limitada por `ShotRangeMax`; assistências suaves só na cesta adversária; sem bandeja; ângulo mínimo de entrada). `BallPhys`: aro amigável e tabelinha (`CourtGeo.Bank*`) só valem com `assistHoop` (arremesso na cesta adversária); `UpThroughHoop` + `Ball._noScoreHoop` = cesta por baixo não vale — compartilhado por jogador, prévia, HUD e bots.
   - `CourtGeo` (geometria lógica, 3 tamanhos, `IsThree`) e `CourtBuilder` (visual + colisores + ambiente).
   - `CameraRig` (+ `LocalInputReader`), `TrajectoryPreview`, `AutoPilot` (piloto do teste; base para os bots).
 - `Scripts/UI/`: `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.

@@ -19,6 +19,7 @@ public partial class Ball : Node3D
     public Vector3 ShotOrigin;     // pés de quem arremessou (2 ou 3 pontos)
     public Player PassTarget;
     public float FlightTime;
+    int _noScoreHoop = -1;         // passou subindo pelo aro: a descida não vale cesta
 
     MeshInstance3D _mesh;
 
@@ -41,6 +42,7 @@ public partial class Ball : Node3D
         Holder = p;
         Vel = Vector3.Zero;
         PassTarget = null;
+        _noScoreHoop = -1;
         GlobalPosition = p.HeldBallPosition();
         ResetPhysicsInterpolation();
     }
@@ -52,7 +54,8 @@ public partial class Ball : Node3D
         State = state;
         LastThrower = by;
         ThrowTeam = by.Team;
-        if (state == BallState.Shot) ShotOrigin = by.GlobalPosition;
+        ShotOrigin = by.GlobalPosition;
+        _noScoreHoop = -1;
         PassTarget = target;
         FlightTime = 0;
         GlobalPosition = pos;
@@ -84,7 +87,16 @@ public partial class Ball : Node3D
         }
 
         var p = GlobalPosition;
-        var hit = BallPhys.Simulate(ref p, ref Vel, dt, M.Geo);
+        int assist = State == BallState.Shot && ThrowTeam >= 0 ? CourtGeo.AttackHoop(ThrowTeam) : -1;
+        var hit = BallPhys.Simulate(ref p, ref Vel, dt, M.Geo, assist);
+        if (hit.UpThroughHoop >= 0) _noScoreHoop = hit.UpThroughHoop;
+        if (_noScoreHoop >= 0)
+        {
+            if (hit.ScoredHoop == _noScoreHoop) hit.ScoredHoop = -1;
+            var c = M.Geo.RimCenter[_noScoreHoop];
+            float hd = new Vector2(p.X - c.X, p.Z - c.Z).Length();
+            if (p.Y < c.Y - 0.6f || hd > Tuning.I.RimRadius + Tuning.I.BallRadius + 0.4f) _noScoreHoop = -1;
+        }
         Spin(p - GlobalPosition);
         GlobalPosition = p;
         FlightTime += dt;

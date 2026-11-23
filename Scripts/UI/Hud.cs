@@ -8,7 +8,6 @@ public partial class Hud : CanvasLayer
 
     Label _scoreA, _scoreB, _info, _countdown, _msg;
     ProgressBar _stamina, _power;
-    Label _powerLabel, _status;
     HBoxContainer _dribblePips;
     Control _powerBox, _endPanel;
     Label _endTitle, _endScore;
@@ -54,8 +53,6 @@ public partial class Hud : CanvasLayer
         bottom.AddThemeConstantOverride("separation", 8);
         root.AddChild(bottom);
         _powerBox = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
-        _powerLabel = UiKit.Outlined("ALCANCE", 22, Colors.White, outline: 8);
-        _powerBox.AddChild(_powerLabel);
         _power = Bar(new Color("ffb020"), 22);
         _powerBox.AddChild(_power);
         bottom.AddChild(_powerBox);
@@ -67,11 +64,9 @@ public partial class Hud : CanvasLayer
         _dribblePips = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         _dribblePips.AddThemeConstantOverride("separation", 6);
         row.AddChild(_dribblePips);
-        _status = UiKit.Outlined("", 18, new Color("ffd23f"), outline: 6);
-        row.AddChild(_status);
         bottom.AddChild(row);
 
-        var hint = UiKit.Outlined("Esq. arremesso (câmera define distância) · Dir. passe (R = alto) · Espaço salto · Q drible · E roubo · Shift correr · Esc pausa · F5 tuning",
+        var hint = UiKit.Outlined("Esq. arremesso (câmera = distância) · Dir. passe (toque = aliado, segurar = mirar; R = alto) · Espaço salto · E drible / roubo · Shift correr · Esc pausa · F5 tuning",
             18, new Color(1, 1, 1, 0.85f), HorizontalAlignment.Left, 6);
         UiKit.Anchor(hint, 0, 1, 0, 1, 20, -44, 1500, -12);
         root.AddChild(hint);
@@ -186,14 +181,8 @@ public partial class Hud : CanvasLayer
         {
             _stamina.Value = p.Stamina / Mathf.Max(Tuning.I.StaminaMax, 1);
             _powerBox.Visible = p.ChargingShot;
-            _power.Value = p.ShotPower;
-            if (p.GetShotPlan(out var plan))
-                _powerLabel.Text = plan.Close ? "BANDEJA" : $"{plan.Distance:0.0} m   (máx. {plan.MaxRange:0.0} m{(plan.Capped ? " — carregue mais" : "")})";
+            _power.Value = p.GetShotPlan(out var plan) ? plan.Power : 0; // força = distância usada (sem texto)
             UpdateDribblePips(p);
-            _status.Text = p.ChargingPass ? (p.PassHigh ? "PASSE ALTO" : "PASSE") + (p.PassTarget != null ? $" → {p.PassTarget.PlayerName}" : "")
-                : p.StealFail > 0 ? "LENTO (errou o roubo)"
-                : p.LandLock > 0 ? "POUSANDO"
-                : p.IsDribbling ? "DRIBLANDO (imune)" : "";
         }
 
         if (_countT > 0)

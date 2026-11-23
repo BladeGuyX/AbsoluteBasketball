@@ -29,7 +29,7 @@ public partial class MainMenu : Control
         _box.AddThemeConstantOverride("separation", 16);
         center.AddChild(_box);
 
-        var ver = UiKit.Outlined("v0.3 · Etapa 2 (passe, salto, roubo, drible)", 20, Colors.White, HorizontalAlignment.Right, 6);
+        var ver = UiKit.Outlined("v0.4 · Etapa 2 revisada", 20, Colors.White, HorizontalAlignment.Right, 6);
         AddChild(UiKit.Anchor(ver, 1, 1, 1, 1, -520, -44, -20, -12));
         ShowHome();
     }

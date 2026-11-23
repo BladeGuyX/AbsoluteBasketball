@@ -55,8 +55,7 @@ public partial class Player : CharacterBody3D
     public bool IsDribbling => DribbleActive > 0;
     public bool CanCatch => true;
     /// <summary>Pode ter a bola roubada? (não se estiver driblando, no ar ou carregando arremesso)</summary>
-    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot;
-    public float ShotPower => Mathf.Clamp(ShotCharge / Tuning.I.ShotChargeTime, 0, 1);
+    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass;
     public Vector3 Forward => ShotMath.Dir(Yaw);
     public Vector3 Right => new(Mathf.Cos(Yaw), 0, -Mathf.Sin(Yaw));
 
@@ -143,6 +142,7 @@ public partial class Player : CharacterBody3D
         float speed = Running ? t.RunSpeed : t.WalkSpeed;
         if (HasBall) speed *= t.CarrierSpeedMult;
         if (ChargingShot) speed *= t.ShotChargeMoveMult;
+        if (ChargingPass) speed *= t.PassChargeMoveMult;
         if (IsDribbling) speed *= t.DribbleSpeedMult;
         if (StealFail > 0) speed *= t.StealFailSpeedMult;
         if (IsDummy) speed *= t.DummySpeedMult;
@@ -181,7 +181,7 @@ public partial class Player : CharacterBody3D
 
         // ---------- rotação ----------
         float targetYaw = Yaw;
-        if (ChargingShot || ChargingPass) targetYaw = inp.AimYaw;
+        if (ChargingShot || ChargingPass || ChargingJump) targetYaw = inp.AimYaw;
         else if (moving && !Airborne && StealDash <= 0 && LandLock <= 0) targetYaw = ShotMath.YawOf(wish);
         Yaw = Mathf.LerpAngle(Yaw, targetYaw, 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
@@ -237,7 +237,7 @@ public partial class Player : CharacterBody3D
     {
         plan = default;
         if (!ChargingShot) return false;
-        plan = ShotMath.Plan(GlobalPosition, Team, ShotCharge, LastInput.AimYaw, LastInput.AimPitch, M.Geo);
+        plan = ShotMath.Plan(GlobalPosition, Team, LastInput.AimYaw, LastInput.AimPitch, M.Geo);
         return true;
     }
 
@@ -269,23 +269,35 @@ public partial class Player : CharacterBody3D
         PassCharge += dt;
         if (inp.WasPressed(Btn.Variation)) PassHigh = !PassHigh;
         bool tap = PassCharge < t.PassTapTime;
-        PassTarget = tap ? null : Passing.Aimed(this, inp.AimYaw, PassHigh);
-        if (inp.IsHeld(Btn.Pass)) return;
+        if (inp.IsHeld(Btn.Pass) && PassCharge < t.PassAutoReleaseTime) return;
 
-        var target = tap ? Passing.Nearest(this, PassHigh) : PassTarget;
         ChargingPass = false;
         PassTarget = null;
-        if (target == null)
+        var state = PassHigh ? BallState.HighPass : BallState.Pass;
+        if (tap)
         {
-            if (IsLocalHuman) M.Hud?.ShowMessage(PassHigh ? "Nenhum aliado para passe alto" : "Nenhum aliado livre", 0.9f, small: true);
-            return;
+            // passe rápido: aliado livre mais próximo (se não houver, não passa)
+            var target = Passing.Nearest(this, PassHigh);
+            if (target == null) return;
+            var vel = Passing.Velocity(this, target, PassHigh, out var pos);
+            Yaw = ShotMath.YawOf(target.GlobalPosition - GlobalPosition);
+            ThrowPass(pos, vel, state, target);
         }
-        var vel = Passing.Velocity(this, target, PassHigh, out var pos);
-        BallLockoutTimer = t.PassLockout;
+        else
+        {
+            // passe carregado: lança na direção da câmera, sem alvo e sem assistência
+            var vel = Passing.AimedVelocity(inp.AimYaw, inp.AimPitch, PassHigh);
+            Yaw = inp.AimYaw;
+            ThrowPass(Passing.ReleasePos(this, GlobalPosition + ShotMath.Dir(inp.AimYaw)), vel, state, null);
+        }
+    }
+
+    void ThrowPass(Vector3 pos, Vector3 vel, BallState state, Player target)
+    {
+        BallLockoutTimer = Tuning.I.PassLockout;
         _passReleaseT = 0.3f;
-        Yaw = ShotMath.YawOf(target.GlobalPosition - GlobalPosition);
-        M.Ball.Throw(this, pos, vel, PassHigh ? BallState.HighPass : BallState.Pass, target);
-        M.LogEvent(PassHigh ? "HIGHPASS" : "PASS", this, target);
+        M.Ball.Throw(this, pos, vel, state, target);
+        M.LogEvent(state == BallState.HighPass ? "HIGHPASS" : "PASS", this, target);
     }
 
     public void CancelPass()
@@ -380,7 +392,7 @@ public partial class Player : CharacterBody3D
     void UpdateDribble(float dt)
     {
         if (!HasBall || ChargingShot || ChargingPass) return;
-        float speed = IsDribbling ? 1.8f : 1f;
+        float speed = IsDribbling ? Tuning.I.DribbleBounceMult : 1f;
         DribblePhase += dt * speed * Mathf.Pi / Tuning.I.DribblePeriod;
         int idx = Mathf.FloorToInt((DribblePhase + Mathf.Pi / 2f) / Mathf.Pi);
         if (idx != _lastBounceIdx)
@@ -399,7 +411,9 @@ public partial class Player : CharacterBody3D
         var t = Tuning.I;
         if (ChargingShot) return GlobalPosition + Vector3.Up * 2.02f + Forward * 0.33f;
         if (ChargingPass) return GlobalPosition + Vector3.Up * 1.25f + Forward * 0.5f;
-        float y = t.BallRadius + (t.DribbleHandHeight - t.BallRadius) * Mathf.Abs(Mathf.Cos(DribblePhase));
+        // driblando: agachado, a mão encontra a bola mais baixo (quique curto e rápido)
+        float hand = IsDribbling ? Mathf.Lerp(t.DribbleHandHeight, t.BallRadius * 2.2f, Mathf.Clamp(t.DribbleCrouch, 0, 1) * 0.6f) : t.DribbleHandHeight;
+        float y = t.BallRadius + (hand - t.BallRadius) * Mathf.Abs(Mathf.Cos(DribblePhase));
         return GlobalPosition + Right * (0.46f * BallSide) + Forward * 0.36f + Vector3.Up * y;
     }
 
@@ -412,7 +426,7 @@ public partial class Player : CharacterBody3D
             Yaw = Yaw, Speed = Airborne || StealDash > 0 ? 0 : hspeed, HasBall = HasBall, Charging = ChargingShot, Charge = ShotCharge,
             Release = _releaseT / ReleaseAnimTime, PassCharging = ChargingPass, PassRelease = _passReleaseT / 0.3f,
             JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0, Slowed = StealFail > 0,
-            Landing = LandLock > 0, BallSide = BallSide,
+            Landing = LandLock > 0, BallSide = BallSide, Dribbling = IsDribbling,
         };
         if (st.HasBall) st.BallPos = HeldBallPosition();
         _rig.Animate(st, dt);

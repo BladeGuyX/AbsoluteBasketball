@@ -107,8 +107,7 @@ public sealed class DummyBrain
         var rel = ShotMath.ReleasePos(P.GlobalPosition, yaw);
         float dist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
         inp.AimPitch = ShotMath.PitchForDistance(dist);
-        float need = toRim.Length() <= t.CloseShotRadius ? 0f : ShotMath.ChargeForDistance(dist);
-        if (float.IsNaN(need)) need = t.ShotChargeTime;
+        const float need = 0.35f; // segurar não muda a distância: mira e solta
         if (!P.ChargingShot) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; return inp; }
         if (P.ShotCharge + dt < need) inp.Held |= Btn.Shoot;
         return inp;

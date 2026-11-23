@@ -6,6 +6,7 @@ public struct BallHit
 {
     public bool Floor, Rim, Board, Wall, Pole;
     public int ScoredHoop; // -1 = nenhuma
+    public int UpThroughHoop; // -1 = nenhuma; passou SUBINDO por dentro do aro (cesta por baixo não vale)
     public float Impact;   // maior velocidade de impacto (para volume do som)
     public bool Any => Floor || Rim || Board || Wall || Pole;
 }
@@ -18,25 +19,27 @@ public static class BallPhys
 {
     public const int Substeps = 4;
 
-    public static BallHit Simulate(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g)
+    /// <param name="assistHoop">Cesta onde valem o aro amigável e a tabelinha (só arremessos na cesta adversária); −1 = física pura.</param>
+    public static BallHit Simulate(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1)
     {
-        var total = new BallHit { ScoredHoop = -1 };
+        var total = new BallHit { ScoredHoop = -1, UpThroughHoop = -1 };
         float h = dt / Substeps;
         for (int i = 0; i < Substeps; i++)
         {
-            var r = Step(ref p, ref v, h, g);
+            var r = Step(ref p, ref v, h, g, assistHoop);
             total.Floor |= r.Floor; total.Rim |= r.Rim; total.Board |= r.Board;
             total.Wall |= r.Wall; total.Pole |= r.Pole;
             total.Impact = Mathf.Max(total.Impact, r.Impact);
             if (r.ScoredHoop >= 0) total.ScoredHoop = r.ScoredHoop;
+            if (r.UpThroughHoop >= 0) total.UpThroughHoop = r.UpThroughHoop;
         }
         return total;
     }
 
-    public static BallHit Step(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g)
+    public static BallHit Step(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1)
     {
         var t = Tuning.I;
-        var hit = new BallHit { ScoredHoop = -1 };
+        var hit = new BallHit { ScoredHoop = -1, UpThroughHoop = -1 };
         float r = t.BallRadius;
         var prev = p;
 
@@ -102,7 +105,7 @@ public static class BallPhys
                     v *= 0.97f;
                     hit.Rim = true;
                     // "aro amigável": bola por dentro do aro perde a velocidade para fora e tende a cair
-                    if (fl < t.RimRadius)
+                    if (fl < t.RimRadius && hoop == assistHoop)
                     {
                         float vOut = v.X * dir.X + v.Z * dir.Z;
                         if (vOut > 0) { v.X -= dir.X * vOut * t.RimFriendliness; v.Z -= dir.Z * vOut * t.RimFriendliness; }
@@ -117,7 +120,7 @@ public static class BallPhys
                 hit.Board = true;
                 // tabelinha: bateu na face da frente, dentro do quadrado → desvia para cair na cesta
                 bool front = boardNormal.X * CourtGeo.HoopSign(hoop) < -0.5f;
-                if (front && Mathf.Abs(p.Z - c.Z) <= g.BankHalfWidth && p.Y >= g.BankMinY && p.Y <= g.BankMaxY && t.BankAssist > 0)
+                if (front && Mathf.Abs(p.Z - c.Z) <= g.BankHalfWidth && p.Y >= g.BankMinY && p.Y <= g.BankMaxY && t.BankAssist > 0 && hoop == assistHoop)
                     BankAssist(ref v, p, c, t);
             }
 
@@ -143,6 +146,13 @@ public static class BallPhys
                 var cross = prev.Lerp(p, k);
                 float hd = new Vector2(cross.X - c.X, cross.Z - c.Z).Length();
                 if (hd < t.RimRadius - r * (1f - t.ScoreTolerance)) hit.ScoredHoop = hoop;
+            }
+            // passou subindo pelo aro (por baixo): a descida seguinte não vale
+            if (prev.Y < c.Y && p.Y >= c.Y && v.Y > 0)
+            {
+                float k = (c.Y - prev.Y) / Mathf.Max(p.Y - prev.Y, 1e-6f);
+                var cross = prev.Lerp(p, k);
+                if (new Vector2(cross.X - c.X, cross.Z - c.Z).Length() < t.RimRadius + r) hit.UpThroughHoop = hoop;
             }
         }
         return hit;
@@ -197,19 +207,10 @@ public static class ShotMath
     {
         public Vector3 Pos, Vel;
         public float Distance;   // distância horizontal até cruzar a altura do aro
-        public bool Close;       // bandeja (dentro da área de perto da cesta adversária)
-        public float MaxRange;   // limite liberado pela carga
-        public bool Capped;      // a câmera pede mais do que a carga libera
+        public float Power => Mathf.Clamp(Distance / Mathf.Max(Tuning.I.ShotRangeMax, 0.1f), 0, 1); // "força" = distância usada
     }
 
-    /// <summary>Alcance máximo liberado pela carga atual (a carga só muda o LIMITE, não a distância).</summary>
-    public static float MaxRange(float charge)
-    {
-        var t = Tuning.I;
-        return Mathf.Lerp(t.ShotRangeMin, t.ShotRangeMax, Mathf.Clamp(charge / Mathf.Max(t.ShotChargeTime, 0.01f), 0, 1));
-    }
-
-    /// <summary>Distância pedida pela inclinação da câmera: meio da tela = alcance inicial; acima = mais longe; abaixo = mais curto.</summary>
+    /// <summary>Distância pedida pela inclinação da câmera (limitada ao alcance máximo): meio da tela = ShotRangeMin; acima = mais longe; abaixo = mais curto.</summary>
     public static float PitchDistance(float pitch)
     {
         var t = Tuning.I;
@@ -263,29 +264,18 @@ public static class ShotMath
     }
 
     /// <summary>Planeja o arremesso de um jogador (usado no arremesso real, na prévia e pelos bots).</summary>
-    public static ShotPlan Plan(Vector3 feet, int team, float charge, float aimYaw, float aimPitch, CourtGeo g)
+    public static ShotPlan Plan(Vector3 feet, int team, float aimYaw, float aimPitch, CourtGeo g)
     {
         var t = Tuning.I;
         var rim = g.RimCenter[CourtGeo.AttackHoop(team)];
-        var toRim = rim - feet; toRim.Y = 0;
-        var plan = new ShotPlan { Close = toRim.Length() <= t.CloseShotRadius };
+        var plan = new ShotPlan();
 
-        float yaw = plan.Close ? YawOf(toRim) : AssistedYaw(feet, aimYaw, rim);
+        float yaw = AssistedYaw(feet, aimYaw, rim);
         plan.Pos = ReleasePos(feet, yaw);
         float dh = rim.Y - plan.Pos.Y;
         float rimDist = new Vector2(rim.X - plan.Pos.X, rim.Z - plan.Pos.Z).Length();
 
-        if (plan.Close)
-        {
-            plan.Distance = rimDist;
-            plan.Vel = Ballistic(yaw, rimDist, dh, Mathf.DegToRad(t.CloseShotAngleDeg));
-            return plan;
-        }
-
-        plan.MaxRange = MaxRange(charge);
-        float wanted = PitchDistance(aimPitch);
-        plan.Capped = wanted > plan.MaxRange;
-        float d = Mathf.Min(wanted, plan.MaxRange);
+        float d = Mathf.Min(PitchDistance(aimPitch), t.ShotRangeMax);
         // assistência de distância (altura): só perto do ideal e só mirando a cesta adversária
         float yawErr = Mathf.Abs(WrapAngle(YawOf(new Vector3(rim.X - plan.Pos.X, 0, rim.Z - plan.Pos.Z)) - yaw));
         float delta = rimDist - d;
@@ -293,20 +283,11 @@ public static class ShotMath
         {
             float w = 1f - Mathf.Abs(delta) / t.ShotDistAssistMeters;
             float nd = d + delta * t.ShotDistAssistStrength * w;
-            if (nd <= plan.MaxRange) d = nd;
+            if (nd <= t.ShotRangeMax) d = nd;
         }
         plan.Distance = d;
         float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
         plan.Vel = Ballistic(yaw, d, dh, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));
         return plan;
-    }
-
-    /// <summary>Carga necessária para alcançar a distância d com a câmera no alcance total. NaN se impossível.</summary>
-    public static float ChargeForDistance(float d)
-    {
-        var t = Tuning.I;
-        if (d > t.ShotRangeMax + 0.01f) return float.NaN;
-        float k = Mathf.Clamp((d - t.ShotRangeMin) / Mathf.Max(t.ShotRangeMax - t.ShotRangeMin, 0.01f), 0, 1);
-        return k * t.ShotChargeTime;
     }
 }

@@ -16,7 +16,7 @@ public sealed class ScenarioPilot
     int _tick;
     int _stealTries;
     float _afterShot;
-    public bool PassOk, ReturnOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk;
+    public bool PassOk, ReturnOk, AimPassOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk;
     public bool Done;
 
     public ScenarioPilot(Match m, Player p) { M = m; P = p; }
@@ -28,6 +28,7 @@ public sealed class ScenarioPilot
     {
         if (kind == "CATCH" && a == Ally && _step == 0) PassOk = true;
         if (kind == "CATCH" && a == P && PassOk && _step == 0) ReturnOk = true;
+        if (kind == "CATCH" && a == Ally && _step == 1) AimPassOk = true;
         if (kind == "DRIBBLE" && a == P) DribbleOk = true;
         if (kind == "JUMP" && a == Enemy) JumpOk = true;
         if (kind == "BLOCK" && a == Enemy) BlockOk = true;
@@ -49,11 +50,28 @@ public sealed class ScenarioPilot
                 if (_tick == 2 && P.HasBall) { inp.Pressed |= Btn.Pass; inp.Held |= Btn.Pass; }
                 if (ReturnOk || _t > 8f) Next();
                 break;
-            case 1: // drible especial
+            case 1: // passe carregado na direção do aliado (sem alvo): segura 0,6 s e solta
+            {
+                var al = Ally;
+                if (al == null || (AimPassOk && P.HasBall) || _t > 8f) { Next(); break; }
+                if (P.HasBall)
+                {
+                    var to = al.GlobalPosition - P.GlobalPosition; to.Y = 0;
+                    float d = to.Length();
+                    var t = Tuning.I;
+                    float th = 0.5f * Mathf.Asin(Mathf.Clamp(t.BallGravity * d / (t.AimPassSpeed * t.AimPassSpeed), 0, 1));
+                    inp.AimYaw = ShotMath.YawOf(to);
+                    inp.AimPitch = th - Mathf.DegToRad(t.AimPassLiftDeg);
+                    if (!P.ChargingPass) { inp.Pressed |= Btn.Pass; inp.Held |= Btn.Pass; }
+                    else if (P.PassCharge < 0.6f) inp.Held |= Btn.Pass;
+                }
+                break;
+            }
+            case 2: // drible especial
                 if (_tick == 5 && P.HasBall) inp.Pressed |= Btn.Dribble;
                 if (_t > 1.5f) Next();
                 break;
-            case 2: // arremesso na frente do boneco adversário → ele pula e bloqueia
+            case 3: // arremesso na frente do boneco adversário → ele pula e bloqueia
             {
                 var e = Enemy;
                 if (e == null) { Next(); break; }
@@ -72,7 +90,7 @@ public sealed class ScenarioPilot
                 if (BlockOk || _t > 8f) Next();
                 break;
             }
-            case 3: // roubo: dá a bola ao boneco adversário e tenta roubar até conseguir
+            case 4: // roubo: dá a bola ao boneco adversário e tenta roubar até conseguir
             {
                 var e = Enemy;
                 if (e == null) { Next(); break; }

@@ -64,6 +64,24 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Quadrado da tabela útil:** acertar nele é um bom jeito de fazer cesta (tabelinha, como no basquete real).
 - Corrida um pouco mais rápida.
 
+## Revisões do usuário (v0.4) — prevalecem sobre as anteriores
+- Estamina: recarga um pouco menor, estamina máxima maior.
+- **Sem bandeja/ajuda de perto da cesta** (removida).
+- Tabelinha ajuda só um pouco (não puxa a bola totalmente para a cesta).
+- **Arremesso:** segurar NÃO aumenta mais nada; o alcance máximo já está disponível desde o início. A distância vem só da
+  mira (câmera); a "força" mostrada é a distância usada. Arremesso automático depois de **4 s**.
+- **Passe carregado:** não escolhe aliado; lança a bola na direção em que você olha (mesmo sem aliado/fora de alcance).
+  É possível fazer cesta assim, mas é difícil e sem assistência. Passe automático depois de 4 s segurando.
+  Carregando o passe: 25% da velocidade e não pode ter a bola roubada.
+- Passe rápido (toque): alcance um pouco maior; passes mais rápidos e o normal um pouco mais reto.
+- **Cesta por baixo não vale.**
+- Mouse escondido durante o jogo; cursor não pode "congelar" nos menus depois do alt-tab.
+- **Sem avisos de texto no meio do jogo** (ROUBOU, TOCO, metros etc.). Só mensagens de ponto/prorrogação/fim. Não
+  adicionar novos avisos sem o usuário pedir.
+- Drible: boneco agacha um pouco e quica mais rápido.
+- Carregando o salto, o boneco olha para a direção da câmera (pulos para os lados).
+- Botão padrão do drible no teclado: **E** (o mesmo do roubo; drible só com a bola, roubo só sem).
+
 ## Decisões de implementação (Claude)
 - **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
   (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.

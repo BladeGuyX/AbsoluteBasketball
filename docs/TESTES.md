@@ -3,6 +3,33 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.4 — Revisão da Etapa 2 (arremesso, passe carregado, HUD limpa, mouse, drible)
+
+**Antes:** apague o `Build\tuning.json` antigo (o jogo recria com os valores novos).
+
+**Arremesso**
+1. Segure o arremesso sem mexer a câmera: a distância **não muda** com o tempo. Suba/desça a câmera: a trajetória amarela vai mais longe/mais perto, até o máximo logo de cara. A barra laranja mostra a "força" (= distância usada), **sem texto**.
+2. Segure por 4 s: arremessa sozinho.
+3. Colado na cesta adversária: **não existe mais bandeja automática** — você precisa mirar com a câmera.
+4. Fique embaixo da cesta e jogue a bola para cima passando por dentro do aro (ou faça um passe carregado de baixo): ao descer de volta pelo aro **não conta ponto**.
+5. Arremesse na tabela (quadrado): ajuda um pouco, mas não entra sempre.
+
+**Passe**
+6. Toque rápido no **botão direito / RB**: passa para o aliado livre mais próximo (alcance um pouco maior); a bola vai mais rápida e mais reta.
+7. Segure o passe: o jogador anda **bem devagar (25%)** e não aparece marcador em ninguém. Solte: a bola é lançada **na direção da mira/câmera** (mesmo sem aliado ali). Com **R / Y** durante a carga, lança em arco alto.
+8. Segure o passe por 4 s: lança sozinho na direção da câmera.
+9. Tente acertar a cesta adversária com um passe carregado: é possível, mas difícil (sem ajuda).
+10. (A imunidade a roubo enquanto carrega o passe só dá para sentir quando os bots roubarem, na Etapa 4; os bonecos não roubam.)
+
+**Outros**
+11. **Estamina:** a barra verde demora mais para acabar correndo e recarrega um pouco mais devagar.
+12. **Drible: tecla E** (com a bola). O boneco agacha, inclina para frente e quica a bola bem mais rápido, trocando de mão. Sem a bola, **E** continua sendo roubo.
+13. Segure o **salto** e gire a câmera: o boneco vira para onde a câmera olha (dá para pular de lado andando para o lado).
+14. **Sem avisos no meio do jogo:** roubar, tocar, interceptar ou passar sem aliado não mostra texto. Só aparecem o "+2/+3", prorrogação e fim de partida.
+15. **Mouse:** durante a partida o cursor **não aparece**. Esc → aparece no menu de pausa; Continuar → some de novo.
+16. Dê **alt-tab** com o jogo no menu principal e na pausa, volte e mexa o mouse: o cursor deve acompanhar na hora (sem ficar parado).
+
+---
 ## v0.3 — Ajustes da v0.2 + Etapa 2 (passe, salto, roubo, drible)
 
 **Antes:** apague o `Build\tuning.json` antigo (o jogo recria com os valores novos).

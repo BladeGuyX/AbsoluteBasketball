@@ -101,18 +101,13 @@ public static class Passing
         return best;
     }
 
-    /// <summary>Segurando: aliado mais na direção da câmera.</summary>
-    public static Player Aimed(Player from, float aimYaw, bool high)
+    /// <summary>Passe carregado: bola lançada na direção da câmera (yaw + inclinação + elevação), sem alvo.</summary>
+    public static Vector3 AimedVelocity(float aimYaw, float aimPitch, bool high)
     {
-        Player best = null;
-        float bestA = Mathf.DegToRad(Tuning.I.PassAimMaxAngleDeg);
-        foreach (var q in from.M.Players)
-        {
-            if (q == from || q.Team != from.Team || !q.CanCatch || !InRange(from, q)) continue;
-            var to = q.GlobalPosition - from.GlobalPosition; to.Y = 0;
-            float a = Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(to) - aimYaw));
-            if (a < bestA && LaneClear(from, q, high)) { bestA = a; best = q; }
-        }
-        return best;
+        var t = Tuning.I;
+        float lift = high ? t.AimHighPassLiftDeg : t.AimPassLiftDeg;
+        float elev = Mathf.Clamp(aimPitch + Mathf.DegToRad(lift), Mathf.DegToRad(-30f), Mathf.DegToRad(80f));
+        float speed = high ? t.AimHighPassSpeed : t.AimPassSpeed;
+        return ShotMath.Dir(aimYaw) * (speed * Mathf.Cos(elev)) + Vector3.Up * (speed * Mathf.Sin(elev));
     }
 }

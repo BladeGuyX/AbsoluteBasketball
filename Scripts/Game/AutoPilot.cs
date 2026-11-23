@@ -50,13 +50,12 @@ public sealed class AutoPilot
         var rel = ShotMath.ReleasePos(P.GlobalPosition, yaw);
         float rimDist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
         inp.AimPitch = ShotMath.PitchForDistance(rimDist);
-        bool close = toRim.Length() <= Tuning.I.CloseShotRadius;
 
         if (!P.ChargingShot)
         {
             if (new Vector2(P.Velocity.X, P.Velocity.Z).Length() > 0.15f) return inp; // espera parar
-            _holdTarget = close ? 0f : ShotMath.ChargeForDistance(rimDist);
-            if (float.IsNaN(_holdTarget)) { _spotIdx++; return inp; }
+            _holdTarget = 0.25f; // segurar não muda a distância: só mira (câmera) e solta
+            if (rimDist > Tuning.I.ShotRangeMax) { _spotIdx++; return inp; }
             inp.Pressed |= Btn.Shoot;
             inp.Held |= Btn.Shoot;
             return inp;
@@ -66,11 +65,11 @@ public sealed class AutoPilot
         else
         {
             Shots++;
-            var pl = ShotMath.Plan(P.GlobalPosition, P.Team, P.ShotCharge + dt, yaw, inp.AimPitch, M.Geo);
+            var pl = ShotMath.Plan(P.GlobalPosition, P.Team, yaw, inp.AimPitch, M.Geo);
             var sp = pl.Pos; var sv = pl.Vel; string res = "nada";
-            for (int i = 0; i < 400; i++) { var h = BallPhys.Simulate(ref sp, ref sv, 1f / 60f, M.Geo); if (h.ScoredHoop >= 0) { res = "CESTA"; break; } if ((h.Rim || h.Board) && res == "nada") { res = (h.Rim ? "aro" : "tabela") + $"@{sp - M.Geo.RimCenter[hoop]}"; } if (h.Floor) break; }
+            for (int i = 0; i < 400; i++) { var h = BallPhys.Simulate(ref sp, ref sv, 1f / 60f, M.Geo, hoop); if (h.ScoredHoop >= 0) { res = "CESTA"; break; } if ((h.Rim || h.Board) && res == "nada") { res = (h.Rim ? "aro" : "tabela") + $"@{sp - M.Geo.RimCenter[hoop]}"; } if (h.Floor) break; }
             GD.Print($"[SMOKE]   plano d={pl.Distance:0.00} rimDist={rimDist:0.00} carga={P.ShotCharge + dt:0.000} alvo={_holdTarget:0.000} vel={pl.Vel} sim={res}");
-            GD.Print($"[SMOKE] arremesso #{Shots} de {dist:0.0}m (3pt={M.Geo.IsThree(P.GlobalPosition, hoop)}, bandeja={close})");
+            GD.Print($"[SMOKE] arremesso #{Shots} de {dist:0.0}m (3pt={M.Geo.IsThree(P.GlobalPosition, hoop)})");
             _spotIdx++;
         }
         return inp;

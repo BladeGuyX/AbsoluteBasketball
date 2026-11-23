@@ -20,6 +20,7 @@ public struct RigState
     public bool Slowed;        // penalidade do roubo
     public bool Landing;       // travado após pousar
     public float BallSide;     // +1 direita, −1 esquerda
+    public bool Dribbling;     // drible especial (agachado, quique rápido)
 }
 
 /// <summary>
@@ -95,6 +96,7 @@ public sealed class PlayerRig
         if (s.Charging) crouchTarget = Mathf.Clamp(s.Charge / 0.25f, 0, 1);
         if (s.JumpCharging) crouchTarget = 1.3f;
         if (s.Landing) crouchTarget = 0.8f;
+        if (s.Dribbling) crouchTarget = t.DribbleCrouch;
         _crouch = Mathf.Lerp(_crouch, crouchTarget, k);
         float rel = Mathf.Clamp(s.Release, 0, 1);
         float relWave = rel > 0 ? Mathf.Sin(Mathf.Pi * (1f - rel)) : 0f;
@@ -109,12 +111,13 @@ public sealed class PlayerRig
         Root.Scale = new Vector3(sxz, sy, sxz);
 
         float leanTarget = -0.2f * move + 0.12f * _crouch - 0.08f * relWave;
+        if (s.Dribbling) leanTarget -= 0.3f; // tronco para frente (negativo = frente), protegendo a bola
         if (s.Dashing) leanTarget = -0.55f;
         if (s.Slowed) leanTarget = 0.25f;
         _lean = Mathf.Lerp(_lean, leanTarget, k);
         _upper.Rotation = new Vector3(_lean, Mathf.Sin(_stride) * 0.08f * walking, 0);
 
-        float legBend = _crouch * 0.25f;
+        float legBend = _crouch * (s.Dribbling ? 0.45f : 0.25f);
         if (s.Airborne)
         {
             _legL.Rotation = new Vector3(Mathf.Lerp(_legL.Rotation.X, 0.35f, k), 0, -0.08f);
