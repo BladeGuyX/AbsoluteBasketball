@@ -15,7 +15,7 @@ public sealed class DunkScenario
     float _t;
     int _tick;
     bool _setup, _reachedWaypoint, _pressed, _sawFoulRestart;
-    public bool DunkOk, DunkFailOk, StunOk, TipOk, FoulOk, FoulCarrierOk;
+    public bool DunkOk, DunkFailOk, StunOk, SpaceOk, FoulOk, FoulCarrierOk;
     public bool Done;
 
     public DunkScenario(Match m, Player p) { M = m; P = p; }
@@ -26,7 +26,7 @@ public sealed class DunkScenario
     {
         if (kind == "DUNK_OK" && a == P && _step == 0) DunkOk = true;
         if (kind == "DUNK_FAIL" && a == P && _step == 1) DunkFailOk = true;
-        if (kind == "TIP_OK" && a == P && _step == 2) TipOk = true;
+        if (kind == "DUNK_OK" && a == P && _step == 2) SpaceOk = true;
         if (kind == "FOUL" && b == P && _step == 3) FoulOk = true;
     }
 
@@ -46,15 +46,15 @@ public sealed class DunkScenario
     }
 
     /// <summary>Corre até a cesta (passando por um ponto lateral) e salta para enterrar; opcionalmente acerta o skill check.</summary>
-    void DunkRun(ref PlayerInput inp, float dt, bool hitSkill)
+    void DunkRun(ref PlayerInput inp, float dt, bool hitSkill, Btn button = Btn.Shoot)
     {
         if (P.Flight == FlightKind.Dunk)
         {
-            if (hitSkill && !_pressed && P.FlightT + dt >= P.FlightDur - 0.01f) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; _pressed = true; }
+            if (hitSkill && !_pressed && P.FlightT + dt >= P.FlightDur - 0.01f) { inp.Pressed |= button; inp.Held |= button; _pressed = true; }
             return;
         }
         if (!P.HasBall || P.Airborne) return;
-        var wp = Rim - new Vector3(S * 7f, 0, -3f); wp.Y = 0;
+        var wp = Rim - new Vector3(S * 11f, 0, -3f); wp.Y = 0;
         if (!_reachedWaypoint && (P.GlobalPosition - wp).Length() < 1f) _reachedWaypoint = true;
         var rimFlat = Rim with { Y = 0 };
         RunTo(ref inp, P, _reachedWaypoint ? rimFlat : wp, true);
@@ -92,20 +92,11 @@ public sealed class DunkScenario
                 else if (!P.Airborne) Next();
                 break;
             }
-            case 2: // tapinha: bola solta perto do aro, pula na direção dela
+            case 2: // enterrada certa apertando ESPAÇO no skill check
             {
-                if (!_setup)
-                {
-                    var start = Rim - new Vector3(S * 2.2f, 0, 0); start.Y = 0.05f;
-                    P.Teleport(start, ShotMath.YawOf(new Vector3(S, 0, 0)));
-                    if (M.Ball.Holder != null) M.Ball.Drop(M.Ball.GlobalPosition, Vector3.Zero);
-                    M.Ball.Drop(Rim + new Vector3(-S * (Tuning.I.RimRadius + 0.35f), 0.3f, 0), new Vector3(0, 2.0f, 0));
-                    _setup = true;
-                    _tick = 0;
-                }
-                if (TipOk) { if (!P.Airborne) Next(); break; }
-                RunTo(ref inp, P, Rim with { Y = 0 }, false);
-                if (_tick == 1) { inp.Pressed |= Btn.Jump; inp.Held |= Btn.Jump; }
+                if (!_setup) { if (!P.HasBall) M.Ball.GiveTo(P); _setup = true; }
+                if (!SpaceOk) { DunkRun(ref inp, dt, true, Btn.Jump); break; }
+                if (!P.Airborne) Next();
                 break;
             }
             case 3: // falta: boneco na frente da cesta bloqueia a enterrada
@@ -115,10 +106,11 @@ public sealed class DunkScenario
                 if (!_setup)
                 {
                     if (!P.HasBall) M.Ball.GiveTo(P);
-                    var guard = Rim - new Vector3(S * 1.6f, 0, 0); guard.Y = 0.05f;
+                    var guard = Rim - new Vector3(S * 3.5f, 0, 0); guard.Y = 0.05f;
                     e.Teleport(guard, ShotMath.YawOf(new Vector3(-S, 0, 0)));
-                    var start = Rim - new Vector3(S * 8f, 0, 0.4f); start.Y = 0.05f;
+                    var start = Rim - new Vector3(S * 12f, 0, 0.4f); start.Y = 0.05f;
                     P.Teleport(start, ShotMath.YawOf(new Vector3(S, 0, 0)));
+                    P.Stamina = Tuning.I.StaminaMax;
                     _reachedWaypoint = true;
                     _setup = true;
                 }

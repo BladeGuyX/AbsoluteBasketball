@@ -90,6 +90,11 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Tapinha (novo):** bola bem pertinho da cesta + jogador do time que pontua nessa cesta pula na direção dela →
   completa a cesta, sem skill check. Bloquear isso com salto **não** é falta (só bloquear enterrada é falta).
 
+## Revisões do usuário (v0.6) — prevalecem sobre as anteriores
+- Alcance da enterrada bem maior (agora 7 m).
+- Skill check bem mais difícil; **Espaço também vale** no skill check (além do botão de arremesso).
+- **Tapinha removido.**
+
 ## Decisões de implementação (Claude)
 - **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
   (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.
@@ -118,8 +123,16 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   Erro: bola cai do lado do aro, jogador cai e fica atordoado `DunkStunTime` (estrelinhas, anel cinza).
 - **Falta:** adversário NO AR encostando na mão/bola ou no corpo de quem está enterrando = falta: apito, pausa `FoulDelay`,
   round recomeça (sem contagem) com quem sofreu a falta com a bola.
-- **Tapinha:** sem a bola, ao saltar: se a bola solta está a até `TipBallRange` do aro que meu time ataca, eu estou a até
-  `TipJumpRange` e o salto vai na direção da cesta → voo curto até a bola; ao pegar, completa a cesta. Bloqueio = sem falta.
+- **Skill check (v0.6):** janela `DunkWindow` = 0,05 s; a duração do voo varia ± `DunkFlightJitter` a cada enterrada
+  (o ponteiro muda de velocidade, não dá para decorar). Botão de arremesso OU Espaço.
+- **Bots (Etapa 4, `BotBrain`):** com a bola: decide a cada ~0,25 s — drible especial sob pressão, infiltração para enterrar
+  (caminho livre), passe carregado para o aliado mais livre/mais perto da cesta (alto se o corredor estiver fechado),
+  arremesso livre dentro de `BotShootRange` (marcado só com pequena chance; impaciente após `BotMaxHoldTime`).
+  Erros de mira/distância/skill check sorteados (triangulares) e multiplicados pela dificuldade (Fácil ×1,8, Difícil ×0,55).
+  Sem a bola no ataque: posições espalhadas em volta da cesta. Defesa: marcação individual gulosa (quem tem a bola
+  primeiro), entre o atacante e a cesta; rouba só quando dá (Fácil às vezes erra), pula contra arremesso/enterrada após
+  o tempo de reação. Bola solta/no ar: o mais perto de cada time vai no rebote, o resto se posiciona.
+  Os aliados bots passam para você também. Menu: "Outros jogadores" = Bots ou Bonecos de treino; dificuldade.
 - **Indicativos sem texto (`AimIndicator`):** passe carregado: seta reta amarela (normal) / arco rosa (alto) abaixo da mira +
   anel até o passe automático; arremesso: anel laranja até o automático; anéis curtos que esvaziam: drible (laranja),
   roubo errado (vermelho), atordoado/pousando (cinza).

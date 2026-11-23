@@ -50,8 +50,9 @@ public sealed class Tuning
     const string SJump = "Salto e bloqueio";
     const string SSteal = "Roubo";
     const string SDrib = "Drible";
-    const string SDunk = "Enterrada e tapinha";
+    const string SDunk = "Enterrada";
     const string SDummy = "Bonecos de treino";
+    const string SBots = "Bots";
 
     // ---------------- Movimento ----------------
     [Param(SMove, "Velocidade andando", "Velocidade máxima andando (m/s).", 1, 10, 0.1f)]
@@ -290,29 +291,55 @@ public sealed class Tuning
     [Param(SDrib, "Agachamento driblando", "Quanto o boneco agacha durante o drible (0 = nada, 1 = como carregando o salto).", 0, 1.3f, 0.05f)]
     public float DribbleCrouch = 0.8f;
 
-    // ---------------- Enterrada e tapinha ----------------
+    // ---------------- Enterrada ----------------
     [Param(SDunk, "Distância para enterrar", "Com a bola, correndo na direção da cesta adversária e a até esta distância (m) do aro, o salto vira enterrada.", 0.5f, 8, 0.1f)]
-    public float DunkRange = 3f;
+    public float DunkRange = 7f;
     [Param(SDunk, "Ângulo da corrida", "A corrida precisa estar dentro deste ângulo (graus) da direção da cesta para enterrar.", 5, 90, 1)]
     public float DunkMaxAngleDeg = 45f;
     [Param(SDunk, "Duração do voo", "Segundos do salto da enterrada até tocar a cesta (momento do skill check).", 0.3f, 2, 0.05f)]
     public float DunkFlightTime = 0.8f;
     [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
-    public float DunkWindow = 0.12f;
+    public float DunkWindow = 0.05f;
+    [Param(SDunk, "Variação da duração do voo", "Cada enterrada dura a duração do voo ± até este valor (s), sorteado: o ponteiro do skill check muda de velocidade e não dá para decorar.", 0, 0.6f, 0.01f)]
+    public float DunkFlightJitter = 0.2f;
     [Param(SDunk, "Alcance da mão", "Altura (m) da bola acima dos pés com os braços esticados na enterrada.", 1.5f, 3.5f, 0.05f)]
     public float DunkHandReach = 2.3f;
     [Param(SDunk, "Atordoamento ao errar", "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.", 0, 6, 0.1f)]
     public float DunkStunTime = 2f;
     [Param(SDunk, "Pausa da falta", "Segundos entre a falta (enterrada bloqueada) e o reinício do round.", 0, 4, 0.1f)]
     public float FoulDelay = 1.2f;
-    [Param(SDunk, "Tapinha: bola perto do aro", "Se a bola solta estiver a até esta distância (m) do aro, pular na direção dela completa a cesta (sem skill check).", 0.2f, 3, 0.05f)]
-    public float TipBallRange = 1.3f;
-    [Param(SDunk, "Tapinha: distância do jogador", "Distância máxima (m) do jogador até o aro para o tapinha.", 0.5f, 8, 0.1f)]
-    public float TipJumpRange = 3.5f;
-    [Param(SDunk, "Tapinha: ângulo", "O salto precisa ir dentro deste ângulo (graus) da direção da cesta.", 10, 180, 1)]
-    public float TipMaxAngleDeg = 70f;
-    [Param(SDunk, "Tapinha: duração do voo", "Segundos do salto do tapinha até a bola.", 0.15f, 1.5f, 0.05f)]
-    public float TipFlightTime = 0.45f;
+
+    // ---------------- Bots ----------------
+    [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]
+    public float BotAimErrorDeg = 4f;
+    [Param(SBots, "Erro de distância (m)", "Erro máximo de distância do arremesso do bot no Normal (m).", 0, 5, 0.05f)]
+    public float BotDistErrorM = 1.3f;
+    [Param(SBots, "Erro no skill check da enterrada (s)", "Erro máximo do bot ao apertar no skill check (Normal). Compare com metade da janela da enterrada.", 0, 0.3f, 0.005f)]
+    public float BotDunkTimingError = 0.05f;
+    [Param(SBots, "Tempo de reação (s)", "Atraso do bot para pular contra arremesso/enterrada (Normal).", 0, 2, 0.01f)]
+    public float BotReactionTime = 0.3f;
+    [Param(SBots, "Fácil: multiplicador", "Multiplica erros e tempos de reação dos bots no Fácil (e divide as chances de roubo/bloqueio).", 1, 4, 0.05f)]
+    public float BotEasyMult = 1.8f;
+    [Param(SBots, "Difícil: multiplicador", "Multiplica erros e tempos de reação dos bots no Difícil.", 0.1f, 1, 0.05f)]
+    public float BotHardMult = 0.55f;
+    [Param(SBots, "Distância preferida de arremesso", "Bot arremessa livre a até esta distância (m) da cesta (Normal; Fácil −2, Difícil +1,5).", 2, 20, 0.5f)]
+    public float BotShootRange = 9f;
+    [Param(SBots, "Distância para estar livre", "Defensor mais perto que isso (m) = marcado; o bot prefere passar ou infiltrar.", 0.5f, 8, 0.1f)]
+    public float BotOpenDistance = 2.6f;
+    [Param(SBots, "Chance de infiltrar/enterrar", "Chance (por decisão) de o bot partir para a enterrada quando o caminho está livre.", 0, 1, 0.01f)]
+    public float BotDunkChance = 0.45f;
+    [Param(SBots, "Chance de passar", "Chance (por decisão) de passar quando um aliado está em situação melhor.", 0, 1, 0.01f)]
+    public float BotPassChance = 0.5f;
+    [Param(SBots, "Tempo máximo com a bola", "Segurando a bola por mais que isso (s), o bot arremessa assim que puder.", 1, 20, 0.5f)]
+    public float BotMaxHoldTime = 4f;
+    [Param(SBots, "Chance de arremesso marcado", "Chance (por decisão, ~5 por segundo) de o bot arremessar mesmo marcado, dentro da distância preferida.", 0, 1, 0.01f)]
+    public float BotContestedShotChance = 0.06f;
+    [Param(SBots, "Chance de roubo por segundo", "Chance por segundo de tentar roubar quando colado em quem tem a bola (Normal).", 0, 5, 0.05f)]
+    public float BotStealChancePerSec = 0.2f;
+    [Param(SBots, "Chance de pular para bloquear", "Chance de o bot pular contra um arremesso/enterrada perto dele (Normal).", 0, 1, 0.01f)]
+    public float BotBlockChance = 0.45f;
+    [Param(SBots, "Distância da marcação", "Distância (m) que o bot fica de quem tem a bola, entre ele e a cesta.", 0.5f, 5, 0.1f)]
+    public float BotMarkDistance = 1.4f;
 
     // ---------------- Bonecos de treino ----------------
     [Param(SDummy, "Reação do boneco", "Atraso (s) para o boneco adversário pular contra um arremesso.", 0, 2, 0.05f)]

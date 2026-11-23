@@ -7,7 +7,7 @@ namespace AB;
 /// Ações: arremesso, passe (normal/alto), salto (bloqueio), roubo, drible especial.
 /// Visual/animação em PlayerRig (placeholder até a arte do Blender).
 /// </summary>
-public enum FlightKind { None, Dunk, Tip }
+public enum FlightKind { None, Dunk }
 
 public partial class Player : CharacterBody3D
 {
@@ -369,9 +369,6 @@ public partial class Player : CharacterBody3D
         if (wish.LengthSquared() > 0.01f) { _jumpWish = wish; _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0; }
         if (inp.IsHeld(Btn.Jump)) return;
 
-        // tapinha: bola solta bem perto da cesta que meu time ataca e pulando na direção dela
-        if (CanTip(_jumpWish)) { ChargingJump = false; StartTip(); return; }
-
         // pula: direção vem do movimento antes de pular, quase sem controle no ar
         float k = t.JumpChargeTime > 0 ? JumpCharge / t.JumpChargeTime : 1f;
         float vy = Mathf.Lerp(t.JumpVelMin, t.JumpVelMax, k);
@@ -503,7 +500,7 @@ public partial class Player : CharacterBody3D
     }
 
     // =====================================================================
-    // Enterrada (skill check) e tapinha
+    // Enterrada (skill check)
 
     Vector3 FlatToRim(int hoop) { var v = M.Geo.RimCenter[hoop] - GlobalPosition; v.Y = 0; return v; }
 
@@ -517,20 +514,6 @@ public partial class Player : CharacterBody3D
         var hv = new Vector3(Velocity.X, 0, Velocity.Z);
         if (hv.Length() < 1f) return false;
         return hv.AngleTo(to) <= Mathf.DegToRad(t.DunkMaxAngleDeg);
-    }
-
-    bool CanTip(Vector3 wish)
-    {
-        var t = Tuning.I;
-        var b = M.Ball;
-        if (b.State == BallState.Held) return false;
-        int hoop = CourtGeo.AttackHoop(Team);
-        var rim = M.Geo.RimCenter[hoop];
-        if (b.GlobalPosition.DistanceTo(rim) > t.TipBallRange) return false;
-        var to = FlatToRim(hoop);
-        if (to.Length() > t.TipJumpRange) return false;
-        var dir = wish.LengthSquared() > 0.01f ? wish : Forward;
-        return to.Length() < 0.6f || dir.AngleTo(to) <= Mathf.DegToRad(t.TipMaxAngleDeg);
     }
 
     void BeginFlight(FlightKind kind, float dur, Vector3 handTarget, int hoop)
@@ -562,15 +545,9 @@ public partial class Player : CharacterBody3D
         var rim = M.Geo.RimCenter[hoop];
         var dir = FlatToRim(hoop).Normalized();
         // a bola chega um pouco acima e à frente do centro do aro
-        BeginFlight(FlightKind.Dunk, t.DunkFlightTime, rim - dir * 0.1f + Vector3.Up * 0.35f, hoop);
+        float dur = t.DunkFlightTime + (float)GD.RandRange(-t.DunkFlightJitter, t.DunkFlightJitter);
+        BeginFlight(FlightKind.Dunk, Mathf.Max(dur, 0.25f), rim - dir * 0.1f + Vector3.Up * 0.35f, hoop);
         M.LogEvent("DUNK", this);
-    }
-
-    void StartTip()
-    {
-        int hoop = CourtGeo.AttackHoop(Team);
-        BeginFlight(FlightKind.Tip, Tuning.I.TipFlightTime, M.Ball.GlobalPosition, hoop);
-        M.LogEvent("TIP_TRY", this);
     }
 
     void FlightTick(PlayerInput inp, float dt)
@@ -586,17 +563,10 @@ public partial class Player : CharacterBody3D
         Velocity = Vector3.Zero;
         Yaw = Mathf.LerpAngle(Yaw, ShotMath.YawOf(FlatToRim(FlightHoop)), 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
-        if (Flight == FlightKind.Tip)
-        {
-            if (HasBall) { FinishDunk(true); return; } // pegou a bola no ar: completa a cesta
-            if (FlightT >= FlightDur) EndFlight();
-            return;
-        }
-
         // enterrada: skill check com o botão de arremesso no momento de tocar a cesta
         float half = t.DunkWindow * 0.5f;
         if (!HasBall) { EndFlight(); return; }
-        if (!DunkPressed && inp.WasPressed(Btn.Shoot)) { DunkPressed = true; DunkPressT = FlightT; }
+        if (!DunkPressed && (inp.WasPressed(Btn.Shoot) || inp.WasPressed(Btn.Jump))) { DunkPressed = true; DunkPressT = FlightT; }
         if (DunkPressed)
         {
             bool inWindow = Mathf.Abs(DunkPressT - FlightDur) <= half;
@@ -617,7 +587,7 @@ public partial class Player : CharacterBody3D
             M.Ball.Throw(this, rim + Vector3.Up * 0.3f, new Vector3(0, -7f, 0), BallState.Shot);
             Sfx.Play3D(M, "rim", rim, 2, 0.8f);
             Sfx.Play3D(M, "board", rim, 0, 0.9f);
-            M.LogEvent(Flight == FlightKind.Dunk ? "DUNK_OK" : "TIP_OK", this);
+            M.LogEvent("DUNK_OK", this);
         }
         else
         {

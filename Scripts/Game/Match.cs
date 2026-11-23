@@ -14,10 +14,13 @@ public sealed class MatchConfig
     public int TargetScore = 21;
     public float TimeMinutes = 5f;
     public int AllyDummies = 1;      // bonecos de treino no seu time
-    public int EnemyDummies = 1;     // bonecos de treino no time adversário
+    public int EnemyDummies = 2;     // bonecos de treino no time adversário
+    public bool TrainingDummies;     // true = bonecos de treino; false = bots (os campos acima são as quantidades)
+    public int BotDifficulty = 1;    // 0 fácil, 1 normal, 2 difícil
+    public bool SmokeE4;             // --smoke-e4 (partida só de bots)
     public bool SmokeTest;           // --smoke-test (arremessos)
     public bool SmokeE2;             // --smoke-e2 (passe, drible, bloqueio, roubo)
-    public bool SmokeE3;             // --smoke-e3 (enterrada, tapinha, falta)
+    public bool SmokeE3;             // --smoke-e3 (enterrada, skill check, falta)
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
 
@@ -49,6 +52,8 @@ public partial class Match : Node3D
     TrajectoryPreview _preview;
     readonly LocalInputReader _reader = new();
     readonly Dictionary<Player, DummyBrain> _dummies = new();
+    readonly Dictionary<Player, BotBrain> _bots = new();
+    public readonly Dictionary<string, int> EventCount = new();
     PauseMenu _pause;
     AutoPilot _smoke;
     ScenarioPilot _scenario;
@@ -62,7 +67,7 @@ public partial class Match : Node3D
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.AutoPilotLocal;
 
     public override void _Ready()
     {
@@ -77,8 +82,9 @@ public partial class Match : Node3D
         int max = CourtGeo.MaxPlayers(Cfg.Size);
         int allies = Mathf.Clamp(Cfg.AllyDummies, 0, max - 1);
         int enemies = Mathf.Clamp(Cfg.EnemyDummies, 0, max - 1 - allies);
-        for (int i = 0; i < allies; i++) AddDummy(0, $"Aliado {i + 1}");
-        for (int i = 0; i < enemies; i++) AddDummy(1, $"Adversário {i + 1}");
+        for (int i = 0; i < allies; i++) AddOther(0, $"Aliado {i + 1}");
+        for (int i = 0; i < enemies; i++) AddOther(1, $"Adversário {i + 1}");
+        if (Cfg.SmokeE4) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
 
         Cam = new CameraRig { Target = LocalPlayer, Name = "CameraRig" };
         AddChild(Cam);
@@ -106,6 +112,14 @@ public partial class Match : Node3D
         AddChild(p);
         Players.Add(p);
         return p;
+    }
+
+    void AddOther(int team, string name)
+    {
+        if (Cfg.TrainingDummies) { AddDummy(team, name); return; }
+        var p = SpawnPlayer(team, name);
+        p.IsBot = true;
+        _bots[p] = new BotBrain(this, p, (ulong)(p.Id * 7919 + 17));
     }
 
     void AddDummy(int team, string name)
@@ -220,12 +234,14 @@ public partial class Match : Node3D
             PlayerInput inp = default;
             if (p == LocalPlayer)
             {
-                if (_scenario != null) inp = _scenario.Build(dt);
+                if (_bots.TryGetValue(p, out var lb)) inp = lb.Build(dt);
+                else if (_scenario != null) inp = _scenario.Build(dt);
                 else if (_dunkScenario != null) inp = _dunkScenario.Build(dt);
                 else if (_smoke != null) inp = _smoke.Build(dt);
                 else inp = _reader.Build(Cam, !InputBlocked);
             }
             else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
+            else if (_bots.TryGetValue(p, out var bot)) inp = bot.Build(dt);
             p.ServerTick(inp, dt);
         }
 
@@ -239,6 +255,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeTest) SmokeTick(dt);
         if (Cfg.SmokeE2) SmokeE2Tick(dt);
         if (Cfg.SmokeE3) SmokeE3Tick(dt);
+        if (Cfg.SmokeE4) SmokeE4Tick(dt);
     }
 
     void HandleBallHit(BallHit hit)
@@ -264,6 +281,7 @@ public partial class Match : Node3D
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
         Sfx.Play2D(this, "score", -7);
         Hud?.ShowMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, color: Palette.Team[team]);
+        LogEvent(Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
         GD.Print($"[SCORE] time {team} +{pts} ({(three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
 
         _nextPossession = 1 - team;
@@ -316,10 +334,7 @@ public partial class Match : Node3D
         }
     }
 
-    /// <summary>
-    /// Salto do adversário na frente da mão de quem está enterrando = FALTA (round reinicia com quem sofreu, com a bola).
-    /// No tapinha, o bloqueio só derruba a jogada (sem falta), como qualquer outro salto.
-    /// </summary>
+    /// <summary>Salto do adversário na frente da mão/corpo de quem está enterrando = FALTA (round reinicia com quem sofreu, com a bola).</summary>
     void CheckFlightBlocks()
     {
         var t = Tuning.I;
@@ -340,17 +355,7 @@ public partial class Match : Node3D
                 float py0 = p.GlobalPosition.Y, py1 = p.GlobalPosition.Y + t.BlockReach;
                 bool bodyHit = bodyH <= 0.9f && fy0 <= py1 && py0 <= fy1;
                 if (!handHit && !bodyHit) continue;
-                if (f.Flight == FlightKind.Dunk) { OnFoul(f, p); return; }
-                // tapinha bloqueado: sem falta
-                f.EndFlight();
-                if (Ball.Holder == f)
-                {
-                    var away = (f.GlobalPosition - p.GlobalPosition) with { Y = 0 };
-                    Ball.Drop(Ball.GlobalPosition, (away.LengthSquared() > 1e-4f ? away.Normalized() : f.Forward) * t.BlockBounceSpeed);
-                }
-                p.BallLockoutTimer = 0.5f;
-                Sfx.Play3D(this, "board", hand, -2, 0.8f);
-                LogEvent("BLOCK", p, f);
+                OnFoul(f, p);
                 return;
             }
         }
@@ -401,7 +406,8 @@ public partial class Match : Node3D
 
     public void LogEvent(string kind, Player a, Player b = null)
     {
-        if (Automated) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
+        EventCount[kind] = EventCount.GetValueOrDefault(kind) + 1;
+        if (Automated && !Cfg.SmokeE4) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
         _scenario?.OnEvent(kind, a, b);
         _dunkScenario?.OnEvent(kind, a, b);
     }
@@ -490,13 +496,40 @@ public partial class Match : Node3D
         }
     }
 
+    int _possChanges, _lastPossTeam = -1;
+    float _noScoreT;
+
+    /// <summary>Partida só de bots: verifica se jogam de verdade (pontos dos dois lados, passes, variedade, sem travar).</summary>
+    void SmokeE4Tick(float dt)
+    {
+        _smokeTime += dt;
+        if (Ball.Holder != null && Ball.Holder.Team != _lastPossTeam) { _lastPossTeam = Ball.Holder.Team; _possChanges++; }
+        _noScoreT = Phase == MatchPhase.Scored ? 0 : _noScoreT + dt;
+        if (_noScoreT > 40f && Mathf.PosMod(_noScoreT, 10f) < dt)
+        {
+            var h = Ball.Holder;
+            GD.Print($"[E4] sem cesta há {_noScoreT:0}s: fase={Phase} bola={Ball.State} pos={Ball.GlobalPosition} vel={Ball.Vel} " +
+                     $"dono={(h == null ? "-" : h.PlayerName + " t" + h.Team + " @" + h.GlobalPosition + " st=" + h.Stamina.ToString("0") + " drib=" + h.IsDribbling + " shot=" + h.ChargingShot + " pass=" + h.ChargingPass)}");
+            foreach (var q in Players) GD.Print($"[E4]    {q.PlayerName} t{q.Team} @{q.GlobalPosition} air={q.Airborne} stun={q.Stun:0.0} fail={q.StealFail:0.0}");
+        }
+        if (_smokeTime < 150f) return;
+        int C(string k) => EventCount.GetValueOrDefault(k);
+        int total = Score[0] + Score[1];
+        bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 6 && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
+        GD.Print($"[E4] placar={Score[0]}x{Score[1]} arremessos={C("SCORE_SHOT")}/{C("SHOT")} passes={C("PASS")}+{C("HIGHPASS")} enterradas={C("DUNK_OK")}/{C("DUNK")} (erros {C("DUNK_FAIL")}) " +
+                 $"faltas={C("FOUL")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
+                 $"trocas_de_posse={_possChanges} -> {(ok ? "OK" : "FALHOU")}");
+        GetTree().Quit(ok ? 0 : 1);
+        Cfg.SmokeE4 = false;
+    }
+
     void SmokeE3Tick(float dt)
     {
         _smokeTime += dt;
         if (!_dunkScenario.Done && _smokeTime < 120f) return;
         var s = _dunkScenario;
-        bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.TipOk && s.FoulOk && s.FoulCarrierOk;
-        GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} tapinha={s.TipOk} falta={s.FoulOk} " +
+        bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.SpaceOk && s.FoulOk && s.FoulCarrierOk;
+        GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} espaço_no_skill_check={s.SpaceOk} falta={s.FoulOk} " +
                  $"bola_com_quem_sofreu={s.FoulCarrierOk} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE3 = false;

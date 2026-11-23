@@ -75,27 +75,33 @@ public partial class GameRoot : Node
                 };
                 return;
             }
-            StartMatch(new MatchConfig { AutoPilotLocal = true, ScreenshotPath = args[si + 1], Size = CourtSize.Small, AllyDummies = 1, EnemyDummies = 1 });
+            StartMatch(new MatchConfig { AutoPilotLocal = true, ScreenshotPath = args[si + 1], Size = CourtSize.Small, AllyDummies = 1, EnemyDummies = 1, TrainingDummies = true });
             return;
         }
         if (args.Contains("--smoke-test"))
         {
-            Engine.TimeScale = 2.0;
+            SetTestSpeed(2.0f);
             StartMatch(new MatchConfig { SmokeTest = true, Size = CourtSize.Medium, TargetScore = 99, AllyDummies = 0, EnemyDummies = 0 });
+            return;
+        }
+        if (args.Contains("--smoke-e4"))
+        {
+            SetTestSpeed(3.0f);
+            StartMatch(new MatchConfig { SmokeE4 = true, Size = CourtSize.Medium, TargetScore = 999, AllyDummies = 2, EnemyDummies = 3, BotDifficulty = 1 });
             return;
         }
         if (args.Contains("--smoke-e3"))
         {
-            Engine.TimeScale = 2.0;
+            SetTestSpeed(2.0f);
             int ei = Array.IndexOf(args, "--e3-shot");
-            StartMatch(new MatchConfig { SmokeE3 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 0, EnemyDummies = 1,
+            StartMatch(new MatchConfig { SmokeE3 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true,
                 ScreenshotPath = ei >= 0 && ei + 1 < args.Length ? args[ei + 1] : null });
             return;
         }
         if (args.Contains("--smoke-e2"))
         {
-            Engine.TimeScale = 2.0;
-            StartMatch(new MatchConfig { SmokeE2 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 1 });
+            SetTestSpeed(2.0f);
+            StartMatch(new MatchConfig { SmokeE2 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 1, TrainingDummies = true });
             return;
         }
         ShowMainMenu();
@@ -153,6 +159,14 @@ public partial class GameRoot : Node
             }
         }
         GD.Print($"[STATS] cestas por baixo que valeriam (deve ser 0): {under}/50 · bloqueadas pela regra: {wouldScore}");
+    }
+
+    /// <summary>Acelera os testes SEM mudar o passo da simulação (mantém 1/60 s de jogo por tick, como no jogo real).</summary>
+    static void SetTestSpeed(float k)
+    {
+        Engine.TimeScale = k;
+        Engine.PhysicsTicksPerSecond = Mathf.RoundToInt(60 * k);
+        Engine.MaxPhysicsStepsPerFrame = 24;
     }
 
     public void ShowMainMenu()

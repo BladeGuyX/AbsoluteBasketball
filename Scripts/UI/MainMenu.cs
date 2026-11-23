@@ -29,7 +29,7 @@ public partial class MainMenu : Control
         _box.AddThemeConstantOverride("separation", 16);
         center.AddChild(_box);
 
-        var ver = UiKit.Outlined("v0.5 · Etapa 3 (enterrada e tapinha)", 20, Colors.White, HorizontalAlignment.Right, 6);
+        var ver = UiKit.Outlined("v0.6 · Etapa 4 (bots)", 20, Colors.White, HorizontalAlignment.Right, 6);
         AddChild(UiKit.Anchor(ver, 1, 1, 1, 1, -520, -44, -20, -12));
         ShowHome();
     }
@@ -102,10 +102,26 @@ public partial class MainMenu : Control
         grid.AddChild(mins);
 
         var allies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.AllyDummies, CustomMinimumSize = new Vector2(360, 56) };
-        grid.AddChild(new Label { Text = "Bonecos aliados" });
+        var kind = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        kind.AddItem("Bots", 0);
+        kind.AddItem("Bonecos de treino", 1);
+        kind.Selected = Last.TrainingDummies ? 1 : 0;
+        grid.AddChild(new Label { Text = "Outros jogadores" });
+        grid.AddChild(kind);
+        var diff = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        diff.AddItem("Fácil", 0);
+        diff.AddItem("Normal", 1);
+        diff.AddItem("Difícil", 2);
+        diff.Selected = Mathf.Clamp(Last.BotDifficulty, 0, 2);
+        var diffLbl = new Label { Text = "Dificuldade dos bots" };
+        grid.AddChild(diffLbl);
+        grid.AddChild(diff);
+        kind.ItemSelected += _ => diff.Visible = diffLbl.Visible = kind.Selected == 0;
+        diff.Visible = diffLbl.Visible = kind.Selected == 0;
+        grid.AddChild(new Label { Text = "Aliados (no seu time)" });
         grid.AddChild(allies);
         var enemies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.EnemyDummies, CustomMinimumSize = new Vector2(360, 56) };
-        grid.AddChild(new Label { Text = "Bonecos adversários" });
+        grid.AddChild(new Label { Text = "Adversários" });
         grid.AddChild(enemies);
         void ClampDummies()
         {
@@ -127,7 +143,7 @@ public partial class MainMenu : Control
         mode.ItemSelected += _ => Refresh();
         Refresh();
 
-        vb.AddChild(UiKit.Lbl("Bonecos de treino: o aliado devolve passes; o adversário pula contra arremessos,\ndribla quando você chega perto e ataca com a bola. Bots de verdade na Etapa 4.", 20, new Color("5b6577")));
+        vb.AddChild(UiKit.Lbl("Bots jogam de verdade (atacam, passam, enterram, marcam, roubam e bloqueiam).\nBonecos de treino: o aliado devolve passes; o adversário pula contra arremessos e marca a cesta.", 20, new Color("5b6577")));
         var start = UiKit.Btn("Iniciar partida", () =>
         {
             Last.Size = (CourtSize)size.GetSelectedId();
@@ -136,6 +152,8 @@ public partial class MainMenu : Control
             Last.TimeMinutes = (float)mins.Value;
             Last.AllyDummies = (int)allies.Value;
             Last.EnemyDummies = (int)enemies.Value;
+            Last.TrainingDummies = kind.Selected == 1;
+            Last.BotDifficulty = diff.Selected;
             GameRoot.I.StartMatch(Last.Clone());
         });
         vb.AddChild(start);

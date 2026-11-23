@@ -1071,17 +1071,17 @@
   },
   {
     "key": "DunkRange",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Dist\u00E2ncia para enterrar",
     "desc": "Com a bola, correndo na dire\u00E7\u00E3o da cesta advers\u00E1ria e a at\u00E9 esta dist\u00E2ncia (m) do aro, o salto vira enterrada.",
     "min": 0.5,
     "max": 8,
     "step": 0.1,
-    "default": 3
+    "default": 7
   },
   {
     "key": "DunkMaxAngleDeg",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "\u00C2ngulo da corrida",
     "desc": "A corrida precisa estar dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta para enterrar.",
     "min": 5,
@@ -1091,7 +1091,7 @@
   },
   {
     "key": "DunkFlightTime",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Dura\u00E7\u00E3o do voo",
     "desc": "Segundos do salto da enterrada at\u00E9 tocar a cesta (momento do skill check).",
     "min": 0.3,
@@ -1101,17 +1101,27 @@
   },
   {
     "key": "DunkWindow",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Janela do skill check",
     "desc": "Dura\u00E7\u00E3o (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais dif\u00EDcil.",
     "min": 0.03,
     "max": 0.6,
     "step": 0.01,
-    "default": 0.12
+    "default": 0.05
+  },
+  {
+    "key": "DunkFlightJitter",
+    "section": "Enterrada",
+    "label": "Varia\u00E7\u00E3o da dura\u00E7\u00E3o do voo",
+    "desc": "Cada enterrada dura a dura\u00E7\u00E3o do voo \u00B1 at\u00E9 este valor (s), sorteado: o ponteiro do skill check muda de velocidade e n\u00E3o d\u00E1 para decorar.",
+    "min": 0,
+    "max": 0.6,
+    "step": 0.01,
+    "default": 0.2
   },
   {
     "key": "DunkHandReach",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Alcance da m\u00E3o",
     "desc": "Altura (m) da bola acima dos p\u00E9s com os bra\u00E7os esticados na enterrada.",
     "min": 1.5,
@@ -1121,7 +1131,7 @@
   },
   {
     "key": "DunkStunTime",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Atordoamento ao errar",
     "desc": "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.",
     "min": 0,
@@ -1131,7 +1141,7 @@
   },
   {
     "key": "FoulDelay",
-    "section": "Enterrada e tapinha",
+    "section": "Enterrada",
     "label": "Pausa da falta",
     "desc": "Segundos entre a falta (enterrada bloqueada) e o rein\u00EDcio do round.",
     "min": 0,
@@ -1140,44 +1150,154 @@
     "default": 1.2
   },
   {
-    "key": "TipBallRange",
-    "section": "Enterrada e tapinha",
-    "label": "Tapinha: bola perto do aro",
-    "desc": "Se a bola solta estiver a at\u00E9 esta dist\u00E2ncia (m) do aro, pular na dire\u00E7\u00E3o dela completa a cesta (sem skill check).",
-    "min": 0.2,
-    "max": 3,
+    "key": "BotAimErrorDeg",
+    "section": "Bots",
+    "label": "Erro de mira (graus)",
+    "desc": "Erro m\u00E1ximo de dire\u00E7\u00E3o do arremesso do bot no Normal (graus). F\u00E1cil/Dif\u00EDcil multiplicam.",
+    "min": 0,
+    "max": 20,
+    "step": 0.1,
+    "default": 4
+  },
+  {
+    "key": "BotDistErrorM",
+    "section": "Bots",
+    "label": "Erro de dist\u00E2ncia (m)",
+    "desc": "Erro m\u00E1ximo de dist\u00E2ncia do arremesso do bot no Normal (m).",
+    "min": 0,
+    "max": 5,
     "step": 0.05,
     "default": 1.3
   },
   {
-    "key": "TipJumpRange",
-    "section": "Enterrada e tapinha",
-    "label": "Tapinha: dist\u00E2ncia do jogador",
-    "desc": "Dist\u00E2ncia m\u00E1xima (m) do jogador at\u00E9 o aro para o tapinha.",
+    "key": "BotDunkTimingError",
+    "section": "Bots",
+    "label": "Erro no skill check da enterrada (s)",
+    "desc": "Erro m\u00E1ximo do bot ao apertar no skill check (Normal). Compare com metade da janela da enterrada.",
+    "min": 0,
+    "max": 0.3,
+    "step": 0.005,
+    "default": 0.05
+  },
+  {
+    "key": "BotReactionTime",
+    "section": "Bots",
+    "label": "Tempo de rea\u00E7\u00E3o (s)",
+    "desc": "Atraso do bot para pular contra arremesso/enterrada (Normal).",
+    "min": 0,
+    "max": 2,
+    "step": 0.01,
+    "default": 0.3
+  },
+  {
+    "key": "BotEasyMult",
+    "section": "Bots",
+    "label": "F\u00E1cil: multiplicador",
+    "desc": "Multiplica erros e tempos de rea\u00E7\u00E3o dos bots no F\u00E1cil (e divide as chances de roubo/bloqueio).",
+    "min": 1,
+    "max": 4,
+    "step": 0.05,
+    "default": 1.8
+  },
+  {
+    "key": "BotHardMult",
+    "section": "Bots",
+    "label": "Dif\u00EDcil: multiplicador",
+    "desc": "Multiplica erros e tempos de rea\u00E7\u00E3o dos bots no Dif\u00EDcil.",
+    "min": 0.1,
+    "max": 1,
+    "step": 0.05,
+    "default": 0.55
+  },
+  {
+    "key": "BotShootRange",
+    "section": "Bots",
+    "label": "Dist\u00E2ncia preferida de arremesso",
+    "desc": "Bot arremessa livre a at\u00E9 esta dist\u00E2ncia (m) da cesta (Normal; F\u00E1cil \u22122, Dif\u00EDcil \u002B1,5).",
+    "min": 2,
+    "max": 20,
+    "step": 0.5,
+    "default": 9
+  },
+  {
+    "key": "BotOpenDistance",
+    "section": "Bots",
+    "label": "Dist\u00E2ncia para estar livre",
+    "desc": "Defensor mais perto que isso (m) = marcado; o bot prefere passar ou infiltrar.",
     "min": 0.5,
     "max": 8,
     "step": 0.1,
-    "default": 3.5
+    "default": 2.6
   },
   {
-    "key": "TipMaxAngleDeg",
-    "section": "Enterrada e tapinha",
-    "label": "Tapinha: \u00E2ngulo",
-    "desc": "O salto precisa ir dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta.",
-    "min": 10,
-    "max": 180,
-    "step": 1,
-    "default": 70
-  },
-  {
-    "key": "TipFlightTime",
-    "section": "Enterrada e tapinha",
-    "label": "Tapinha: dura\u00E7\u00E3o do voo",
-    "desc": "Segundos do salto do tapinha at\u00E9 a bola.",
-    "min": 0.15,
-    "max": 1.5,
-    "step": 0.05,
+    "key": "BotDunkChance",
+    "section": "Bots",
+    "label": "Chance de infiltrar/enterrar",
+    "desc": "Chance (por decis\u00E3o) de o bot partir para a enterrada quando o caminho est\u00E1 livre.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
     "default": 0.45
+  },
+  {
+    "key": "BotPassChance",
+    "section": "Bots",
+    "label": "Chance de passar",
+    "desc": "Chance (por decis\u00E3o) de passar quando um aliado est\u00E1 em situa\u00E7\u00E3o melhor.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.5
+  },
+  {
+    "key": "BotMaxHoldTime",
+    "section": "Bots",
+    "label": "Tempo m\u00E1ximo com a bola",
+    "desc": "Segurando a bola por mais que isso (s), o bot arremessa assim que puder.",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 4
+  },
+  {
+    "key": "BotContestedShotChance",
+    "section": "Bots",
+    "label": "Chance de arremesso marcado",
+    "desc": "Chance (por decis\u00E3o, ~5 por segundo) de o bot arremessar mesmo marcado, dentro da dist\u00E2ncia preferida.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.06
+  },
+  {
+    "key": "BotStealChancePerSec",
+    "section": "Bots",
+    "label": "Chance de roubo por segundo",
+    "desc": "Chance por segundo de tentar roubar quando colado em quem tem a bola (Normal).",
+    "min": 0,
+    "max": 5,
+    "step": 0.05,
+    "default": 0.2
+  },
+  {
+    "key": "BotBlockChance",
+    "section": "Bots",
+    "label": "Chance de pular para bloquear",
+    "desc": "Chance de o bot pular contra um arremesso/enterrada perto dele (Normal).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.45
+  },
+  {
+    "key": "BotMarkDistance",
+    "section": "Bots",
+    "label": "Dist\u00E2ncia da marca\u00E7\u00E3o",
+    "desc": "Dist\u00E2ncia (m) que o bot fica de quem tem a bola, entre ele e a cesta.",
+    "min": 0.5,
+    "max": 5,
+    "step": 0.1,
+    "default": 1.4
   },
   {
     "key": "DummyReactionTime",

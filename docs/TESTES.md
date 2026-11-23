@@ -3,6 +3,26 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.6 — Enterrada revisada + Etapa 4 (bots)
+
+**Antes:** apague o `Build\tuning.json` antigo.
+
+**Enterrada**
+1. Com a bola, corra (Shift) para a cesta adversária: dá para enterrar bem mais de longe (até ~7 m).
+2. O skill check está bem mais difícil: zona branca bem fina e o ponteiro muda de velocidade a cada enterrada.
+3. Acerte o skill check com **Espaço** (em vez do botão esquerdo): também vale.
+4. O tapinha não existe mais (pular perto da bola no aro é só um salto normal).
+
+**Bots (menu → Outros jogadores: Bots; escolha a dificuldade)**
+5. Partida 2x2 (1 aliado, 2 adversários), Normal. Os adversários atacam: infiltram, enterram (às vezes erram o skill check e ficam atordoados), passam e arremessam (acertam mais ou menos metade).
+6. Na defesa deles: um bot marca você entre você e a cesta, tenta roubar quando você não está driblando/carregando, e pula contra seus arremessos e enterradas (enterrada bloqueada = falta a seu favor).
+7. Seu aliado bot se posiciona livre em volta da cesta; às vezes passa para você.
+8. Bola solta: o mais perto de cada time vai buscar.
+9. Compare **Fácil** (erra bastante, reage devagar) e **Difícil** (acerta mais, reage rápido).
+10. Escolha "Bonecos de treino": volta o comportamento antigo (bonecos parados) para treinar.
+11. Partidas maiores (ex.: quadra Grande, 4x5) devem continuar fluindo, sem bots travados num canto.
+
+---
 ## v0.5 — Indicativos, prévia, cursor + Etapa 3 (enterrada e tapinha)
 
 **Antes:** apague o `Build\tuning.json` antigo. Jogue em **tela cheia** (onde aconteciam os problemas do cursor).

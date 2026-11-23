@@ -16,6 +16,8 @@ try {
     & $godot --headless --path . --import | Out-Null
 
     if (-not $SkipSmoke) {
+        # testes sempre com os valores padrão do código (o tuning.json da raiz guarda valores antigos)
+        if (Test-Path tuning.json) { Remove-Item tuning.json -Force }
         Write-Host "== smoke test ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-test 2>&1 | Select-String "SMOKE|SCORE|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test falhou" }
@@ -25,6 +27,9 @@ try {
         Write-Host "== smoke test etapa 3 ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e3 2>&1 | Select-String "\[E3\] enterrada|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 3 falhou" }
+        Write-Host "== smoke test etapa 4 (partida so de bots) ==" -ForegroundColor Cyan
+        & $godot --headless --path . -- --smoke-e4 2>&1 | Select-String "\[E4\]|ERROR" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 4 falhou" }
     }
 
     Write-Host "== export ==" -ForegroundColor Cyan
