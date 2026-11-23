@@ -1,0 +1,742 @@
+[
+  {
+    "key": "WalkSpeed",
+    "section": "Movimento",
+    "label": "Velocidade andando",
+    "desc": "Velocidade m\u00E1xima andando (m/s).",
+    "min": 1,
+    "max": 10,
+    "step": 0.1,
+    "default": 4
+  },
+  {
+    "key": "RunSpeed",
+    "section": "Movimento",
+    "label": "Velocidade correndo",
+    "desc": "Velocidade m\u00E1xima correndo (m/s).",
+    "min": 1,
+    "max": 14,
+    "step": 0.1,
+    "default": 6
+  },
+  {
+    "key": "Acceleration",
+    "section": "Movimento",
+    "label": "Acelera\u00E7\u00E3o",
+    "desc": "Qu\u00E3o r\u00E1pido chega na velocidade m\u00E1xima (m/s\u00B2).",
+    "min": 1,
+    "max": 120,
+    "step": 1,
+    "default": 28
+  },
+  {
+    "key": "Deceleration",
+    "section": "Movimento",
+    "label": "Desacelera\u00E7\u00E3o",
+    "desc": "Qu\u00E3o r\u00E1pido para ao soltar o direcional (m/s\u00B2).",
+    "min": 1,
+    "max": 120,
+    "step": 1,
+    "default": 34
+  },
+  {
+    "key": "TurnSpeed",
+    "section": "Movimento",
+    "label": "Rapidez para virar",
+    "desc": "Suaviza\u00E7\u00E3o da rota\u00E7\u00E3o do personagem (maior = vira mais r\u00E1pido).",
+    "min": 1,
+    "max": 40,
+    "step": 0.5,
+    "default": 14
+  },
+  {
+    "key": "CarrierSpeedMult",
+    "section": "Movimento",
+    "label": "Multiplicador com a bola",
+    "desc": "Velocidade de quem est\u00E1 com a bola (1 = igual).",
+    "min": 0.3,
+    "max": 1.5,
+    "step": 0.01,
+    "default": 0.92
+  },
+  {
+    "key": "PlayerGravity",
+    "section": "Movimento",
+    "label": "Gravidade dos jogadores",
+    "desc": "Gravidade aplicada aos jogadores (m/s\u00B2).",
+    "min": 5,
+    "max": 60,
+    "step": 0.5,
+    "default": 22
+  },
+  {
+    "key": "StaminaMax",
+    "section": "Estamina",
+    "label": "Estamina m\u00E1xima",
+    "desc": "Quantidade total de estamina.",
+    "min": 10,
+    "max": 500,
+    "step": 1,
+    "default": 100
+  },
+  {
+    "key": "StaminaDrainPerSec",
+    "section": "Estamina",
+    "label": "Gasto por segundo correndo",
+    "desc": "Estamina gasta por segundo enquanto corre.",
+    "min": 1,
+    "max": 200,
+    "step": 1,
+    "default": 28
+  },
+  {
+    "key": "StaminaRegenPerSec",
+    "section": "Estamina",
+    "label": "Recarga por segundo",
+    "desc": "Estamina recuperada por segundo sem correr.",
+    "min": 1,
+    "max": 300,
+    "step": 1,
+    "default": 45
+  },
+  {
+    "key": "StaminaRegenDelay",
+    "section": "Estamina",
+    "label": "Atraso da recarga",
+    "desc": "Segundos ap\u00F3s parar de correr at\u00E9 come\u00E7ar a recarregar.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.35
+  },
+  {
+    "key": "StaminaMinToRun",
+    "section": "Estamina",
+    "label": "M\u00EDnimo para come\u00E7ar a correr",
+    "desc": "Estamina m\u00EDnima para iniciar uma corrida.",
+    "min": 0,
+    "max": 100,
+    "step": 1,
+    "default": 15
+  },
+  {
+    "key": "CameraDistance",
+    "section": "C\u00E2mera",
+    "label": "Dist\u00E2ncia",
+    "desc": "Dist\u00E2ncia da c\u00E2mera atr\u00E1s do jogador (m).",
+    "min": 1.5,
+    "max": 15,
+    "step": 0.1,
+    "default": 5.5
+  },
+  {
+    "key": "CameraHeight",
+    "section": "C\u00E2mera",
+    "label": "Altura do piv\u00F4",
+    "desc": "Altura do ponto que a c\u00E2mera orbita (m acima dos p\u00E9s).",
+    "min": 0.5,
+    "max": 4,
+    "step": 0.05,
+    "default": 2.1
+  },
+  {
+    "key": "CameraShoulderOffset",
+    "section": "C\u00E2mera",
+    "label": "Deslocamento lateral",
+    "desc": "C\u00E2mera sobre o ombro (m, negativo = esquerda).",
+    "min": -2,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.8
+  },
+  {
+    "key": "CameraFov",
+    "section": "C\u00E2mera",
+    "label": "Campo de vis\u00E3o (FOV)",
+    "desc": "FOV vertical em graus.",
+    "min": 40,
+    "max": 110,
+    "step": 1,
+    "default": 72
+  },
+  {
+    "key": "CameraPitchMinDeg",
+    "section": "C\u00E2mera",
+    "label": "Inclina\u00E7\u00E3o m\u00EDnima",
+    "desc": "Quanto a c\u00E2mera pode olhar para baixo (graus, negativo).",
+    "min": -89,
+    "max": 0,
+    "step": 1,
+    "default": -55
+  },
+  {
+    "key": "CameraPitchMaxDeg",
+    "section": "C\u00E2mera",
+    "label": "Inclina\u00E7\u00E3o m\u00E1xima",
+    "desc": "Quanto a c\u00E2mera pode olhar para cima (graus).",
+    "min": 0,
+    "max": 89,
+    "step": 1,
+    "default": 30
+  },
+  {
+    "key": "CameraFollowSmooth",
+    "section": "C\u00E2mera",
+    "label": "Suaviza\u00E7\u00E3o do seguimento",
+    "desc": "Maior = c\u00E2mera gruda mais r\u00E1pido no jogador.",
+    "min": 1,
+    "max": 60,
+    "step": 0.5,
+    "default": 18
+  },
+  {
+    "key": "MouseDegPerPixel",
+    "section": "C\u00E2mera",
+    "label": "Sensibilidade base do mouse",
+    "desc": "Graus por pixel (multiplicado pela sensibilidade das Configura\u00E7\u00F5es).",
+    "min": 0.01,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.12
+  },
+  {
+    "key": "StickDegPerSec",
+    "section": "C\u00E2mera",
+    "label": "Sensibilidade base do anal\u00F3gico",
+    "desc": "Graus por segundo com o anal\u00F3gico no m\u00E1ximo (multiplicado pelas Configura\u00E7\u00F5es).",
+    "min": 30,
+    "max": 720,
+    "step": 5,
+    "default": 220
+  },
+  {
+    "key": "BallRadius",
+    "section": "Bola",
+    "label": "Raio da bola",
+    "desc": "Raio da bola (m). Estilizada: maior que a real (0.12).",
+    "min": 0.08,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.22
+  },
+  {
+    "key": "BallGravity",
+    "section": "Bola",
+    "label": "Gravidade da bola",
+    "desc": "Gravidade da bola (m/s\u00B2). Maior = voo mais r\u00E1pido e reto.",
+    "min": 2,
+    "max": 30,
+    "step": 0.1,
+    "default": 11
+  },
+  {
+    "key": "FloorBounce",
+    "section": "Bola",
+    "label": "Quique no ch\u00E3o",
+    "desc": "Fra\u00E7\u00E3o da velocidade vertical mantida ao quicar no ch\u00E3o.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.72
+  },
+  {
+    "key": "RimBounce",
+    "section": "Bola",
+    "label": "Quique no aro",
+    "desc": "Elasticidade do aro.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.5
+  },
+  {
+    "key": "BoardBounce",
+    "section": "Bola",
+    "label": "Quique na tabela",
+    "desc": "Elasticidade da tabela.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.55
+  },
+  {
+    "key": "WallBounce",
+    "section": "Bola",
+    "label": "Quique nas paredes invis\u00EDveis",
+    "desc": "Elasticidade dos limites da \u00E1rea de jogo.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.6
+  },
+  {
+    "key": "BounceFriction",
+    "section": "Bola",
+    "label": "Atrito no quique",
+    "desc": "Fra\u00E7\u00E3o da velocidade horizontal mantida a cada quique no ch\u00E3o.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.85
+  },
+  {
+    "key": "RollDecel",
+    "section": "Bola",
+    "label": "Atrito rolando",
+    "desc": "Desacelera\u00E7\u00E3o da bola rolando no ch\u00E3o (m/s\u00B2).",
+    "min": 0,
+    "max": 20,
+    "step": 0.1,
+    "default": 1.5
+  },
+  {
+    "key": "PickupRadius",
+    "section": "Bola",
+    "label": "Alcance para pegar",
+    "desc": "Dist\u00E2ncia horizontal m\u00E1xima para pegar a bola (m).",
+    "min": 0.2,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.8
+  },
+  {
+    "key": "CatchHeight",
+    "section": "Bola",
+    "label": "Altura para pegar",
+    "desc": "Altura m\u00E1xima da bola (acima dos p\u00E9s) para pegar (m).",
+    "min": 0.5,
+    "max": 4,
+    "step": 0.05,
+    "default": 2.4
+  },
+  {
+    "key": "DribblePeriod",
+    "section": "Bola",
+    "label": "Per\u00EDodo do quique",
+    "desc": "Segundos por quique do drible autom\u00E1tico.",
+    "min": 0.15,
+    "max": 1.5,
+    "step": 0.01,
+    "default": 0.5
+  },
+  {
+    "key": "DribbleHandHeight",
+    "section": "Bola",
+    "label": "Altura da m\u00E3o no quique",
+    "desc": "Altura em que a m\u00E3o encontra a bola no quique (m).",
+    "min": 0.4,
+    "max": 1.6,
+    "step": 0.05,
+    "default": 0.6
+  },
+  {
+    "key": "DribbleSoundDb",
+    "section": "Bola",
+    "label": "Volume do quique (dB)",
+    "desc": "Volume do som do drible autom\u00E1tico. Mais negativo = mais baixo.",
+    "min": -40,
+    "max": 0,
+    "step": 1,
+    "default": -18
+  },
+  {
+    "key": "ShotRangeMin",
+    "section": "Arremesso",
+    "label": "Alcance com carga m\u00EDnima",
+    "desc": "Dist\u00E2ncia (m) do arremesso logo no in\u00EDcio da carga.",
+    "min": 0.5,
+    "max": 15,
+    "step": 0.1,
+    "default": 3
+  },
+  {
+    "key": "ShotRangeMax",
+    "section": "Arremesso",
+    "label": "Alcance com carga m\u00E1xima",
+    "desc": "Dist\u00E2ncia m\u00E1xima (m) que um arremesso alcan\u00E7a (at\u00E9 a altura do aro).",
+    "min": 2,
+    "max": 40,
+    "step": 0.1,
+    "default": 13
+  },
+  {
+    "key": "ShotChargeTime",
+    "section": "Arremesso",
+    "label": "Tempo para carga total",
+    "desc": "Segundos segurando at\u00E9 o alcance m\u00E1ximo.",
+    "min": 0.2,
+    "max": 6,
+    "step": 0.05,
+    "default": 2
+  },
+  {
+    "key": "ShotAutoReleaseTime",
+    "section": "Arremesso",
+    "label": "Arremesso autom\u00E1tico",
+    "desc": "Segurando por esse tempo, o jogador arremessa sozinho (s).",
+    "min": 0.5,
+    "max": 10,
+    "step": 0.1,
+    "default": 3
+  },
+  {
+    "key": "ShotPitchFullDeg",
+    "section": "Arremesso",
+    "label": "C\u00E2mera: inclina\u00E7\u00E3o de alcance total",
+    "desc": "Com a c\u00E2mera nesta inclina\u00E7\u00E3o ou acima (graus), o arremesso usa todo o alcance carregado.",
+    "min": -89,
+    "max": 45,
+    "step": 1,
+    "default": -15
+  },
+  {
+    "key": "ShotPitchMinDeg",
+    "section": "Arremesso",
+    "label": "C\u00E2mera: inclina\u00E7\u00E3o de alcance m\u00EDnimo",
+    "desc": "Com a c\u00E2mera nesta inclina\u00E7\u00E3o ou abaixo (graus), o arremesso fica no mais curto.",
+    "min": -89,
+    "max": 45,
+    "step": 1,
+    "default": -50
+  },
+  {
+    "key": "ShotPitchMinRangeFactor",
+    "section": "Arremesso",
+    "label": "C\u00E2mera: fra\u00E7\u00E3o m\u00EDnima do alcance",
+    "desc": "Fra\u00E7\u00E3o do alcance carregado usada com a c\u00E2mera totalmente para baixo.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.15
+  },
+  {
+    "key": "ShotAngleNearDeg",
+    "section": "Arremesso",
+    "label": "\u00C2ngulo de perto",
+    "desc": "\u00C2ngulo vertical (graus) em arremessos curtos. Mais alto = mais curva.",
+    "min": 15,
+    "max": 85,
+    "step": 0.5,
+    "default": 55
+  },
+  {
+    "key": "ShotAngleFarDeg",
+    "section": "Arremesso",
+    "label": "\u00C2ngulo de longe",
+    "desc": "\u00C2ngulo vertical (graus) no alcance m\u00E1ximo. Mais baixo = bola mais r\u00E1pida e reta.",
+    "min": 15,
+    "max": 85,
+    "step": 0.5,
+    "default": 44
+  },
+  {
+    "key": "ShotMinEntryAngleDeg",
+    "section": "Arremesso",
+    "label": "\u00C2ngulo m\u00EDnimo de entrada",
+    "desc": "Inclina\u00E7\u00E3o m\u00EDnima (graus) com que a bola desce na altura do aro. Maior = arcos mais altos, mais f\u00E1cil entrar.",
+    "min": 10,
+    "max": 80,
+    "step": 0.5,
+    "default": 38
+  },
+  {
+    "key": "ShotReleaseHeight",
+    "section": "Arremesso",
+    "label": "Altura de soltura",
+    "desc": "Altura de onde a bola sai no arremesso (m).",
+    "min": 1,
+    "max": 4,
+    "step": 0.05,
+    "default": 2.35
+  },
+  {
+    "key": "ShotChargeMoveMult",
+    "section": "Arremesso",
+    "label": "Velocidade carregando",
+    "desc": "Multiplicador de velocidade enquanto carrega o arremesso.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.35
+  },
+  {
+    "key": "ShotAimAssist",
+    "section": "Arremesso",
+    "label": "Assist\u00EAncia de dire\u00E7\u00E3o",
+    "desc": "Quanto a dire\u00E7\u00E3o \u00E9 puxada para a cesta advers\u00E1ria (0 = nenhuma, 1 = total). Nunca na pr\u00F3pria cesta.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.6
+  },
+  {
+    "key": "ShotAimAssistMaxAngleDeg",
+    "section": "Arremesso",
+    "label": "\u00C2ngulo da assist\u00EAncia",
+    "desc": "A assist\u00EAncia s\u00F3 age mirando dentro deste \u00E2ngulo da cesta advers\u00E1ria (graus).",
+    "min": 0,
+    "max": 90,
+    "step": 1,
+    "default": 30
+  },
+  {
+    "key": "ShotDistAssistMeters",
+    "section": "Arremesso",
+    "label": "Assist\u00EAncia de dist\u00E2ncia: alcance",
+    "desc": "Se o arremesso cairia a at\u00E9 esta dist\u00E2ncia (m) da cesta advers\u00E1ria, ele \u00E9 puxado para ela.",
+    "min": 0,
+    "max": 5,
+    "step": 0.05,
+    "default": 1.5
+  },
+  {
+    "key": "ShotDistAssistStrength",
+    "section": "Arremesso",
+    "label": "Assist\u00EAncia de dist\u00E2ncia: for\u00E7a",
+    "desc": "Quanto a dist\u00E2ncia \u00E9 corrigida (0 = nada, 1 = acerto exato).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.6
+  },
+  {
+    "key": "CloseShotRadius",
+    "section": "Arremesso",
+    "label": "\u00C1rea de perto (bandeja)",
+    "desc": "Dentro deste raio (m) da cesta advers\u00E1ria o arremesso vira bandeja: mira e dist\u00E2ncia autom\u00E1ticas.",
+    "min": 0,
+    "max": 8,
+    "step": 0.1,
+    "default": 3
+  },
+  {
+    "key": "CloseShotAngleDeg",
+    "section": "Arremesso",
+    "label": "\u00C2ngulo da bandeja",
+    "desc": "\u00C2ngulo vertical (graus) do arremesso de perto.",
+    "min": 30,
+    "max": 85,
+    "step": 0.5,
+    "default": 66
+  },
+  {
+    "key": "ShotPickupLockout",
+    "section": "Arremesso",
+    "label": "Bloqueio de repegar",
+    "desc": "Segundos em que quem arremessou n\u00E3o pode pegar a pr\u00F3pria bola.",
+    "min": 0,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.35
+  },
+  {
+    "key": "TrajectoryPreviewTime",
+    "section": "Arremesso",
+    "label": "Dura\u00E7\u00E3o da trajet\u00F3ria mostrada",
+    "desc": "Segundos de voo desenhados no indicador de trajet\u00F3ria.",
+    "min": 0.3,
+    "max": 5,
+    "step": 0.1,
+    "default": 3
+  },
+  {
+    "key": "HoopHeight",
+    "section": "Quadra",
+    "label": "Altura do aro",
+    "desc": "Altura do aro (m). Real = 3.05.",
+    "min": 1.5,
+    "max": 7,
+    "step": 0.05,
+    "default": 4
+  },
+  {
+    "key": "RimRadius",
+    "section": "Quadra",
+    "label": "Raio do aro",
+    "desc": "Raio interno do aro (m). Real \u2248 0.23.",
+    "min": 0.15,
+    "max": 1.2,
+    "step": 0.01,
+    "default": 0.5
+  },
+  {
+    "key": "BoardWidth",
+    "section": "Quadra",
+    "label": "Largura da tabela",
+    "desc": "Largura da tabela (m).",
+    "min": 0.5,
+    "max": 8,
+    "step": 0.05,
+    "default": 3.4
+  },
+  {
+    "key": "BoardHeight",
+    "section": "Quadra",
+    "label": "Altura da tabela",
+    "desc": "Altura da tabela (m).",
+    "min": 0.5,
+    "max": 5,
+    "step": 0.05,
+    "default": 2
+  },
+  {
+    "key": "ScoreTolerance",
+    "section": "Quadra",
+    "label": "Toler\u00E2ncia da cesta",
+    "desc": "Quanto (fra\u00E7\u00E3o do raio da bola) ela pode encostar no aro e ainda contar ao passar.",
+    "min": 0,
+    "max": 1,
+    "step": 0.05,
+    "default": 0.35
+  },
+  {
+    "key": "HoopInset",
+    "section": "Quadra",
+    "label": "Dist\u00E2ncia do aro \u00E0 linha de fundo",
+    "desc": "Dist\u00E2ncia do centro do aro at\u00E9 a linha de fundo (m).",
+    "min": 0.5,
+    "max": 5,
+    "step": 0.05,
+    "default": 1.8
+  },
+  {
+    "key": "CourtSmallLength",
+    "section": "Quadra",
+    "label": "Pequena: comprimento",
+    "desc": "Comprimento da quadra pequena (m).",
+    "min": 10,
+    "max": 80,
+    "step": 0.5,
+    "default": 28
+  },
+  {
+    "key": "CourtSmallWidth",
+    "section": "Quadra",
+    "label": "Pequena: largura",
+    "desc": "Largura da quadra pequena (m).",
+    "min": 6,
+    "max": 50,
+    "step": 0.5,
+    "default": 16
+  },
+  {
+    "key": "ThreePtSmall",
+    "section": "Quadra",
+    "label": "Pequena: raio dos 3 pontos",
+    "desc": "Raio da linha de 3 na quadra pequena (m).",
+    "min": 2,
+    "max": 20,
+    "step": 0.1,
+    "default": 7
+  },
+  {
+    "key": "CourtMediumLength",
+    "section": "Quadra",
+    "label": "M\u00E9dia: comprimento",
+    "desc": "Comprimento da quadra m\u00E9dia (m).",
+    "min": 10,
+    "max": 80,
+    "step": 0.5,
+    "default": 34
+  },
+  {
+    "key": "CourtMediumWidth",
+    "section": "Quadra",
+    "label": "M\u00E9dia: largura",
+    "desc": "Largura da quadra m\u00E9dia (m).",
+    "min": 6,
+    "max": 50,
+    "step": 0.5,
+    "default": 19
+  },
+  {
+    "key": "ThreePtMedium",
+    "section": "Quadra",
+    "label": "M\u00E9dia: raio dos 3 pontos",
+    "desc": "Raio da linha de 3 na quadra m\u00E9dia (m).",
+    "min": 2,
+    "max": 20,
+    "step": 0.1,
+    "default": 8
+  },
+  {
+    "key": "CourtLargeLength",
+    "section": "Quadra",
+    "label": "Grande: comprimento",
+    "desc": "Comprimento da quadra grande (m).",
+    "min": 10,
+    "max": 80,
+    "step": 0.5,
+    "default": 40
+  },
+  {
+    "key": "CourtLargeWidth",
+    "section": "Quadra",
+    "label": "Grande: largura",
+    "desc": "Largura da quadra grande (m).",
+    "min": 6,
+    "max": 50,
+    "step": 0.5,
+    "default": 22
+  },
+  {
+    "key": "ThreePtLarge",
+    "section": "Quadra",
+    "label": "Grande: raio dos 3 pontos",
+    "desc": "Raio da linha de 3 na quadra grande (m).",
+    "min": 2,
+    "max": 20,
+    "step": 0.1,
+    "default": 9
+  },
+  {
+    "key": "BoundsMargin",
+    "section": "Quadra",
+    "label": "Margem al\u00E9m das linhas",
+    "desc": "Espa\u00E7o jog\u00E1vel al\u00E9m das linhas antes das paredes invis\u00EDveis (n\u00E3o existe \u0027fora\u0027).",
+    "min": 0.2,
+    "max": 6,
+    "step": 0.1,
+    "default": 1.5
+  },
+  {
+    "key": "CountdownSeconds",
+    "section": "Regras",
+    "label": "Contagem regressiva",
+    "desc": "Segundos de contagem antes de cada round.",
+    "min": 0,
+    "max": 10,
+    "step": 0.5,
+    "default": 3
+  },
+  {
+    "key": "PostScoreDelay",
+    "section": "Regras",
+    "label": "Pausa ap\u00F3s cesta",
+    "desc": "Segundos de comemora\u00E7\u00E3o antes de reiniciar o round.",
+    "min": 0,
+    "max": 6,
+    "step": 0.1,
+    "default": 1.6
+  },
+  {
+    "key": "PointsInside",
+    "section": "Regras",
+    "label": "Pontos de dentro",
+    "desc": "Pontos de uma cesta de dentro da linha de 3.",
+    "min": 1,
+    "max": 10,
+    "step": 1,
+    "default": 2
+  },
+  {
+    "key": "PointsOutside",
+    "section": "Regras",
+    "label": "Pontos de fora",
+    "desc": "Pontos de uma cesta de fora da linha de 3.",
+    "min": 1,
+    "max": 10,
+    "step": 1,
+    "default": 3
+  }
+]

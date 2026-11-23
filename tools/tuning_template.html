@@ -1,0 +1,299 @@
+<title>Absolute Basketball Tuning</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: cabeçalho tipo placar + navegação por seção + linhas de parâmetro; barra de ação fixa no rodapé */
+:root {
+  --bg: #f3f6fb;
+  --surface: #ffffff;
+  --surface-2: #e9eef7;
+  --fg: #1d2433;
+  --muted: #5b6577;
+  --line: #d5ddea;
+  --court: #2f80ed;
+  --court-ink: #ffffff;
+  --ball: #ff8a3d;
+  --changed: #fff1e4;
+  --changed-line: #ff8a3d;
+  --ok: #1f9d55;
+  --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161f; --surface: #182030; --surface-2: #202a3d; --fg: #e8edf6; --muted: #9aa6ba;
+    --line: #2c3850; --court: #4d94f5; --court-ink: #0b1220; --ball: #ff9a55; --changed: #2e2418;
+    --changed-line: #ff9a55; --ok: #46c27a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161f; --surface: #182030; --surface-2: #202a3d; --fg: #e8edf6; --muted: #9aa6ba;
+  --line: #2c3850; --court: #4d94f5; --court-ink: #0b1220; --ball: #ff9a55; --changed: #2e2418;
+  --changed-line: #ff9a55; --ok: #46c27a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 24px 120px; }
+header.board { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: end; padding-block: 8px 20px; border-bottom: 3px solid var(--fg); }
+.eyebrow { font-family: var(--font-display); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ball); font-size: 15px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(40px, 7vw, 64px); line-height: .95; margin: 2px 0 0; text-wrap: balance; text-transform: uppercase; }
+h1 span { color: var(--court); }
+.meta { font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-align: right; }
+.how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 20px 0; }
+.how div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; min-width: 0; }
+.how b { font-family: var(--font-display); font-size: 20px; color: var(--court); margin-right: 6px; }
+.how p { margin: 0; font-size: 14px; color: var(--muted); }
+.how code { font-family: var(--font-mono); font-size: 12px; color: var(--fg); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 8px 0 18px; }
+.toolbar input[type=search] { flex: 1 1 220px; min-width: 0; font: inherit; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--font-display); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; font-size: 15px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); padding: 5px 12px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed=true] { background: var(--court); border-color: var(--court); color: var(--court-ink); }
+.chip .n { font-family: var(--font-mono); font-size: 11px; margin-left: 4px; color: var(--ball); }
+.chip[aria-pressed=true] .n { color: var(--court-ink); }
+section.sec { margin-top: 26px; }
+section.sec h2 { font-family: var(--font-display); font-weight: 800; font-size: 28px; text-transform: uppercase; letter-spacing: .04em; margin: 0 0 8px; display: flex; gap: 10px; align-items: baseline; }
+section.sec h2 small { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0; text-transform: none; }
+.row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 128px 34px; gap: 14px; align-items: center; padding: 12px 12px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.row.changed { background: var(--changed); border-left-color: var(--changed-line); }
+.row .lbl { font-weight: 600; }
+.row .key { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+.row .desc { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.row input[type=range] { width: 100%; accent-color: var(--court); }
+.row .num { width: 100%; font-family: var(--font-mono); font-size: 14px; padding: 7px 8px; border-radius: 7px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); font-variant-numeric: tabular-nums; text-align: right; }
+.row .def { font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: right; margin-top: 3px; }
+.reset { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-size: 16px; }
+.reset:disabled { opacity: .25; cursor: default; }
+.row.hidden { display: none; }
+footer.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--fg); color: var(--bg); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
+footer.bar .in { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+footer.bar .count { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-right: auto; }
+footer.bar .count em { font-style: normal; color: var(--ball); }
+.btn { font: 600 14px var(--font-body); padding: 10px 14px; border-radius: 8px; border: 0; cursor: pointer; background: var(--surface-2); color: var(--fg); }
+.btn.primary { background: var(--ball); color: #1d2433; }
+.btn:focus-visible, .chip:focus-visible, .reset:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--ball); outline-offset: 2px; }
+.status { font-size: 13px; color: var(--ball); min-width: 0; }
+dialog { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--fg); width: min(720px, calc(100vw - 32px)); padding: 18px; }
+dialog::backdrop { background: rgba(10, 15, 25, .55); }
+dialog h3 { font-family: var(--font-display); font-size: 26px; text-transform: uppercase; margin: 0 0 6px; }
+dialog p { color: var(--muted); margin: 0 0 10px; font-size: 14px; }
+dialog textarea { width: 100%; height: 300px; font-family: var(--font-mono); font-size: 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); padding: 10px; }
+dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px; flex-wrap: wrap; }
+@media (max-width: 720px) {
+  .how { grid-template-columns: 1fr; }
+  header.board { grid-template-columns: 1fr; }
+  .meta { text-align: left; }
+  .row { grid-template-columns: minmax(0, 1fr) 96px 34px; }
+  .row .slider { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="board">
+    <div>
+      <div class="eyebrow">Painel de ajustes · tuning.json</div>
+      <h1>Absolute <span>Basketball</span></h1>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="how">
+    <div><p><b>1</b>Ajuste os valores abaixo. Linhas alteradas ficam destacadas; o padrão aparece embaixo de cada campo.</p></div>
+    <div><p><b>2</b>Clique em <strong>Copiar tuning.json</strong> e cole por cima do arquivo <code>Build\tuning.json</code> (ao lado do .exe). Salve.</p></div>
+    <div><p><b>3</b>No jogo, aperte <strong>F5</strong>. Valores de quadra e aro valem a partir da próxima partida.</p></div>
+  </div>
+
+  <div class="toolbar">
+    <input type="search" id="q" placeholder="Buscar valor (ex.: estamina, aro, câmera)" aria-label="Buscar valor">
+  </div>
+  <div class="chips" id="chips" role="toolbar" aria-label="Seções"></div>
+  <div id="list"></div>
+</div>
+
+<footer class="bar">
+  <div class="in">
+    <div class="count" id="count">Nenhuma alteração</div>
+    <span class="status" id="status" role="status"></span>
+    <button class="btn" id="btnImport" type="button">Importar tuning.json</button>
+    <button class="btn" id="btnReset" type="button">Restaurar padrões</button>
+    <button class="btn primary" id="btnCopy" type="button">Copiar tuning.json</button>
+  </div>
+</footer>
+
+<dialog id="dlg">
+  <h3 id="dlgTitle">Importar</h3>
+  <p id="dlgText"></p>
+  <textarea id="dlgArea" spellcheck="false"></textarea>
+  <div class="acts">
+    <button class="btn" id="dlgCancel" type="button">Fechar</button>
+    <button class="btn primary" id="dlgOk" type="button">Aplicar</button>
+  </div>
+</dialog>
+
+<script id="schema" type="application/json">/*__SCHEMA__*/</script>
+<script>
+(function () {
+  const VERSION = "__VERSION__";
+  const schema = JSON.parse(document.getElementById("schema").textContent);
+  const STORE = "ab-tuning-v1";
+  const values = {};
+  schema.forEach(p => values[p.key] = p.default);
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE) || "{}");
+    for (const k in saved) if (k in values && typeof saved[k] === "number") values[k] = saved[k];
+  } catch (e) {}
+
+  const decimals = s => { const t = String(s); return t.includes(".") ? t.split(".")[1].length : 0; };
+  const fmt = (p, v) => Number(v).toFixed(Math.min(decimals(p.step), 4));
+  const isChanged = p => Math.abs(values[p.key] - p.default) > 1e-9;
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(values)); } catch (e) {} };
+
+  document.getElementById("meta").innerHTML =
+    `${schema.length} valores<br>versão do jogo: ${VERSION}`;
+
+  const sections = [...new Set(schema.map(p => p.section))];
+  let activeSection = null;
+  const chips = document.getElementById("chips");
+  const list = document.getElementById("list");
+  const rows = {};
+
+  const all = document.createElement("button");
+  all.className = "chip"; all.type = "button"; all.textContent = "Todas";
+  all.setAttribute("aria-pressed", "true");
+  all.onclick = () => setSection(null);
+  chips.appendChild(all);
+  const chipEls = {};
+  sections.forEach(s => {
+    const b = document.createElement("button");
+    b.className = "chip"; b.type = "button"; b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `${s}<span class="n"></span>`;
+    b.onclick = () => setSection(s);
+    chips.appendChild(b);
+    chipEls[s] = b;
+
+    const sec = document.createElement("section");
+    sec.className = "sec"; sec.dataset.section = s;
+    sec.innerHTML = `<h2>${s} <small>${schema.filter(p => p.section === s).length} valores</small></h2>`;
+    schema.filter(p => p.section === s).forEach(p => {
+      const r = document.createElement("div");
+      r.className = "row";
+      const id = "f-" + p.key;
+      r.innerHTML = `
+        <div><label class="lbl" for="${id}">${p.label}</label> <span class="key">${p.key}</span><div class="desc">${p.desc}</div></div>
+        <div class="slider"><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${p.label}"></div>
+        <div><input class="num" id="${id}" type="number" min="${p.min}" max="${p.max}" step="${p.step}"><div class="def">padrão ${fmt(p, p.default)}</div></div>
+        <button class="reset" type="button" title="Voltar ao padrão" aria-label="Voltar ${p.label} ao padrão">↺</button>`;
+      const range = r.querySelector("input[type=range]");
+      const num = r.querySelector(".num");
+      const reset = r.querySelector(".reset");
+      range.oninput = () => set(p, parseFloat(range.value));
+      num.onchange = () => { const v = parseFloat(num.value); if (!isNaN(v)) set(p, v); else refresh(p); };
+      reset.onclick = () => set(p, p.default);
+      rows[p.key] = { r, range, num, reset, p };
+      sec.appendChild(r);
+    });
+    list.appendChild(sec);
+  });
+
+  function set(p, v) {
+    values[p.key] = Math.round(v * 1e6) / 1e6;
+    refresh(p); save(); updateCount();
+  }
+  function refresh(p) {
+    const o = rows[p.key];
+    o.range.value = values[p.key];
+    if (document.activeElement !== o.num) o.num.value = fmt(p, values[p.key]);
+    o.r.classList.toggle("changed", isChanged(p));
+    o.reset.disabled = !isChanged(p);
+  }
+  function updateCount() {
+    const n = schema.filter(isChanged).length;
+    document.getElementById("count").innerHTML = n ? `<em>${n}</em> ${n === 1 ? "alteração" : "alterações"}` : "Nenhuma alteração";
+    sections.forEach(s => {
+      const c = schema.filter(p => p.section === s && isChanged(p)).length;
+      chipEls[s].querySelector(".n").textContent = c ? "●" + c : "";
+    });
+  }
+  function setSection(s) {
+    activeSection = s;
+    all.setAttribute("aria-pressed", String(s === null));
+    for (const k in chipEls) chipEls[k].setAttribute("aria-pressed", String(k === s));
+    filter();
+  }
+  const q = document.getElementById("q");
+  const norm = t => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  function filter() {
+    const term = norm(q.value.trim());
+    document.querySelectorAll("section.sec").forEach(sec => {
+      const okSec = !activeSection || sec.dataset.section === activeSection;
+      let any = false;
+      sec.querySelectorAll(".row").forEach(r => {
+        const p = Object.values(rows).find(o => o.r === r).p;
+        const hit = !term || norm(p.label + " " + p.key + " " + p.desc + " " + p.section).includes(term);
+        r.classList.toggle("hidden", !(okSec && hit));
+        any = any || (okSec && hit);
+      });
+      sec.hidden = !any;
+    });
+  }
+  q.oninput = filter;
+
+  const json = () => {
+    const o = {}; schema.forEach(p => o[p.key] = values[p.key]);
+    return JSON.stringify(o, null, 2);
+  };
+  const status = t => { const s = document.getElementById("status"); s.textContent = t; clearTimeout(status.t); status.t = setTimeout(() => s.textContent = "", 4000); };
+
+  const dlg = document.getElementById("dlg");
+  const area = document.getElementById("dlgArea");
+  let dlgMode = "import";
+  function openDlg(mode) {
+    dlgMode = mode;
+    document.getElementById("dlgTitle").textContent = mode === "import" ? "Importar tuning.json" : "Copie o conteúdo";
+    document.getElementById("dlgText").textContent = mode === "import"
+      ? "Cole aqui o conteúdo do seu tuning.json atual para carregar os valores neste painel."
+      : "A cópia automática não funcionou neste navegador. Selecione tudo (Ctrl+A) e copie (Ctrl+C).";
+    document.getElementById("dlgOk").hidden = mode !== "import";
+    area.value = mode === "import" ? "" : json();
+    dlg.showModal();
+    if (mode !== "import") area.select(); else area.focus();
+  }
+  document.getElementById("btnCopy").onclick = () => {
+    const text = json();
+    try {
+      navigator.clipboard.writeText(text).then(() => status("Copiado! Cole em Build\\tuning.json e aperte F5 no jogo."), () => openDlg("copy"));
+    } catch (e) { openDlg("copy"); }
+  };
+  document.getElementById("btnImport").onclick = () => openDlg("import");
+  document.getElementById("dlgCancel").onclick = () => dlg.close();
+  document.getElementById("dlgOk").onclick = () => {
+    try {
+      const txt = area.value.replace(/\/\/.*$/gm, "").replace(/,\s*([}\]])/g, "$1");
+      const o = JSON.parse(txt);
+      let n = 0;
+      schema.forEach(p => { if (typeof o[p.key] === "number") { values[p.key] = o[p.key]; n++; } });
+      schema.forEach(refresh); save(); updateCount(); dlg.close();
+      status(`${n} valores importados.`);
+    } catch (e) { document.getElementById("dlgText").textContent = "Não consegui ler esse JSON: " + e.message; }
+  };
+  const resetBtn = document.getElementById("btnReset");
+  resetBtn.onclick = () => {
+    if (resetBtn.dataset.armed) {
+      schema.forEach(p => values[p.key] = p.default);
+      schema.forEach(refresh); save(); updateCount();
+      delete resetBtn.dataset.armed; resetBtn.textContent = "Restaurar padrões";
+      status("Todos os valores voltaram ao padrão.");
+    } else {
+      resetBtn.dataset.armed = "1"; resetBtn.textContent = "Confirmar restauração";
+      setTimeout(() => { delete resetBtn.dataset.armed; resetBtn.textContent = "Restaurar padrões"; }, 3500);
+    }
+  };
+
+  schema.forEach(refresh);
+  updateCount();
+})();
+</script>
