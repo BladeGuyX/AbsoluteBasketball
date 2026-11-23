@@ -1,4 +1,4 @@
-# Gera a build jogavel em Build\AbsoluteBasketball.exe
+﻿# Gera a build jogavel em Build\AbsoluteBasketball.exe
 # Uso:  powershell -ExecutionPolicy Bypass -File tools\build.ps1  [-SkipSmoke]
 param([switch]$SkipSmoke)
 $ErrorActionPreference = "Continue"
@@ -22,6 +22,9 @@ try {
         Write-Host "== smoke test etapa 2 ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e2 2>&1 | Select-String "\[E2\] passe|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 2 falhou" }
+        Write-Host "== smoke test etapa 3 ==" -ForegroundColor Cyan
+        & $godot --headless --path . -- --smoke-e3 2>&1 | Select-String "\[E3\] enterrada|ERROR" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 3 falhou" }
     }
 
     Write-Host "== export ==" -ForegroundColor Cyan

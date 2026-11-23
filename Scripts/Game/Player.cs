@@ -7,6 +7,8 @@ namespace AB;
 /// Ações: arremesso, passe (normal/alto), salto (bloqueio), roubo, drible especial.
 /// Visual/animação em PlayerRig (placeholder até a arte do Blender).
 /// </summary>
+public enum FlightKind { None, Dunk, Tip }
+
 public partial class Player : CharacterBody3D
 {
     public int Id;
@@ -40,6 +42,22 @@ public partial class Player : CharacterBody3D
     public float BallLockoutTimer;
     public float DribblePhase;
     public PlayerInput LastInput;
+    public float Stun;                // atordoado (errou enterrada): sem mover nem agir
+
+    // ---- enterrada / tapinha (voo roteirizado) ----
+    public FlightKind Flight;
+    public float FlightT, FlightDur;
+    public int FlightHoop;
+    public bool DunkPressed;
+    public float DunkPressT;
+    public float SkillFlash;          // >0: mostra o resultado do skill check (HUD)
+    public bool SkillFlashOk;
+    Vector3 _flightFrom, _flightTo;
+    bool _stunOnLand;
+
+    // prévia do arremesso = exatamente o que vai sair (calculada no fim de cada tick)
+    ShotMath.ShotPlan _shotPlan;
+    bool _shotPlanValid;
 
     float _regenDelay;
     int _lastBounceIdx;
@@ -48,6 +66,7 @@ public partial class Player : CharacterBody3D
     Node3D _visual;
     PlayerRig _rig;
     Label3D _nameLabel;
+    Node3D _stars;                    // estrelinhas girando = atordoado
     const float ReleaseAnimTime = 0.45f;
     float _releaseT, _passReleaseT;
 
@@ -55,7 +74,7 @@ public partial class Player : CharacterBody3D
     public bool IsDribbling => DribbleActive > 0;
     public bool CanCatch => true;
     /// <summary>Pode ter a bola roubada? (não se estiver driblando, no ar ou carregando arremesso)</summary>
-    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass;
+    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass && Flight == FlightKind.None;
     public Vector3 Forward => ShotMath.Dir(Yaw);
     public Vector3 Right => new(Mathf.Cos(Yaw), 0, -Mathf.Sin(Yaw));
 
@@ -78,6 +97,15 @@ public partial class Player : CharacterBody3D
             Visible = !IsLocalHuman,
         };
         AddChild(_nameLabel);
+        _stars = new Node3D { Position = new Vector3(0, 2.15f, 0), Visible = false };
+        var starMat = Mat.Unshaded(new Color("ffd23f"));
+        for (int i = 0; i < 3; i++)
+        {
+            float a = i * Mathf.Tau / 3f;
+            _stars.AddChild(Mat.MeshNode(new SphereMesh { Radius = 0.06f, Height = 0.12f, RadialSegments = 8, Rings = 4 }, starMat,
+                new Vector3(Mathf.Cos(a) * 0.3f, 0, Mathf.Sin(a) * 0.3f), false));
+        }
+        AddChild(_stars);
         Stamina = Tuning.I.StaminaMax;
         DribbleCharges = Mathf.RoundToInt(Tuning.I.DribbleCharges);
     }
@@ -89,9 +117,17 @@ public partial class Player : CharacterBody3D
         var t = Tuning.I;
         LastInput = inp;
         TickTimers(dt);
+        if (SkillFlash > 0) SkillFlash -= dt;
 
-        bool canMove = M.CanMove && LandLock <= 0;
-        bool canAct = M.CanAct && LandLock <= 0 && !Airborne;
+        if (Flight != FlightKind.None)
+        {
+            FlightTick(inp, dt);
+            ApplyPose(dt, 0);
+            return;
+        }
+
+        bool canMove = M.CanMove && LandLock <= 0 && Stun <= 0;
+        bool canAct = M.CanAct && LandLock <= 0 && !Airborne && Stun <= 0;
 
         var wish = canMove ? new Vector3(inp.Move.X, 0, inp.Move.Y) : Vector3.Zero;
         if (wish.LengthSquared() > 1f) wish = wish.Normalized();
@@ -105,6 +141,7 @@ public partial class Player : CharacterBody3D
             if (canAct && !IsDribbling)
             {
                 if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Dribble) && DribbleCharges > 0) StartDribble();
+                else if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Jump) && CanDunk()) StartDunk();
                 else
                 {
                     if (!ChargingPass) HandleShot(inp, dt);
@@ -170,7 +207,8 @@ public partial class Player : CharacterBody3D
             if (_airTime > 0.08f && IsOnFloor())
             {
                 Airborne = false;
-                LandLock = t.LandLockTime;
+                if (_stunOnLand) { _stunOnLand = false; Stun = t.DunkStunTime; }
+                else LandLock = t.LandLockTime;
                 _jumpVel = Vector3.Zero;
                 M.OnLanded(this);
             }
@@ -186,6 +224,8 @@ public partial class Player : CharacterBody3D
         Yaw = Mathf.LerpAngle(Yaw, targetYaw, 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
         UpdateDribble(dt);
+        _shotPlanValid = ChargingShot;
+        if (ChargingShot) _shotPlan = ShotMath.Plan(GlobalPosition, Team, inp.AimYaw, inp.AimPitch, M.Geo);
         ApplyPose(dt, new Vector2(Velocity.X, Velocity.Z).Length());
     }
 
@@ -194,6 +234,7 @@ public partial class Player : CharacterBody3D
         var t = Tuning.I;
         if (BallLockoutTimer > 0) BallLockoutTimer -= dt;
         if (LandLock > 0 && !Airborne) LandLock -= dt;
+        if (Stun > 0 && !Airborne) Stun -= dt;
         if (StealFail > 0) StealFail -= dt;
         if (DribbleActive > 0) DribbleActive -= dt;
         int max = Mathf.RoundToInt(t.DribbleCharges);
@@ -233,11 +274,14 @@ public partial class Player : CharacterBody3D
         ShotCharge = 0;
     }
 
+    /// <summary>Plano mostrado na prévia (calculado no fim do último tick). O arremesso usa exatamente este plano.</summary>
     public bool GetShotPlan(out ShotMath.ShotPlan plan)
     {
         plan = default;
         if (!ChargingShot) return false;
-        plan = ShotMath.Plan(GlobalPosition, Team, LastInput.AimYaw, LastInput.AimPitch, M.Geo);
+        if (!_shotPlanValid) _shotPlan = ShotMath.Plan(GlobalPosition, Team, LastInput.AimYaw, LastInput.AimPitch, M.Geo);
+        _shotPlanValid = true;
+        plan = _shotPlan;
         return true;
     }
 
@@ -246,6 +290,7 @@ public partial class Player : CharacterBody3D
         if (!GetShotPlan(out var plan)) return;
         ChargingShot = false;
         ShotCharge = 0;
+        _shotPlanValid = false;
         BallLockoutTimer = Tuning.I.ShotPickupLockout;
         _releaseT = ReleaseAnimTime;
         M.Ball.Throw(this, plan.Pos, plan.Vel, BallState.Shot);
@@ -323,6 +368,9 @@ public partial class Player : CharacterBody3D
         JumpCharge = Mathf.Min(JumpCharge + dt, t.JumpChargeTime);
         if (wish.LengthSquared() > 0.01f) { _jumpWish = wish; _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0; }
         if (inp.IsHeld(Btn.Jump)) return;
+
+        // tapinha: bola solta bem perto da cesta que meu time ataca e pulando na direção dela
+        if (CanTip(_jumpWish)) { ChargingJump = false; StartTip(); return; }
 
         // pula: direção vem do movimento antes de pular, quase sem controle no ar
         float k = t.JumpChargeTime > 0 ? JumpCharge / t.JumpChargeTime : 1f;
@@ -409,6 +457,7 @@ public partial class Player : CharacterBody3D
     public Vector3 HeldBallPosition()
     {
         var t = Tuning.I;
+        if (Flight != FlightKind.None) return GlobalPosition + Vector3.Up * t.DunkHandReach + Forward * 0.35f;
         if (ChargingShot) return GlobalPosition + Vector3.Up * 2.02f + Forward * 0.33f;
         if (ChargingPass) return GlobalPosition + Vector3.Up * 1.25f + Forward * 0.5f;
         // driblando: agachado, a mão encontra a bola mais baixo (quique curto e rápido)
@@ -427,8 +476,11 @@ public partial class Player : CharacterBody3D
             Release = _releaseT / ReleaseAnimTime, PassCharging = ChargingPass, PassRelease = _passReleaseT / 0.3f,
             JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0, Slowed = StealFail > 0,
             Landing = LandLock > 0, BallSide = BallSide, Dribbling = IsDribbling,
+            Dunking = Flight != FlightKind.None, Stunned = Stun > 0 || _stunOnLand,
         };
         if (st.HasBall) st.BallPos = HeldBallPosition();
+        _stars.Visible = Stun > 0;
+        if (_stars.Visible) _stars.RotateY(dt * 5f);
         _rig.Animate(st, dt);
     }
 
@@ -443,10 +495,152 @@ public partial class Player : CharacterBody3D
         CancelPass();
         ChargingJump = false; Airborne = false; _jumpVel = Vector3.Zero; LandLock = 0;
         StealDash = 0; StealFail = 0; DribbleActive = 0;
+        Flight = FlightKind.None; Stun = 0; _stunOnLand = false; SkillFlash = 0; _shotPlanValid = false;
         Running = false;
         _releaseT = 0; _passReleaseT = 0;
         _visual.Rotation = new Vector3(0, Yaw, 0);
         ResetPhysicsInterpolation();
+    }
+
+    // =====================================================================
+    // Enterrada (skill check) e tapinha
+
+    Vector3 FlatToRim(int hoop) { var v = M.Geo.RimCenter[hoop] - GlobalPosition; v.Y = 0; return v; }
+
+    public bool CanDunk()
+    {
+        var t = Tuning.I;
+        if (!Running || !IsOnFloor()) return false;
+        int hoop = CourtGeo.AttackHoop(Team);
+        var to = FlatToRim(hoop);
+        if (to.Length() > t.DunkRange) return false;
+        var hv = new Vector3(Velocity.X, 0, Velocity.Z);
+        if (hv.Length() < 1f) return false;
+        return hv.AngleTo(to) <= Mathf.DegToRad(t.DunkMaxAngleDeg);
+    }
+
+    bool CanTip(Vector3 wish)
+    {
+        var t = Tuning.I;
+        var b = M.Ball;
+        if (b.State == BallState.Held) return false;
+        int hoop = CourtGeo.AttackHoop(Team);
+        var rim = M.Geo.RimCenter[hoop];
+        if (b.GlobalPosition.DistanceTo(rim) > t.TipBallRange) return false;
+        var to = FlatToRim(hoop);
+        if (to.Length() > t.TipJumpRange) return false;
+        var dir = wish.LengthSquared() > 0.01f ? wish : Forward;
+        return to.Length() < 0.6f || dir.AngleTo(to) <= Mathf.DegToRad(t.TipMaxAngleDeg);
+    }
+
+    void BeginFlight(FlightKind kind, float dur, Vector3 handTarget, int hoop)
+    {
+        var t = Tuning.I;
+        CancelShot(false); CancelPass(); ChargingJump = false; DribbleActive = 0;
+        var to = FlatToRim(hoop);
+        var dir = to.LengthSquared() > 0.01f ? to.Normalized() : Forward;
+        Yaw = ShotMath.YawOf(dir);
+        Flight = kind;
+        FlightHoop = hoop;
+        FlightT = 0;
+        FlightDur = dur;
+        DunkPressed = false;
+        _flightFrom = GlobalPosition;
+        // os pés ficam onde a mão (bola) alcança o alvo
+        _flightTo = handTarget - dir * 0.35f - Vector3.Up * t.DunkHandReach;
+        _flightTo.Y = Mathf.Max(_flightTo.Y, 0.05f);
+        Airborne = true;
+        _airTime = 0;
+        _jumpVel = Vector3.Zero;
+        Velocity = Vector3.Zero;
+    }
+
+    void StartDunk()
+    {
+        var t = Tuning.I;
+        int hoop = CourtGeo.AttackHoop(Team);
+        var rim = M.Geo.RimCenter[hoop];
+        var dir = FlatToRim(hoop).Normalized();
+        // a bola chega um pouco acima e à frente do centro do aro
+        BeginFlight(FlightKind.Dunk, t.DunkFlightTime, rim - dir * 0.1f + Vector3.Up * 0.35f, hoop);
+        M.LogEvent("DUNK", this);
+    }
+
+    void StartTip()
+    {
+        int hoop = CourtGeo.AttackHoop(Team);
+        BeginFlight(FlightKind.Tip, Tuning.I.TipFlightTime, M.Ball.GlobalPosition, hoop);
+        M.LogEvent("TIP_TRY", this);
+    }
+
+    void FlightTick(PlayerInput inp, float dt)
+    {
+        var t = Tuning.I;
+        FlightT += dt;
+        float k = Mathf.Clamp(FlightT / Mathf.Max(FlightDur, 0.01f), 0, 1);
+        float kh = 1f - (1f - k) * (1f - k);          // horizontal: sai rápido e desacelera
+        float kv = Mathf.Sin(k * Mathf.Pi * 0.5f);     // vertical: sobe rápido, "flutua" no topo
+        var p = _flightFrom.Lerp(_flightTo, kh);
+        p.Y = Mathf.Lerp(_flightFrom.Y, _flightTo.Y, kv);
+        GlobalPosition = p;
+        Velocity = Vector3.Zero;
+        Yaw = Mathf.LerpAngle(Yaw, ShotMath.YawOf(FlatToRim(FlightHoop)), 1f - Mathf.Exp(-t.TurnSpeed * dt));
+
+        if (Flight == FlightKind.Tip)
+        {
+            if (HasBall) { FinishDunk(true); return; } // pegou a bola no ar: completa a cesta
+            if (FlightT >= FlightDur) EndFlight();
+            return;
+        }
+
+        // enterrada: skill check com o botão de arremesso no momento de tocar a cesta
+        float half = t.DunkWindow * 0.5f;
+        if (!HasBall) { EndFlight(); return; }
+        if (!DunkPressed && inp.WasPressed(Btn.Shoot)) { DunkPressed = true; DunkPressT = FlightT; }
+        if (DunkPressed)
+        {
+            bool inWindow = Mathf.Abs(DunkPressT - FlightDur) <= half;
+            if (inWindow) { FinishDunk(true); return; }
+            if (FlightT >= FlightDur) { FinishDunk(false); return; } // apertou cedo demais: erra ao tocar a cesta
+        }
+        else if (FlightT >= FlightDur + half) FinishDunk(false); // não apertou a tempo
+    }
+
+    void FinishDunk(bool ok)
+    {
+        var t = Tuning.I;
+        var rim = M.Geo.RimCenter[FlightHoop];
+        if (Flight == FlightKind.Dunk) { SkillFlash = 0.6f; SkillFlashOk = ok; }
+        if (ok)
+        {
+            BallLockoutTimer = 0.8f;
+            M.Ball.Throw(this, rim + Vector3.Up * 0.3f, new Vector3(0, -7f, 0), BallState.Shot);
+            Sfx.Play3D(M, "rim", rim, 2, 0.8f);
+            Sfx.Play3D(M, "board", rim, 0, 0.9f);
+            M.LogEvent(Flight == FlightKind.Dunk ? "DUNK_OK" : "TIP_OK", this);
+        }
+        else
+        {
+            // bola cai do lado da cesta; o jogador cai e fica atordoado
+            var side = Right;
+            BallLockoutTimer = 0.8f;
+            M.Ball.Drop(rim + side * (t.RimRadius + 0.45f) + Vector3.Up * 0.1f, side * 1.4f + Vector3.Down * 1f);
+            Sfx.Play3D(M, "rim", rim, 0, 1.25f);
+            _stunOnLand = true;
+            M.LogEvent("DUNK_FAIL", this);
+        }
+        EndFlight();
+    }
+
+    /// <summary>Termina o voo roteirizado: o jogador cai normalmente (gravidade).</summary>
+    public void EndFlight()
+    {
+        if (Flight == FlightKind.None) return;
+        Flight = FlightKind.None;
+        Airborne = true;
+        _airTime = 0;
+        _jumpVel = Vector3.Zero;
+        Velocity = Vector3.Zero;
     }
 
     public void SetNameVisible(bool v) { if (_nameLabel != null) _nameLabel.Visible = v; }

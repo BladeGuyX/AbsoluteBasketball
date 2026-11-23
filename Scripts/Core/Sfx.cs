@@ -89,6 +89,9 @@ public static class Sfx
         // fim do tempo: buzina em acorde, timbre arredondado
         Streams["horn"] = Make(0.9f, t => (Brass(t, 233.08f, 0.85f, 8) + Brass(t, 293.66f, 0.85f, 8)) * 0.13f);
 
+        // apito (falta): dois tons agudos com trinado
+        Streams["whistle"] = Make(0.55f, t => Mathf.Sin(Tau * (2650f + 120f * Mathf.Sin(Tau * 38f * t)) * t)
+            * Mathf.Min(1f, t / 0.02f) * Mathf.Min(1f, (0.55f - t) / 0.05f) * 0.22f);
         Streams["beep"] = Make(0.14f, t => Mathf.Sin(Tau * 660 * t) * Mathf.Min(1, (0.14f - t) * 30) * Mathf.Min(1, t / 0.005f) * 0.45f);
         Streams["go"] = Make(0.4f, t => Bell(t, 880f) * 0.5f + Bell(t - 0.06f, 1318.5f) * 0.35f);
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);

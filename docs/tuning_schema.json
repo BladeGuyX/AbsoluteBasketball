@@ -807,7 +807,7 @@
     "min": 4,
     "max": 50,
     "step": 0.5,
-    "default": 22
+    "default": 19
   },
   {
     "key": "AimPassLiftDeg",
@@ -827,7 +827,7 @@
     "min": 4,
     "max": 50,
     "step": 0.5,
-    "default": 14
+    "default": 12.5
   },
   {
     "key": "AimHighPassLiftDeg",
@@ -1070,6 +1070,116 @@
     "default": 0.8
   },
   {
+    "key": "DunkRange",
+    "section": "Enterrada e tapinha",
+    "label": "Dist\u00E2ncia para enterrar",
+    "desc": "Com a bola, correndo na dire\u00E7\u00E3o da cesta advers\u00E1ria e a at\u00E9 esta dist\u00E2ncia (m) do aro, o salto vira enterrada.",
+    "min": 0.5,
+    "max": 8,
+    "step": 0.1,
+    "default": 3
+  },
+  {
+    "key": "DunkMaxAngleDeg",
+    "section": "Enterrada e tapinha",
+    "label": "\u00C2ngulo da corrida",
+    "desc": "A corrida precisa estar dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta para enterrar.",
+    "min": 5,
+    "max": 90,
+    "step": 1,
+    "default": 45
+  },
+  {
+    "key": "DunkFlightTime",
+    "section": "Enterrada e tapinha",
+    "label": "Dura\u00E7\u00E3o do voo",
+    "desc": "Segundos do salto da enterrada at\u00E9 tocar a cesta (momento do skill check).",
+    "min": 0.3,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.8
+  },
+  {
+    "key": "DunkWindow",
+    "section": "Enterrada e tapinha",
+    "label": "Janela do skill check",
+    "desc": "Dura\u00E7\u00E3o (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais dif\u00EDcil.",
+    "min": 0.03,
+    "max": 0.6,
+    "step": 0.01,
+    "default": 0.12
+  },
+  {
+    "key": "DunkHandReach",
+    "section": "Enterrada e tapinha",
+    "label": "Alcance da m\u00E3o",
+    "desc": "Altura (m) da bola acima dos p\u00E9s com os bra\u00E7os esticados na enterrada.",
+    "min": 1.5,
+    "max": 3.5,
+    "step": 0.05,
+    "default": 2.3
+  },
+  {
+    "key": "DunkStunTime",
+    "section": "Enterrada e tapinha",
+    "label": "Atordoamento ao errar",
+    "desc": "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.",
+    "min": 0,
+    "max": 6,
+    "step": 0.1,
+    "default": 2
+  },
+  {
+    "key": "FoulDelay",
+    "section": "Enterrada e tapinha",
+    "label": "Pausa da falta",
+    "desc": "Segundos entre a falta (enterrada bloqueada) e o rein\u00EDcio do round.",
+    "min": 0,
+    "max": 4,
+    "step": 0.1,
+    "default": 1.2
+  },
+  {
+    "key": "TipBallRange",
+    "section": "Enterrada e tapinha",
+    "label": "Tapinha: bola perto do aro",
+    "desc": "Se a bola solta estiver a at\u00E9 esta dist\u00E2ncia (m) do aro, pular na dire\u00E7\u00E3o dela completa a cesta (sem skill check).",
+    "min": 0.2,
+    "max": 3,
+    "step": 0.05,
+    "default": 1.3
+  },
+  {
+    "key": "TipJumpRange",
+    "section": "Enterrada e tapinha",
+    "label": "Tapinha: dist\u00E2ncia do jogador",
+    "desc": "Dist\u00E2ncia m\u00E1xima (m) do jogador at\u00E9 o aro para o tapinha.",
+    "min": 0.5,
+    "max": 8,
+    "step": 0.1,
+    "default": 3.5
+  },
+  {
+    "key": "TipMaxAngleDeg",
+    "section": "Enterrada e tapinha",
+    "label": "Tapinha: \u00E2ngulo",
+    "desc": "O salto precisa ir dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta.",
+    "min": 10,
+    "max": 180,
+    "step": 1,
+    "default": 70
+  },
+  {
+    "key": "TipFlightTime",
+    "section": "Enterrada e tapinha",
+    "label": "Tapinha: dura\u00E7\u00E3o do voo",
+    "desc": "Segundos do salto do tapinha at\u00E9 a bola.",
+    "min": 0.15,
+    "max": 1.5,
+    "step": 0.05,
+    "default": 0.45
+  },
+  {
     "key": "DummyReactionTime",
     "section": "Bonecos de treino",
     "label": "Rea\u00E7\u00E3o do boneco",
@@ -1108,5 +1218,15 @@
     "max": 1.5,
     "step": 0.01,
     "default": 0.6
+  },
+  {
+    "key": "DummyGuardRange",
+    "section": "Bonecos de treino",
+    "label": "Marca\u00E7\u00E3o perto da cesta",
+    "desc": "Boneco advers\u00E1rio vai para a frente da cesta quando quem tem a bola chega a esta dist\u00E2ncia (m) dela. 0 = desliga.",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 7
   }
 ]

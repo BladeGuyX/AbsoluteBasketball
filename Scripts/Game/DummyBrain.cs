@@ -37,16 +37,30 @@ public sealed class DummyBrain
         _passStep = 0;
 
         if (!IsAllyOfLocal) DefendShots(ref inp, dt);
-        if (!P.Airborne && !P.ChargingJump) MoveTo(ref inp, P.HomePos, 0.6f);
+        if (!P.Airborne && !P.ChargingJump) MoveTo(ref inp, GuardSpot() ?? P.HomePos, 0.6f);
         var toBall = M.Ball.GlobalPosition - P.GlobalPosition; toBall.Y = 0;
         if (toBall.LengthSquared() > 0.01f) inp.AimYaw = ShotMath.YawOf(toBall);
         return inp;
     }
 
+    /// <summary>Adversário com a bola perto da cesta que defendo: fico entre ele e o aro.</summary>
+    Vector3? GuardSpot()
+    {
+        var t = Tuning.I;
+        var c = M.Ball.Holder;
+        if (IsAllyOfLocal || t.DummyGuardRange <= 0 || c == null || c.Team == P.Team) return null;
+        var rim = M.Geo.RimCenter[CourtGeo.AttackHoop(c.Team)];
+        var from = c.GlobalPosition - rim; from.Y = 0;
+        if (from.Length() > t.DummyGuardRange) return null;
+        var spot = rim + from.Normalized() * Mathf.Min(1.6f, from.Length() * 0.6f);
+        spot.Y = 0;
+        return spot;
+    }
+
     void DefendShots(ref PlayerInput inp, float dt)
     {
         var t = Tuning.I;
-        var threat = M.Players.FirstOrDefault(q => q.Team != P.Team && q.ChargingShot &&
+        var threat = M.Players.FirstOrDefault(q => q.Team != P.Team && (q.ChargingShot || q.Flight == FlightKind.Dunk) &&
             q.GlobalPosition.DistanceTo(P.GlobalPosition) <= t.DummyJumpRange);
         if (threat == null) { _jumpedForThreat = false; _react = 0; return; }
         if (_jumpedForThreat) return;

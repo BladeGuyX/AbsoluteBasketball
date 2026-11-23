@@ -21,6 +21,8 @@ public struct RigState
     public bool Landing;       // travado após pousar
     public float BallSide;     // +1 direita, −1 esquerda
     public bool Dribbling;     // drible especial (agachado, quique rápido)
+    public bool Dunking;       // voo da enterrada/tapinha (braços esticados para cima)
+    public bool Stunned;       // atordoado depois de errar a enterrada
 }
 
 /// <summary>
@@ -97,6 +99,7 @@ public sealed class PlayerRig
         if (s.JumpCharging) crouchTarget = 1.3f;
         if (s.Landing) crouchTarget = 0.8f;
         if (s.Dribbling) crouchTarget = t.DribbleCrouch;
+        if (s.Stunned && !s.Airborne) crouchTarget = 1.1f;
         _crouch = Mathf.Lerp(_crouch, crouchTarget, k);
         float rel = Mathf.Clamp(s.Release, 0, 1);
         float relWave = rel > 0 ? Mathf.Sin(Mathf.Pi * (1f - rel)) : 0f;
@@ -114,6 +117,7 @@ public sealed class PlayerRig
         if (s.Dribbling) leanTarget -= 0.3f; // tronco para frente (negativo = frente), protegendo a bola
         if (s.Dashing) leanTarget = -0.55f;
         if (s.Slowed) leanTarget = 0.25f;
+        if (s.Stunned) leanTarget = 0.35f + Mathf.Sin(_stride + Time.GetTicksMsec() / 260f) * 0.08f; // cambaleando
         _lean = Mathf.Lerp(_lean, leanTarget, k);
         _upper.Rotation = new Vector3(_lean, Mathf.Sin(_stride) * 0.08f * walking, 0);
 
@@ -136,7 +140,12 @@ public sealed class PlayerRig
 
         float r = t.BallRadius;
         var right = new Vector3(Mathf.Cos(s.Yaw), 0, -Mathf.Sin(s.Yaw));
-        if (s.HasBall && (s.Charging || s.PassCharging))
+        if (s.Dunking && !s.HasBall)
+        {
+            _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, 3.05f, k), 0, -0.12f);
+            _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, 3.05f, k), 0, 0.12f);
+        }
+        else if (s.HasBall && (s.Charging || s.PassCharging || s.Dunking))
         {
             PointArm(_armL, s.BallPos - right * (r + 0.03f), right);
             PointArm(_armR, s.BallPos + right * (r + 0.03f), right);
@@ -176,7 +185,7 @@ public sealed class PlayerRig
         }
         else
         {
-            float amp = s.Slowed ? 0.3f : 1.1f;
+            float amp = s.Slowed || s.Stunned ? 0.3f : 1.1f;
             _armL.Rotation = new Vector3(Mathf.Lerp(_armL.Rotation.X, -swing * amp, k), 0, -0.1f);
             _armR.Rotation = new Vector3(Mathf.Lerp(_armR.Rotation.X, swing * amp, k), 0, 0.1f);
         }

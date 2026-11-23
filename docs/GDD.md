@@ -82,6 +82,14 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - Carregando o salto, o boneco olha para a direção da câmera (pulos para os lados).
 - Botão padrão do drible no teclado: **E** (o mesmo do roubo; drible só com a bola, roubo só sem).
 
+## Revisões do usuário (v0.5) — prevalecem sobre as anteriores
+- Sem texto e nada chamativo, mas **com indicativos discretos** (ex.: se o passe é alto ou não).
+- Prévia da trajetória do arremesso precisa bater com o arremesso real.
+- Cursor nunca visível durante o jogo e nunca "congelado" depois do alt-tab (tela cheia).
+- Passe carregado um pouco mais fraco.
+- **Tapinha (novo):** bola bem pertinho da cesta + jogador do time que pontua nessa cesta pula na direção dela →
+  completa a cesta, sem skill check. Bloquear isso com salto **não** é falta (só bloquear enterrada é falta).
+
 ## Decisões de implementação (Claude)
 - **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
   (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.
@@ -103,6 +111,20 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   de pular. Bloqueia arremessos e passes altos do adversário (bola quica e cai; bloqueador não pega). Trava ao pousar.
 - **Roubo:** bote para frente; acerta quem tem a bola dentro de `StealReach`/`StealAngleDeg`. Alvo driblando, no ar ou
   carregando arremesso = falha. Falha = penalidade (lento, sem correr/pular/roubar).
+- **Enterrada (Etapa 3):** com a bola, **correndo (Shift)** na direção da cesta adversária (≤ `DunkMaxAngleDeg`) e a até
+  `DunkRange` do aro, o salto vira enterrada: voo roteirizado de `DunkFlightTime` até a bola ficar sobre o aro. Skill check:
+  anel em volta da mira, ponteiro vermelho gira 270° até o toque na cesta; zona branca = janela `DunkWindow` centrada no toque.
+  Apertar arremesso dentro da janela = cesta (2 pts). Apertar cedo = erra ao tocar; não apertar = erra no fim da janela.
+  Erro: bola cai do lado do aro, jogador cai e fica atordoado `DunkStunTime` (estrelinhas, anel cinza).
+- **Falta:** adversário NO AR encostando na mão/bola ou no corpo de quem está enterrando = falta: apito, pausa `FoulDelay`,
+  round recomeça (sem contagem) com quem sofreu a falta com a bola.
+- **Tapinha:** sem a bola, ao saltar: se a bola solta está a até `TipBallRange` do aro que meu time ataca, eu estou a até
+  `TipJumpRange` e o salto vai na direção da cesta → voo curto até a bola; ao pegar, completa a cesta. Bloqueio = sem falta.
+- **Indicativos sem texto (`AimIndicator`):** passe carregado: seta reta amarela (normal) / arco rosa (alto) abaixo da mira +
+  anel até o passe automático; arremesso: anel laranja até o automático; anéis curtos que esvaziam: drible (laranja),
+  roubo errado (vermelho), atordoado/pousando (cinza).
+- **Cursor:** o do Windows é sempre transparente; o visível é desenhado pelo jogo (`SoftCursor`). Modo do mouse só em
+  `GameRoot.UpdateMouse()`; ao voltar do foco reaplica o modo.
 - **Drible especial:** botão de drible com a bola (cargas; recarga contínua). A bola troca de mão; imune a roubo; mais lento;
   sem outras ações.
 - **Por tempo empatado:** prorrogação "próxima cesta vence".

@@ -17,6 +17,7 @@ public sealed class MatchConfig
     public int EnemyDummies = 1;     // bonecos de treino no time adversário
     public bool SmokeTest;           // --smoke-test (arremessos)
     public bool SmokeE2;             // --smoke-e2 (passe, drible, bloqueio, roubo)
+    public bool SmokeE3;             // --smoke-e3 (enterrada, tapinha, falta)
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
 
@@ -51,15 +52,17 @@ public partial class Match : Node3D
     PauseMenu _pause;
     AutoPilot _smoke;
     ScenarioPilot _scenario;
+    DunkScenario _dunkScenario;
     int _lastCountShown = -1;
     float _stuckTimer;
     float _smokeTime;
     int _nextPossession;
+    Player _nextCarrier;              // falta: quem sofreu recomeça com a bola
 
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.AutoPilotLocal;
 
     public override void _Ready()
     {
@@ -89,6 +92,7 @@ public partial class Match : Node3D
         Clock = Cfg.TimeMinutes * 60f;
         if (Cfg.SmokeTest || Cfg.AutoPilotLocal) _smoke = new AutoPilot(this, LocalPlayer);
         if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
+        if (Cfg.SmokeE3) _dunkScenario = new DunkScenario(this, LocalPlayer);
         StartRound(0, null, countdown: true);
     }
 
@@ -205,7 +209,8 @@ public partial class Match : Node3D
                 if (PhaseTimer <= 0)
                 {
                     if (Winner >= 0) EndMatch();
-                    else StartRound(_nextPossession, null, countdown: false);
+                    else StartRound(_nextPossession, _nextCarrier, countdown: false);
+                    _nextCarrier = null;
                 }
                 break;
         }
@@ -216,6 +221,7 @@ public partial class Match : Node3D
             if (p == LocalPlayer)
             {
                 if (_scenario != null) inp = _scenario.Build(dt);
+                else if (_dunkScenario != null) inp = _dunkScenario.Build(dt);
                 else if (_smoke != null) inp = _smoke.Build(dt);
                 else inp = _reader.Build(Cam, !InputBlocked);
             }
@@ -226,11 +232,13 @@ public partial class Match : Node3D
         var hit = Ball.ServerTick(dt);
         HandleBallHit(hit);
         if (CanMove && Ball.State is BallState.Shot or BallState.HighPass) CheckBlocks();
+        if (CanAct) CheckFlightBlocks();
         if (CanAct && Ball.State != BallState.Held) TryPickup();
         CheckStuckBall(dt);
 
         if (Cfg.SmokeTest) SmokeTick(dt);
         if (Cfg.SmokeE2) SmokeE2Tick(dt);
+        if (Cfg.SmokeE3) SmokeE3Tick(dt);
     }
 
     void HandleBallHit(BallHit hit)
@@ -308,6 +316,58 @@ public partial class Match : Node3D
         }
     }
 
+    /// <summary>
+    /// Salto do adversário na frente da mão de quem está enterrando = FALTA (round reinicia com quem sofreu, com a bola).
+    /// No tapinha, o bloqueio só derruba a jogada (sem falta), como qualquer outro salto.
+    /// </summary>
+    void CheckFlightBlocks()
+    {
+        var t = Tuning.I;
+        foreach (var f in Players)
+        {
+            if (f.Flight == FlightKind.None) continue;
+            var hand = f.GlobalPosition + Vector3.Up * t.DunkHandReach + f.Forward * 0.35f;
+            foreach (var p in Players)
+            {
+                if (!p.Airborne || p.Flight != FlightKind.None || p.Team == f.Team) continue;
+                var rel = hand - p.GlobalPosition;
+                float hd = new Vector2(rel.X, rel.Z).Length();
+                bool handHit = hd <= t.BlockRadius + t.BallRadius + 0.2f && rel.Y >= 0.8f && rel.Y <= t.BlockReach + t.BallRadius;
+                // corpo no caminho: defensor no ar cruzando a trajetória de quem voa (alturas se sobrepõem)
+                var bd = f.GlobalPosition - p.GlobalPosition;
+                float bodyH = new Vector2(bd.X, bd.Z).Length();
+                float fy0 = f.GlobalPosition.Y + 0.8f, fy1 = f.GlobalPosition.Y + t.DunkHandReach;
+                float py0 = p.GlobalPosition.Y, py1 = p.GlobalPosition.Y + t.BlockReach;
+                bool bodyHit = bodyH <= 0.9f && fy0 <= py1 && py0 <= fy1;
+                if (!handHit && !bodyHit) continue;
+                if (f.Flight == FlightKind.Dunk) { OnFoul(f, p); return; }
+                // tapinha bloqueado: sem falta
+                f.EndFlight();
+                if (Ball.Holder == f)
+                {
+                    var away = (f.GlobalPosition - p.GlobalPosition) with { Y = 0 };
+                    Ball.Drop(Ball.GlobalPosition, (away.LengthSquared() > 1e-4f ? away.Normalized() : f.Forward) * t.BlockBounceSpeed);
+                }
+                p.BallLockoutTimer = 0.5f;
+                Sfx.Play3D(this, "board", hand, -2, 0.8f);
+                LogEvent("BLOCK", p, f);
+                return;
+            }
+        }
+    }
+
+    void OnFoul(Player victim, Player fouler)
+    {
+        victim.EndFlight();
+        if (Ball.Holder != victim) Ball.GiveTo(victim);
+        Sfx.Play2D(this, "whistle", -6);
+        LogEvent("FOUL", fouler, victim);
+        _nextPossession = victim.Team;
+        _nextCarrier = victim;
+        Phase = MatchPhase.Scored;
+        PhaseTimer = Tuning.I.FoulDelay;
+    }
+
     void TryPickup()
     {
         Player best = null;
@@ -343,6 +403,7 @@ public partial class Match : Node3D
     {
         if (Automated) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
         _scenario?.OnEvent(kind, a, b);
+        _dunkScenario?.OnEvent(kind, a, b);
     }
 
     void CheckStuckBall(float dt)
@@ -363,7 +424,14 @@ public partial class Match : Node3D
         var lp = LocalPlayer;
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
 
-        if (Cfg.ScreenshotPath != null) ScreenshotTick((float)delta);
+        if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3) ScreenshotTick((float)delta);
+        // diagnóstico: --smoke-e3 --e3-shot <png> salva um print do skill check no meio da enterrada
+        if (Cfg.SmokeE3 && Cfg.ScreenshotPath != null && lp != null && lp.Flight == FlightKind.Dunk && lp.FlightT > lp.FlightDur * 0.6f)
+        {
+            GetViewport().GetTexture().GetImage().SavePng(Cfg.ScreenshotPath);
+            GD.Print("[SHOT] salvo " + Cfg.ScreenshotPath);
+            Cfg.ScreenshotPath = null;
+        }
     }
 
     float _shotT;
@@ -420,6 +488,18 @@ public partial class Match : Node3D
             GetTree().Quit(ok ? 0 : 1);
             Cfg.SmokeTest = false;
         }
+    }
+
+    void SmokeE3Tick(float dt)
+    {
+        _smokeTime += dt;
+        if (!_dunkScenario.Done && _smokeTime < 120f) return;
+        var s = _dunkScenario;
+        bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.TipOk && s.FoulOk && s.FoulCarrierOk;
+        GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} tapinha={s.TipOk} falta={s.FoulOk} " +
+                 $"bola_com_quem_sofreu={s.FoulCarrierOk} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
+        GetTree().Quit(ok ? 0 : 1);
+        Cfg.SmokeE3 = false;
     }
 
     void SmokeE2Tick(float dt)

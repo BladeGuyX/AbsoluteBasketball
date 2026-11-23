@@ -45,6 +45,7 @@ public partial class GameRoot : Node
 
         _ui = new CanvasLayer { Layer = 20 };
         AddChild(_ui);
+        SetupCursor(args);
         _toast = UiKit.Outlined("", 22, Colors.White, HorizontalAlignment.Right, 8);
         _ui.AddChild(UiKit.Anchor(_toast, 1, 0, 1, 0, -1200, 120, -20, 160));
 
@@ -81,6 +82,14 @@ public partial class GameRoot : Node
         {
             Engine.TimeScale = 2.0;
             StartMatch(new MatchConfig { SmokeTest = true, Size = CourtSize.Medium, TargetScore = 99, AllyDummies = 0, EnemyDummies = 0 });
+            return;
+        }
+        if (args.Contains("--smoke-e3"))
+        {
+            Engine.TimeScale = 2.0;
+            int ei = Array.IndexOf(args, "--e3-shot");
+            StartMatch(new MatchConfig { SmokeE3 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 0, EnemyDummies = 1,
+                ScreenshotPath = ei >= 0 && ei + 1 < args.Length ? args[ei + 1] : null });
             return;
         }
         if (args.Contains("--smoke-e2"))
@@ -207,16 +216,33 @@ public partial class GameRoot : Node
         {
             if (_match != null && IsInstanceValid(_match)) _match.OnFocusLost();
         }
-        else if (what == NotificationApplicationFocusIn)
+        else if (what == NotificationApplicationFocusIn || what == NotificationWMWindowFocusIn)
         {
             CameraRig.IgnoreMouseUntilMs = Time.GetTicksMsec() + 250;
-            _mouseRefresh = 3;
+            _mouseRefresh = 6;
         }
     }
 
     int _mouseRefresh;
 
-    /// <summary>Único lugar que define o modo do mouse: preso/escondido jogando; visível em menus, pausa e fim de jogo.</summary>
+    /// <summary>
+    /// Cursor do Windows sempre TRANSPARENTE (em tela cheia ele congelava/reaparecia depois do alt-tab);
+    /// o cursor visível é o SoftCursor, desenhado pelo jogo na posição real do mouse.
+    /// </summary>
+    void SetupCursor(string[] args)
+    {
+        var img = Image.CreateEmpty(16, 16, false, Image.Format.Rgba8);
+        img.Fill(new Color(0, 0, 0, 0));
+        var tex = ImageTexture.CreateFromImage(img);
+        foreach (Input.CursorShape shape in System.Enum.GetValues(typeof(Input.CursorShape)))
+            Input.SetCustomMouseCursor(tex, shape, Vector2.Zero);
+        if (args.Contains("--screenshot") || args.Contains("--smoke-test") || args.Contains("--smoke-e2") || args.Contains("--smoke-e3")) return;
+        var layer = new CanvasLayer { Layer = 128 };
+        AddChild(layer);
+        layer.AddChild(new SoftCursor { Name = "SoftCursor" });
+    }
+
+    /// <summary>Único lugar que define o modo do mouse: preso jogando; visível em menus, pausa e fim de jogo.</summary>
     void UpdateMouse()
     {
         if (!DisplayServer.WindowIsFocused()) return;
@@ -224,13 +250,11 @@ public partial class GameRoot : Node
         var want = capture ? Input.MouseModeEnum.Captured : Input.MouseModeEnum.Visible;
         if (_mouseRefresh > 0)
         {
-            // ao voltar do alt-tab: força o Windows a redesenhar o cursor (esconde 1 quadro, mostra e reposiciona)
+            // ao voltar do alt-tab: reaplica o modo (passa por outro modo e volta) para o Windows
+            // refazer a captura/esconder o cursor — setar o mesmo modo não faz nada.
             _mouseRefresh--;
-            if (!capture)
-            {
-                if (_mouseRefresh == 2) { Input.MouseMode = Input.MouseModeEnum.Hidden; return; }
-                if (_mouseRefresh == 1) { Input.MouseMode = Input.MouseModeEnum.Visible; Input.WarpMouse(GetViewport().GetMousePosition()); return; }
-            }
+            if (_mouseRefresh == 3) { Input.MouseMode = capture ? Input.MouseModeEnum.Visible : Input.MouseModeEnum.Hidden; return; }
+            if (_mouseRefresh == 2) { Input.MouseMode = want; return; }
         }
         if (Input.MouseMode != want) Input.MouseMode = want;
     }

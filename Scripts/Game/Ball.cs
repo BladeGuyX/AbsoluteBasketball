@@ -123,7 +123,7 @@ public partial class Ball : Node3D
         if (hd > t.PickupRadius + t.BallRadius) return false;
         if (d.Y < -0.3f || d.Y > t.CatchHeight) return false;
         // arremesso e passe alto subindo: ninguém pega (só o bloqueio no salto interfere)
-        if ((State == BallState.Shot || State == BallState.HighPass) && Vel.Y > 0) return false;
+        if ((State == BallState.Shot || State == BallState.HighPass) && Vel.Y > 0 && p.Flight != FlightKind.Tip) return false;
         return true;
     }
 }

@@ -3,6 +3,38 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.5 — Indicativos, prévia, cursor + Etapa 3 (enterrada e tapinha)
+
+**Antes:** apague o `Build\tuning.json` antigo. Jogue em **tela cheia** (onde aconteciam os problemas do cursor).
+
+**Cursor (tela cheia)**
+1. No menu principal o cursor aparece normalmente. Dê alt-tab, volte e mexa o mouse: o cursor acompanha na hora.
+2. Comece a partida: sem cursor. Dê alt-tab e volte (abre a pausa, com cursor). Continue: **sem cursor**. Repita 3 vezes.
+
+**Indicativos (sem texto)**
+3. Segure o passe: aparece uma **seta reta amarela** abaixo da mira e um anel enchendo (passe automático em 4 s). Aperte **R/Y**: vira um **arco rosa** (passe alto).
+4. Segure o arremesso: anel laranja em volta da mira enchendo até o arremesso automático.
+5. Drible (E com a bola): anel laranja curto esvaziando. Erre um roubo: anel vermelho. Ao pousar de um salto: anel cinza rápido.
+
+**Prévia e passe**
+6. Faça uns 10 arremessos de vários lugares (parado e andando): a bola deve seguir **exatamente** os pontos amarelos.
+7. Passe carregado: a bola vai um pouco menos longe/forte que antes.
+
+**Enterrada (Etapa 3)**
+8. Com a bola, **corra (Shift)** direto para a cesta adversária e aperte **Espaço** a menos de ~3 m: o jogador voa até o aro e aparece o **skill check** (anel com zona branca à esquerda e ponteiro vermelho).
+9. Aperte o **botão esquerdo** quando o ponteiro estiver na zona branca (= quando a bola toca a cesta): a zona fica verde e é cesta (+2).
+10. Erre de propósito (aperte cedo ou não aperte): zona vermelha, a bola cai do lado do aro, o jogador cai e fica **atordoado 2 s** (estrelinhas, anel cinza, não anda nem age).
+11. Andando (sem correr) ou de longe/de lado, Espaço com a bola não faz nada.
+
+**Falta**
+12. Ande devagar com a bola até perto da cesta adversária: o boneco adversário vai para a frente da cesta. Corra e enterre por cima dele: ele pula, **apito**, e o round recomeça com **você com a bola** (sem contagem).
+   (Se você chegar rápido, ele não dá tempo de chegar — enterrada livre.)
+
+**Tapinha**
+13. Arremesse na cesta adversária e corra para baixo dela. Quando a bola estiver quicando no aro/bem perto dele, pule **na direção da cesta**: o jogador voa até a bola e completa a cesta sozinho (sem skill check).
+14. Se um adversário pular e bloquear um tapinha, **não** é falta.
+
+---
 ## v0.4 — Revisão da Etapa 2 (arremesso, passe carregado, HUD limpa, mouse, drible)
 
 **Antes:** apague o `Build\tuning.json` antigo (o jogo recria com os valores novos).

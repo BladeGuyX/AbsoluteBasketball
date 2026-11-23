@@ -46,6 +46,7 @@ public partial class Hud : CanvasLayer
         var cross = new ColorRect { Color = new Color(1, 1, 1, 0.8f), Size = new Vector2(6, 6), MouseFilter = Control.MouseFilterEnum.Ignore };
         UiKit.Anchor(cross, 0.5f, 0.5f, 0.5f, 0.5f, -3, -3, 3, 3);
         root.AddChild(cross);
+        root.AddChild(UiKit.FullRect(new AimIndicator { M = M }));
 
         // ---- barras ----
         var bottom = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(420, 0) };
@@ -66,7 +67,7 @@ public partial class Hud : CanvasLayer
         row.AddChild(_dribblePips);
         bottom.AddChild(row);
 
-        var hint = UiKit.Outlined("Esq. arremesso (câmera = distância) · Dir. passe (toque = aliado, segurar = mirar; R = alto) · Espaço salto · E drible / roubo · Shift correr · Esc pausa · F5 tuning",
+        var hint = UiKit.Outlined("Esq. arremesso · Dir. passe (R = alto) · Espaço salto / enterrada (Esq. ao tocar o aro) · E drible / roubo · Shift correr · Esc pausa",
             18, new Color(1, 1, 1, 0.85f), HorizontalAlignment.Left, 6);
         UiKit.Anchor(hint, 0, 1, 0, 1, 20, -44, 1500, -12);
         root.AddChild(hint);

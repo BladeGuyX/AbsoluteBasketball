@@ -50,6 +50,7 @@ public sealed class Tuning
     const string SJump = "Salto e bloqueio";
     const string SSteal = "Roubo";
     const string SDrib = "Drible";
+    const string SDunk = "Enterrada e tapinha";
     const string SDummy = "Bonecos de treino";
 
     // ---------------- Movimento ----------------
@@ -229,11 +230,11 @@ public sealed class Tuning
     [Param(SPass, "Altura do passe alto", "Altura máxima (m) que o passe rápido alto atinge.", 3, 12, 0.1f)]
     public float HighPassApex = 5.0f;
     [Param(SPass, "Passe carregado: velocidade", "Velocidade (m/s) da bola no passe carregado normal (lançado na direção da câmera).", 4, 50, 0.5f)]
-    public float AimPassSpeed = 22f;
+    public float AimPassSpeed = 19f;
     [Param(SPass, "Passe carregado: elevação", "Graus somados à inclinação da câmera no passe carregado normal (compensa a gravidade).", -20, 45, 0.5f)]
     public float AimPassLiftDeg = 6f;
     [Param(SPass, "Passe carregado alto: velocidade", "Velocidade (m/s) da bola no passe carregado alto.", 4, 50, 0.5f)]
-    public float AimHighPassSpeed = 14f;
+    public float AimHighPassSpeed = 12.5f;
     [Param(SPass, "Passe carregado alto: elevação", "Graus somados à inclinação da câmera no passe carregado alto.", 0, 80, 0.5f)]
     public float AimHighPassLiftDeg = 32f;
     [Param(SPass, "Passe automático", "Segurando o passe por esse tempo (s), o jogador passa sozinho na direção da câmera.", 0.5f, 10, 0.1f)]
@@ -289,6 +290,30 @@ public sealed class Tuning
     [Param(SDrib, "Agachamento driblando", "Quanto o boneco agacha durante o drible (0 = nada, 1 = como carregando o salto).", 0, 1.3f, 0.05f)]
     public float DribbleCrouch = 0.8f;
 
+    // ---------------- Enterrada e tapinha ----------------
+    [Param(SDunk, "Distância para enterrar", "Com a bola, correndo na direção da cesta adversária e a até esta distância (m) do aro, o salto vira enterrada.", 0.5f, 8, 0.1f)]
+    public float DunkRange = 3f;
+    [Param(SDunk, "Ângulo da corrida", "A corrida precisa estar dentro deste ângulo (graus) da direção da cesta para enterrar.", 5, 90, 1)]
+    public float DunkMaxAngleDeg = 45f;
+    [Param(SDunk, "Duração do voo", "Segundos do salto da enterrada até tocar a cesta (momento do skill check).", 0.3f, 2, 0.05f)]
+    public float DunkFlightTime = 0.8f;
+    [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
+    public float DunkWindow = 0.12f;
+    [Param(SDunk, "Alcance da mão", "Altura (m) da bola acima dos pés com os braços esticados na enterrada.", 1.5f, 3.5f, 0.05f)]
+    public float DunkHandReach = 2.3f;
+    [Param(SDunk, "Atordoamento ao errar", "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.", 0, 6, 0.1f)]
+    public float DunkStunTime = 2f;
+    [Param(SDunk, "Pausa da falta", "Segundos entre a falta (enterrada bloqueada) e o reinício do round.", 0, 4, 0.1f)]
+    public float FoulDelay = 1.2f;
+    [Param(SDunk, "Tapinha: bola perto do aro", "Se a bola solta estiver a até esta distância (m) do aro, pular na direção dela completa a cesta (sem skill check).", 0.2f, 3, 0.05f)]
+    public float TipBallRange = 1.3f;
+    [Param(SDunk, "Tapinha: distância do jogador", "Distância máxima (m) do jogador até o aro para o tapinha.", 0.5f, 8, 0.1f)]
+    public float TipJumpRange = 3.5f;
+    [Param(SDunk, "Tapinha: ângulo", "O salto precisa ir dentro deste ângulo (graus) da direção da cesta.", 10, 180, 1)]
+    public float TipMaxAngleDeg = 70f;
+    [Param(SDunk, "Tapinha: duração do voo", "Segundos do salto do tapinha até a bola.", 0.15f, 1.5f, 0.05f)]
+    public float TipFlightTime = 0.45f;
+
     // ---------------- Bonecos de treino ----------------
     [Param(SDummy, "Reação do boneco", "Atraso (s) para o boneco adversário pular contra um arremesso.", 0, 2, 0.05f)]
     public float DummyReactionTime = 0.3f;
@@ -298,6 +323,8 @@ public sealed class Tuning
     public float DummyPassBackDelay = 0.8f;
     [Param(SDummy, "Velocidade do boneco", "Multiplicador de velocidade dos bonecos quando andam.", 0, 1.5f, 0.01f)]
     public float DummySpeedMult = 0.6f;
+    [Param(SDummy, "Marcação perto da cesta", "Boneco adversário vai para a frente da cesta quando quem tem a bola chega a esta distância (m) dela. 0 = desliga.", 0, 20, 0.5f)]
+    public float DummyGuardRange = 7f;
 
     // =====================================================================
 
