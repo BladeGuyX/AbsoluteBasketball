@@ -46,7 +46,7 @@ public partial class GameRoot : Node
         if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GetTree().Quit(); return; }
 
         // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
-        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--video-test");
+        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
         if (!automated)
         {
             if (SteamService.RelaunchForOverlay(args)) { GetTree().Quit(); return; }
@@ -54,6 +54,14 @@ public partial class GameRoot : Node
         }
         else if (args.Contains("--steam-test")) SteamService.Init();
         AddChild(new NetSession { Name = "Net" });
+        AddChild(new Updater { Name = "Updater" });
+        if (!automated) Callable.From(() => Updater.I?.Check()).CallDeferred(); // procura versão nova no GitHub
+        if (args.Contains("--print-version"))
+        {
+            File.WriteAllText(Path.Combine(Path.GetDirectoryName(OS.GetExecutablePath()) ?? ".", "version_check.txt"), GameVersion.Number);
+            GD.Print("[VERSION] v" + GameVersion.Number); GetTree().Quit(); return;
+        }
+        if (args.Contains("--update-test")) { Updater.I.Auto = true; Callable.From(() => Updater.I.Check()).CallDeferred(); return; }
         InputDevice.LogPads();
 
         _ui = new CanvasLayer { Layer = 20 };

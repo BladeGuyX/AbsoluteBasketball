@@ -29,7 +29,7 @@ public partial class MainMenu : Control
         _box.AddThemeConstantOverride("separation", 16);
         center.AddChild(_box);
 
-        var ver = UiKit.Outlined("v0.11 · Etapa 7", 20, Colors.White, HorizontalAlignment.Right, 6);
+        var ver = UiKit.Outlined(GameVersion.Label, 20, Colors.White, HorizontalAlignment.Right, 6);
         AddChild(UiKit.Anchor(ver, 1, 1, 1, 1, -520, -44, -20, -12));
         ShowHome();
     }
@@ -49,8 +49,35 @@ public partial class MainMenu : Control
         _box.AddChild(Centered(play));
         _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 420)));
         _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 420)));
+        _update = UiKit.Btn("", () => Updater.I?.Activate(), 420);
+        _box.AddChild(Centered(_update));
         _box.AddChild(Centered(UiKit.Btn("Sair", () => GetTree().Quit(), 420)));
+        RefreshUpdate();
         play.CallDeferred(Control.MethodName.GrabFocus);
+    }
+
+    // ---------- atualização (GitHub Releases) ----------
+    Button _update;
+
+    public override void _EnterTree() { if (Updater.I != null) Updater.I.Changed += RefreshUpdate; }
+    public override void _ExitTree() { if (Updater.I != null) Updater.I.Changed -= RefreshUpdate; }
+
+    void RefreshUpdate()
+    {
+        if (_update == null || !IsInstanceValid(_update)) return;
+        var u = Updater.I;
+        _update.Disabled = u == null || u.Busy;
+        _update.Modulate = u?.State == Updater.St.Available ? new Color(0.6f, 1.6f, 0.6f) : Colors.White;
+        _update.Text = u == null ? "Atualizar" : u.State switch
+        {
+            Updater.St.Checking => "Procurando atualização...",
+            Updater.St.UpToDate => $"Atualizado (v{GameVersion.Number})",
+            Updater.St.Available => Updater.CanInstall ? $"Atualizar para v{u.Latest}" : $"v{u.Latest} disponível (só na build)",
+            Updater.St.Downloading => $"Baixando v{u.Latest}... {u.Progress * 100:0}%",
+            Updater.St.Installing => "Instalando... o jogo vai reabrir",
+            Updater.St.Failed => "Atualizar (erro: " + u.Error + ")",
+            _ => "Procurar atualização",
+        };
     }
 
     static Control Centered(Control c)

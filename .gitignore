@@ -7,3 +7,5 @@ Build/*
 tuning.json
 art_source/previews/
 *.blend1
+dist/
+Build.rar

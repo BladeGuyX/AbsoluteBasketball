@@ -3,6 +3,18 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.12 — Publicado no GitHub + botão Atualizar
+
+**Primeira instalação (você e seus amigos)**
+1. Baixe o `AbsoluteBasketball-windows.zip` em https://github.com/BladeGuyX/AbsoluteBasketball/releases/latest, extraia numa pasta (fora de "Arquivos de Programas") e abra o `AbsoluteBasketball.exe`.
+2. No menu principal aparece o botão **"Atualizado (v0.12)"** (depois de "Procurando atualização..."). No canto: "v0.12 · Etapa 7".
+
+**Quando sair uma versão nova**
+3. Abra o jogo: o botão fica verde, **"Atualizar para vX"**. Clique: mostra "Baixando... %", o jogo fecha, abre uma janelinha azul "Atualizando...", e o jogo reabre já na versão nova.
+4. Se der erro: o botão mostra o motivo; o log fica em `%TEMP%\AbsoluteBasketball-update.log`. Dá sempre para baixar o .zip à mão no link acima.
+5. Seus valores de `tuning.json` ficam guardados em `tuning.old.json` (a versão nova começa com os valores padrão dela).
+
+---
 ## v0.11 — Enterrada no X, pulo só ao soltar (início da Etapa 7)
 
 1. Com controle: corra para a cesta com a bola até aparecerem as setinhas verdes e aperte **X** — sai a enterrada (o skill check continua no RT). O A também enterra.

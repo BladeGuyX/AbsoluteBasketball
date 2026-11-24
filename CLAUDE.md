@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.11 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Etapa 6 feita (ícones, vibração, câmera, arremesso no pulo, enterrada no X). Em andamento: **Etapa 7 (arte)** — tudo preparado, guia em `docs/ARTE.md`; o usuário vai mandar as concept arts num chat novo.**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.12 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Etapa 6 feita (ícones, vibração, câmera, arremesso no pulo, enterrada no X). Em andamento: **Etapa 7 (arte)** — tudo preparado, guia em `docs/ARTE.md`; o usuário vai mandar as concept arts num chat novo.**
 - `docs/ARTE.md` — **guia da Etapa 7** (fluxo Blender → .glb → Godot, convenções, medidas, animações, integração). Ler antes de modelar.
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
@@ -20,6 +20,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Decisões do usuário a lembrar
 - **Multiplayer pela Steam** (Steamworks, sem publicar: AppID de teste 480/Spacewar, como já foi feito em outro jogo do usuário). Só na Etapa 5.
 - Controle de versão: **git** neste diretório (commits só quando o usuário pedir ou ao fechar uma entrega combinada).
+- **Publicação (v0.12):** repositório PÚBLICO https://github.com/BladeGuyX/AbsoluteBasketball (escolha do usuário). Os amigos instalam pelo .zip dos Releases e atualizam pelo botão "Atualizar" do menu. **A cada entrega:** subir `Scripts/Core/GameVersion.cs` (`Number`) e rodar `powershell -ExecutionPolicy Bypass -File toolselease.ps1 -Notes "..."` (builda, testa, zipa `Build\` sem tuning.json, faz push e cria a release com `gh`). Sem release nova, os amigos não recebem a mudança.
 - Revisões de regras (v0.2 a v0.9) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
 
 ## Ferramentas instaladas
@@ -80,6 +81,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - v0.10: arremesso no pulo em `Player.ServerTick` (com bola + `ChargingShot` → `HandleJump`; no ar só `HandleShot`; pouso com `ChargingShot` → `ReleaseShot`). `HandleJump` pula sozinho quando a carga enche. Teste: passos 5 e 6 do `--smoke-e2` (`pulo_arremesso_pouso` / `pulo_arremesso_ar`).
 - v0.11: enterrada também pelo botão de roubo quando é separado do drible (`Player.WantsDunk`: X no controle; no teclado E = drible+roubo, então não conta). Pulo só ao soltar. E3 faz a 1ª enterrada pelo X.
 - Etapa 7: `art_source/` (com `.gdignore`; `scripts/ab_common.py`, `make_rig_base.py`, `pipeline_test.py`, `render_preview.py`; `blend/rig_base.blend`; `concepts/`; `previews/` fora do git), `tools/blender.ps1` (roda script do Blender headless; Blender 5.3 em Program Files), `tools/inspect_glb.py`, `Scripts/Core/ArtCheck.cs` (`--inspect-model assets/models/x.glb`).
+- Atualizador: `Scripts/Core/Updater.cs` (nó filho do GameRoot; consulta `api.github.com/repos/BladeGuyX/AbsoluteBasketball/releases/latest`, asset `AbsoluteBasketball-windows.zip`; instala só na build exportada via script PowerShell que espera o jogo fechar, extrai por cima, renomeia tuning.json → tuning.old.json e reabre). Versão: `GameVersion.Number`/`Label` (menu). Teste: `AbsoluteBasketball.exe -- --update-test` numa cópia com versão menor (a cópia reaberta roda `--print-version` e grava `version_check.txt`).
 - **Lembrar o usuário em toda entrega:** a predição do próprio jogador no cliente online está pendente (não fazer até ele pedir).
 - **Controle que não responde:** com a Steam iniciada (AppID 480 = Spacewar), o Steam Input do Spacewar captura o controle (o `localconfig.vdf` do usuário mostra `controller_config/480` em uso). Solução do lado do usuário: desativar o Steam Input do Spacewar. Diagnóstico: `InputDevice.PadReport()` (Configurações → Controles) e `[PAD]` no log.
 - `Scripts/UI/`: `OnlineMenu` (Steam: criar só amigos/público, código, procurar; IP direto: hospedar/entrar), `LobbyMenu` (times, configurações do host, convidar amigos, começar/sair), `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
