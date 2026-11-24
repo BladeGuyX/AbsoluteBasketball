@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.9 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle) — primeira parte pronta: ícones de botões, vibração, ajustes de câmera.**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.10 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle) — primeira parte pronta: ícones de botões, vibração, ajustes de câmera; v0.10: arremesso no pulo, pulo mais rápido, rodapé menor, diagnóstico de controle.**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -76,6 +76,8 @@ O usuário fala português (pt-BR) — responda em pt-BR.
   - O build.ps1 compila também a DLL de depuração (os testes headless usam ela — antes rodavam código velho se você não compilasse à mão).
   - NetId de cliente é SEMPRE positivo (NetId < 0 = bot na escalação). O `SteamTransport` mapeia cada handle da Steam (uint grande, virava negativo) para 1, 2, 3... — bug da v0.8: o amigo virava bot.
 - Etapa 6: `Scripts/Core/InputDevice.cs` (último dispositivo usado, alimentado em `GameRoot._Input`; `Glyph(action)` = nome curto do botão atual), `Scripts/UI/HintBar.cs` (rodapé com teclinhas; redesenha ao trocar dispositivo ou `InputSetup.Revision`), `Scripts/Game/Rumble.cs` (vibração por transições de estado do jogador local — vale no cliente online; forças no Tuning "Vibração (controle)"), câmera: `UserSettings.InvertX/FovOffset/CameraDistanceMult/Vibration/VibrationStrength`, Tuning `StickLookExponent`/`ChargeLookMult`. Print com ícones do controle: `--screenshot <png> --pad`.
+- v0.10: arremesso no pulo em `Player.ServerTick` (com bola + `ChargingShot` → `HandleJump`; no ar só `HandleShot`; pouso com `ChargingShot` → `ReleaseShot`). `HandleJump` pula sozinho quando a carga enche. Teste: passos 5 e 6 do `--smoke-e2` (`pulo_arremesso_pouso` / `pulo_arremesso_ar`).
+- **Controle que não responde:** com a Steam iniciada (AppID 480 = Spacewar), o Steam Input do Spacewar captura o controle (o `localconfig.vdf` do usuário mostra `controller_config/480` em uso). Solução do lado do usuário: desativar o Steam Input do Spacewar. Diagnóstico: `InputDevice.PadReport()` (Configurações → Controles) e `[PAD]` no log.
 - `Scripts/UI/`: `OnlineMenu` (Steam: criar só amigos/público, código, procurar; IP direto: hospedar/entrar), `LobbyMenu` (times, configurações do host, convidar amigos, começar/sair), `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
 - Convenções: cesta 0 em −X, cesta 1 em +X; time 0 (AZUL) ataca a 1, time 1 (LARANJA) ataca a 0. Yaw: frente = (−sin, 0, −cos).
 - **Uma classe Godot por arquivo, com o mesmo nome do arquivo** (requisito do C# da Godot).

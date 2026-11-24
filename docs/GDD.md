@@ -117,6 +117,11 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Ninguém fica em cima de outro jogador.**
 - Investigar o crash (0xc000001d no motor): guardas contra NaN e logs preservados.
 
+## Revisões do usuário (v0.10) — prevalecem sobre as anteriores
+- **Arremesso no pulo:** carregando o arremesso dá para pular, em qualquer direção (a do movimento). No ar, soltar o botão arremessa dali; se tocar o chão ainda carregando, arremessa automaticamente.
+- **Pulo mais rápido:** carga do salto 0,18 s (antes 0,3); um toque pula ao soltar e, segurando, pula sozinho quando a carga enche (não fica mais agachado esperando). A trava ao pousar não mudou.
+- Rodapé de controles menor.
+
 ## Decisões de implementação (Claude)
 - **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
   `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.

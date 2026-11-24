@@ -913,11 +913,11 @@
     "key": "JumpChargeTime",
     "section": "Salto e bloqueio",
     "label": "Tempo de carga do salto",
-    "desc": "Segundos segurando para o salto mais alto (parado enquanto carrega).",
+    "desc": "Segundos segurando para o salto mais alto (parado enquanto carrega). Um toque pula ao soltar; segurando, pula sozinho quando a carga enche.",
     "min": 0.05,
     "max": 2,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.18
   },
   {
     "key": "JumpCarry",

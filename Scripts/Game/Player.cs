@@ -138,9 +138,14 @@ public partial class Player : CharacterBody3D
         // ---------- ações ----------
         if (HasBall)
         {
-            ChargingJump = false;
             StealDash = 0;
-            if (canAct && !IsDribbling)
+            if (Airborne && ChargingShot && M.CanAct && Stun <= 0)
+            {
+                // arremesso no pulo (v0.10): solta no ar quando quiser; se tocar o chão carregando, arremessa sozinho
+                ChargingJump = false;
+                HandleShot(inp, dt);
+            }
+            else if (canAct && !IsDribbling)
             {
                 if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Dribble) && DribbleCharges > 0) StartDribble();
                 else if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Jump) && CanDunk()) StartDunk();
@@ -148,9 +153,12 @@ public partial class Player : CharacterBody3D
                 {
                     if (!ChargingPass) HandleShot(inp, dt);
                     if (!ChargingShot) HandlePass(inp, dt);
+                    // carregando o arremesso dá para pular (qualquer direção)
+                    if (ChargingShot) HandleJump(inp, dt, wish);
+                    else ChargingJump = false;
                 }
             }
-            else { CancelShot(false); CancelPass(); }
+            else { CancelShot(false); CancelPass(); ChargingJump = false; }
         }
         else
         {
@@ -211,6 +219,7 @@ public partial class Player : CharacterBody3D
             if (_airTime > 0.08f && IsOnFloor() && !onPlayer)
             {
                 Airborne = false;
+                if (HasBall && ChargingShot) ReleaseShot(); // pulou carregando e não soltou: arremessa ao tocar o chão
                 if (_stunOnLand) { _stunOnLand = false; Stun = t.DunkStunTime; }
                 else LandLock = t.LandLockTime;
                 _jumpVel = Vector3.Zero;
@@ -425,7 +434,8 @@ public partial class Player : CharacterBody3D
         if (!ChargingJump) return;
         JumpCharge = Mathf.Min(JumpCharge + dt, t.JumpChargeTime);
         if (wish.LengthSquared() > 0.01f) { _jumpWish = wish; _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0; }
-        if (inp.IsHeld(Btn.Jump)) return;
+        // pula ao soltar ou, segurando, assim que a carga enche (v0.10: não fica mais esperando agachado)
+        if (inp.IsHeld(Btn.Jump) && JumpCharge < t.JumpChargeTime) return;
 
         // pula: direção vem do movimento antes de pular, quase sem controle no ar
         float k = t.JumpChargeTime > 0 ? JumpCharge / t.JumpChargeTime : 1f;

@@ -857,9 +857,9 @@ public partial class Match : Node3D
         _smokeTime += dt;
         if (!_scenario.Done && _smokeTime < 70f) return;
         var s = _scenario;
-        bool ok = s.PassOk && s.ReturnOk && s.AimPassOk && s.DribbleOk && s.JumpOk && s.StealOk;
+        bool ok = s.PassOk && s.ReturnOk && s.AimPassOk && s.DribbleOk && s.JumpOk && s.StealOk && s.JumpShotLandOk && s.JumpShotAirOk;
         GD.Print($"[E2] passe={s.PassOk} devolução={s.ReturnOk} passe_carregado={s.AimPassOk} drible={s.DribbleOk} boneco_pulou={s.JumpOk} toco={s.BlockOk} " +
-                 $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} -> {(ok ? "OK" : "FALHOU")}");
+                 $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} pulo_arremesso_pouso={s.JumpShotLandOk} pulo_arremesso_ar={s.JumpShotAirOk} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE2 = false;
     }

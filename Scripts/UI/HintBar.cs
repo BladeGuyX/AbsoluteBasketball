@@ -17,7 +17,7 @@ public partial class HintBar : HBoxContainer
     public override void _Ready()
     {
         MouseFilter = MouseFilterEnum.Ignore;
-        AddThemeConstantOverride("separation", 8);
+        AddThemeConstantOverride("separation", 5);
         InputDevice.Changed += Rebuild;
         Rebuild();
     }
@@ -41,16 +41,16 @@ public partial class HintBar : HBoxContainer
             if (action == Act.Dribble && !same)
             {
                 AddChild(Cap(InputDevice.Glyph(Act.Steal)));
-                var ls = UiKit.Outlined("roubo", 18, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 6);
+                var ls = UiKit.Outlined("roubo", 13, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 4);
                 ls.MouseFilter = MouseFilterEnum.Ignore;
                 AddChild(ls);
-                AddChild(new Control { CustomMinimumSize = new Vector2(10, 0), MouseFilter = MouseFilterEnum.Ignore });
+                AddChild(new Control { CustomMinimumSize = new Vector2(6, 0), MouseFilter = MouseFilterEnum.Ignore });
             }
             AddChild(Cap(InputDevice.Glyph(action)));
-            var l = UiKit.Outlined(text, 18, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 6);
+            var l = UiKit.Outlined(text, 13, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 4);
             l.MouseFilter = MouseFilterEnum.Ignore;
             AddChild(l);
-            AddChild(new Control { CustomMinimumSize = new Vector2(10, 0), MouseFilter = MouseFilterEnum.Ignore });
+            AddChild(new Control { CustomMinimumSize = new Vector2(6, 0), MouseFilter = MouseFilterEnum.Ignore });
         }
     }
 
@@ -62,14 +62,14 @@ public partial class HintBar : HBoxContainer
         {
             "A" => new Color("2f9e44"), "B" => new Color("d9480f"), "X" => new Color("1c7ed6"), _ => new Color("f08c00"),
         };
-        var p = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(face ? 34 : 30, 30) };
-        var sb = UiKit.Box(col, face ? 17 : 7, face ? 6 : 8, 2);
+        var p = new PanelContainer { MouseFilter = MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(face ? 24 : 22, 22) };
+        var sb = UiKit.Box(col, face ? 12 : 5, face ? 4 : 5, 1);
         sb.BorderColor = new Color(1, 1, 1, 0.55f);
         sb.SetBorderWidthAll(2);
         p.AddThemeStyleboxOverride("panel", sb);
         var l = new Label { Text = glyph, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, MouseFilter = MouseFilterEnum.Ignore };
         l.AddThemeColorOverride("font_color", Colors.White);
-        l.AddThemeFontSizeOverride("font_size", 17);
+        l.AddThemeFontSizeOverride("font_size", 12);
         p.AddChild(l);
         return p;
     }

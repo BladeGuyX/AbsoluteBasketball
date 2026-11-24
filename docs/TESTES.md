@@ -3,6 +3,29 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.10 — Arremesso no pulo, pulo mais rápido, rodapé menor, controle
+
+**Antes:** apague o `Build	uning.json` antigo (o tempo de carga do salto mudou).
+
+**Arremesso no pulo**
+1. Com a bola, segure o arremesso e aperte o pulo andando para qualquer lado: o jogador pula naquela direção, ainda mirando pela câmera.
+2. Solte o arremesso no alto do pulo: a bola sai do ar (a prévia acompanha a altura).
+3. Segure o arremesso o pulo inteiro: ao tocar o chão ele arremessa sozinho.
+4. Sem estar carregando, o pulo com a bola continua sendo só a enterrada (perto da cesta, com as setinhas verdes).
+
+**Pulo**
+5. Toque rápido no pulo (sem bola): pula na hora em que você solta. Segurando: pula sozinho em ~0,18 s, sem ficar agachado esperando.
+6. A trava ao pousar continua igual. No artifact: "Tempo de carga do salto".
+
+**Rodapé**
+7. As teclinhas do canto inferior esquerdo estão bem menores.
+
+**Controle (Xbox por Bluetooth)**
+8. Configurações → Controles, embaixo de "Corrida: alternar": aparece "Controles detectados: …" e se algum botão já chegou ao jogo.
+9. Se aparecer o controle mas "nenhum botão chegou", é o Steam Input do Spacewar (AppID 480) capturando o controle. Desative: Steam → Biblioteca → Spacewar → botão direito → Propriedades → Controle → "Desativar Steam Input" (ou, com o jogo aberto, Shift+Tab → Configurações do controle). Feche e abra o jogo.
+10. Teste rápido para confirmar: feche a Steam toda e abra o jogo — o controle deve funcionar offline.
+
+---
 ## v0.9 (Etapa 6) — Ícones de botões, vibração, câmera
 
 **Ícones**

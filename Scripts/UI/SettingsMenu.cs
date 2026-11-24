@@ -60,6 +60,13 @@ public partial class SettingsMenu : Control
         ctl.AddChild(UiKit.CheckRow("Vibração do controle", S.Vibration, b => S.Vibration = b));
         ctl.AddChild(UiKit.SliderRow("Força da vibração", 0f, 1.5f, 0.05f, S.VibrationStrength, v => S.VibrationStrength = v, mult));
         ctl.AddChild(UiKit.CheckRow("Corrida: alternar (em vez de segurar)", S.SprintToggle, b => S.SprintToggle = b));
+        // diagnóstico (v0.10): quais controles o jogo está enxergando
+        var pads = UiKit.Lbl(InputDevice.PadReport(), 18, new Color("5b6577"));
+        pads.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        ctl.AddChild(pads);
+        var padTimer = new Timer { WaitTime = 1, Autostart = true };
+        padTimer.Timeout += () => pads.Text = InputDevice.PadReport();
+        ctl.AddChild(padTimer);
         ctl.AddChild(UiKit.Lbl("Clique em um atalho e pressione a nova tecla/botão (Esc cancela no teclado).", 20, new Color("5b6577")));
 
         var grid = new GridContainer { Columns = 3 };

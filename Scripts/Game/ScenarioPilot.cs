@@ -16,7 +16,8 @@ public sealed class ScenarioPilot
     int _tick;
     int _stealTries;
     float _afterShot;
-    public bool PassOk, ReturnOk, AimPassOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk;
+    public bool PassOk, ReturnOk, AimPassOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk, JumpShotLandOk, JumpShotAirOk;
+    bool _jumped, _sawAir;
     public bool Done;
 
     public ScenarioPilot(Match m, Player p) { M = m; P = p; }
@@ -34,6 +35,8 @@ public sealed class ScenarioPilot
         if (kind == "BLOCK" && a == Enemy) BlockOk = true;
         if (kind == "STEAL_FAIL" && a == P) StealFailOk = true;
         if (kind == "STEAL" && a == P) StealOk = true;
+        if (kind == "SHOT" && a == P && _step == 5 && _jumped && _sawAir && !P.Airborne) JumpShotLandOk = true; // arremessou sozinho ao pousar
+        if (kind == "SHOT" && a == P && _step == 6 && _jumped && P.Airborne) JumpShotAirOk = true;               // soltou no ar
     }
 
     void Next() { _step++; _t = 0; _tick = 0; GD.Print($"[E2] passo {_step}"); }
@@ -101,6 +104,25 @@ public sealed class ScenarioPilot
                 var d = to.Normalized();
                 inp.Move = new Vector2(d.X, d.Z);
                 if (to.Length() < 1.4f && M.Ball.Holder == e) { inp.Pressed |= Btn.Steal; _stealTries++; }
+                break;
+            }
+            case 5: // pula carregando o arremesso (para o lado) e segura: arremessa sozinho ao tocar o chão
+            case 6: // pula carregando o arremesso e solta no ar
+            {
+                if (_tick == 1) { M.Ball.GiveTo(P); _jumped = false; _sawAir = false; }
+                if (_t > 6f || (_step == 5 ? JumpShotLandOk : JumpShotAirOk)) { Next(); break; }
+                if (!P.HasBall || _tick < 20) break;
+                var rim = M.Geo.RimCenter[CourtGeo.AttackHoop(P.Team)];
+                var toRim = (rim - P.GlobalPosition) with { Y = 0 };
+                inp.AimYaw = ShotMath.YawOf(toRim);
+                inp.AimPitch = ShotMath.PitchForDistance(toRim.Length());
+                if (P.Airborne) _sawAir = true;
+                if (!P.ChargingShot) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; break; }
+                inp.Held |= Btn.Shoot;
+                var side = new Vector3(-toRim.Z, 0, toRim.X).Normalized(); // pulo para o lado
+                inp.Move = new Vector2(side.X, side.Z);
+                if (!_jumped && P.ShotCharge > 0.2f) { inp.Pressed |= Btn.Jump; inp.Held |= Btn.Jump; _jumped = true; }
+                if (_step == 6 && P.Airborne && P.Velocity.Y < 0) inp.Held &= ~Btn.Shoot;
                 break;
             }
             default:

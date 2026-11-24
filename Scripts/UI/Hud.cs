@@ -69,7 +69,7 @@ public partial class Hud : CanvasLayer
 
         // dicas com ícones de tecla/botão (trocam entre teclado e controle — Etapa 6)
         var hint = new HintBar { Name = "HintBar" };
-        UiKit.Anchor(hint, 0, 1, 0, 1, 20, -48, 1600, -12);
+        UiKit.Anchor(hint, 0, 1, 0, 1, 16, -34, 1200, -10);
         root.AddChild(hint);
 
         // ---- fim de jogo ----

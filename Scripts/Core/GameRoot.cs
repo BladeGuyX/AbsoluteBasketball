@@ -52,6 +52,7 @@ public partial class GameRoot : Node
         }
         else if (args.Contains("--steam-test")) SteamService.Init();
         AddChild(new NetSession { Name = "Net" });
+        InputDevice.LogPads();
 
         _ui = new CanvasLayer { Layer = 20 };
         AddChild(_ui);
