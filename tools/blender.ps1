@@ -1,4 +1,4 @@
-# Roda um script Python do Blender sem abrir a interface (Etapa 7 — arte).
+﻿# Roda um script Python do Blender sem abrir a interface (Etapa 7 — arte).
 # Uso:  powershell -ExecutionPolicy Bypass -File tools\blender.ps1 <script.py> [args do script...] [-Blend <arquivo.blend>]
 # Ex.:  powershell -ExecutionPolicy Bypass -File tools\blender.ps1 art_source\scripts\make_rig_base.py
 #       powershell -ExecutionPolicy Bypass -File tools\blender.ps1 art_source\scripts\render_preview.py assets\models\ball.glb

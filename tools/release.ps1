@@ -1,4 +1,4 @@
-# Publica uma versão nova no GitHub (os amigos recebem pelo botão "Atualizar" do menu).
+﻿# Publica uma versão nova no GitHub (os amigos recebem pelo botão "Atualizar" do menu).
 # Uso:  powershell -ExecutionPolicy Bypass -File tools\release.ps1 [-Notes "o que mudou"] [-SkipBuild]
 #
 # 1. Lê a versão de Scripts\Core\GameVersion.cs (Number) -> tag "v<Number>". Suba o número antes de publicar.
