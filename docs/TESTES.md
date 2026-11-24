@@ -3,6 +3,25 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.9 (Etapa 6) — Ícones de botões, vibração, câmera
+
+**Ícones**
+1. Jogue com teclado/mouse: no rodapé aparecem teclinhas (Esq., Dir., R, Espaço, E, Shift, Esc) com o que cada uma faz.
+2. Pegue o controle e mexa qualquer coisa: as teclinhas viram os botões do controle na hora (RT, RB, Y, A, X roubo, B drible, LT, Menu — A/B/X/Y coloridos). Volte ao mouse: voltam as teclas.
+3. Remapeie um botão em Configurações → Controles: a dica do rodapé mostra o novo botão.
+
+**Vibração (com controle)**
+4. Pegar a bola, pousar e começar o drible: pulso leve. Seu time pontuar / acertar lance livre: médio. Roubarem de você, acertar enterrada, ficar atordoado: forte.
+5. Configurações → Controles: "Vibração do controle" desliga tudo; "Força da vibração" ajusta. Usando teclado/mouse não vibra.
+6. Funciona também como cliente online.
+
+**Câmera**
+7. Configurações → Controles: "Inverter eixo X", "Campo de visão" (−15° a +20°) e "Distância da câmera" mudam na hora.
+8. Com o analógico direito, movimentos pequenos ficam mais precisos (curva); o giro máximo é o mesmo.
+9. Carregando arremesso ou passe, a mira fica mais lenta/precisa (mouse e analógico).
+10. No artifact: "Curva do analógico", "Mira carregando o arremesso" e a seção "Vibração (controle)".
+
+---
 ## v0.9 — Correções (round, skill check, lance livre, drible, em cima de jogador, crash)
 
 **Antes:** apague o `Build\tuning.json` antigo.

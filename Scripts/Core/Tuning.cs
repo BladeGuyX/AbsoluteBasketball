@@ -54,6 +54,7 @@ public sealed class Tuning
     const string SFree = "Lances livres";
     const string SDummy = "Bonecos de treino";
     const string SBots = "Bots";
+    const string SRumble = "Vibração (controle)";
 
     // ---------------- Movimento ----------------
     [Param(SMove, "Velocidade andando", "Velocidade máxima andando (m/s).", 1, 10, 0.1f)]
@@ -102,6 +103,10 @@ public sealed class Tuning
     public float MouseDegPerPixel = 0.12f;
     [Param(SCam, "Sensibilidade base do analógico", "Graus por segundo com o analógico no máximo (multiplicado pelas Configurações).", 30, 720, 5)]
     public float StickDegPerSec = 220f;
+    [Param(SCam, "Curva do analógico", "Resposta do analógico direito: 1 = linear; maior = movimentos pequenos mais precisos (e o máximo continua igual).", 1, 3, 0.05f)]
+    public float StickLookExponent = 1.6f;
+    [Param(SCam, "Mira carregando o arremesso", "Multiplicador da sensibilidade (mouse e analógico) enquanto carrega o arremesso ou o passe — mira mais precisa.", 0.2f, 1, 0.01f)]
+    public float ChargeLookMult = 0.65f;
 
     // ---------------- Bola ----------------
     [Param(SBall, "Raio da bola", "Raio da bola (m). Estilizada: maior que a real (0.12).", 0.08f, 0.5f, 0.005f)]
@@ -363,6 +368,20 @@ public sealed class Tuning
     public float BotRoamInterval = 3.5f;
     [Param(SBots, "Distância da marcação", "Distância (m) que o bot fica de quem tem a bola, entre ele e a cesta.", 0.5f, 5, 0.1f)]
     public float BotMarkDistance = 1.4f;
+
+    // ---------------- Vibração (controle) ----------------
+    [Param(SRumble, "Pulso leve: força", "Força do pulso leve (pegar a bola, pousar, começar o drible, errar roubo). 0 = desliga.", 0, 1, 0.01f)]
+    public float RumbleLight = 0.3f;
+    [Param(SRumble, "Pulso leve: duração", "Segundos do pulso leve.", 0.02f, 1, 0.01f)]
+    public float RumbleLightTime = 0.08f;
+    [Param(SRumble, "Pulso médio: força", "Força do pulso médio (seu time pontuou, lance livre certo).", 0, 1, 0.01f)]
+    public float RumbleMedium = 0.55f;
+    [Param(SRumble, "Pulso médio: duração", "Segundos do pulso médio.", 0.02f, 1, 0.01f)]
+    public float RumbleMediumTime = 0.18f;
+    [Param(SRumble, "Pulso forte: força", "Força do pulso forte (roubaram de você, enterrada certa, atordoado).", 0, 1, 0.01f)]
+    public float RumbleStrong = 0.9f;
+    [Param(SRumble, "Pulso forte: duração", "Segundos do pulso forte.", 0.02f, 1.5f, 0.01f)]
+    public float RumbleStrongTime = 0.3f;
 
     // ---------------- Bonecos de treino ----------------
     [Param(SDummy, "Reação do boneco", "Atraso (s) para o boneco adversário pular contra um arremesso.", 0, 2, 0.05f)]

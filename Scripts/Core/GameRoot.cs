@@ -70,6 +70,7 @@ public partial class GameRoot : Node
             tree.CreateTimer(4.0).Timeout += () => { Report("apos desligar 2"); UserSettings.Load(); tree.Quit(); };
             return;
         }
+        if (args.Contains("--pad")) InputDevice.Set(true); // prints com os ícones do controle
         int si = Array.IndexOf(args, "--screenshot");
         if (si >= 0 && si + 1 < args.Length)
         {
@@ -297,6 +298,8 @@ public partial class GameRoot : Node
         _toastT = dur;
         GD.Print("[TOAST] " + text);
     }
+
+    public override void _Input(InputEvent e) => InputDevice.Feed(e); // último dispositivo usado (ícones / vibração)
 
     public override void _UnhandledInput(InputEvent e)
     {

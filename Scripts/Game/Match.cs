@@ -56,6 +56,7 @@ public partial class Match : Node3D
     public int Winner = -1;
 
     TrajectoryPreview _preview;
+    Rumble _rumble;
     readonly LocalInputReader _reader = new();
     readonly Dictionary<Player, DummyBrain> _dummies = new();
     readonly Dictionary<Player, BotBrain> _bots = new();
@@ -714,6 +715,7 @@ public partial class Match : Node3D
     {
         var lp = LocalPlayer;
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
+        if (!Automated) (_rumble ??= new Rumble(this)).Tick();
 
         if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3 && !Cfg.SmokeNet) ScreenshotTick((float)delta);
         // teste de rede com --net-shot: prints do cliente aos 20 s e 40 s de jogo

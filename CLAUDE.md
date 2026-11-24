@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.9 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.9 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle) — primeira parte pronta: ícones de botões, vibração, ajustes de câmera.**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -75,6 +75,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
   - **Skill check online (v0.8.2):** o cliente manda, no aperto, onde o ponteiro estava NA TELA dele (`PlayerInput.SkillT`) e o tick do host que está desenhando (`ClientRenderTick`). O host julga pelo `SkillT` e espera o atraso medido (`NetSession.SkillGrace` → `Player.SkillGrace`) antes de dar o skill check como perdido. Teste de rede força 3 lances livres para o cliente e roda com `--net-lag 60` (atraso artificial no `EnetTransport`).
   - O build.ps1 compila também a DLL de depuração (os testes headless usam ela — antes rodavam código velho se você não compilasse à mão).
   - NetId de cliente é SEMPRE positivo (NetId < 0 = bot na escalação). O `SteamTransport` mapeia cada handle da Steam (uint grande, virava negativo) para 1, 2, 3... — bug da v0.8: o amigo virava bot.
+- Etapa 6: `Scripts/Core/InputDevice.cs` (último dispositivo usado, alimentado em `GameRoot._Input`; `Glyph(action)` = nome curto do botão atual), `Scripts/UI/HintBar.cs` (rodapé com teclinhas; redesenha ao trocar dispositivo ou `InputSetup.Revision`), `Scripts/Game/Rumble.cs` (vibração por transições de estado do jogador local — vale no cliente online; forças no Tuning "Vibração (controle)"), câmera: `UserSettings.InvertX/FovOffset/CameraDistanceMult/Vibration/VibrationStrength`, Tuning `StickLookExponent`/`ChargeLookMult`. Print com ícones do controle: `--screenshot <png> --pad`.
 - `Scripts/UI/`: `OnlineMenu` (Steam: criar só amigos/público, código, procurar; IP direto: hospedar/entrar), `LobbyMenu` (times, configurações do host, convidar amigos, começar/sair), `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
 - Convenções: cesta 0 em −X, cesta 1 em +X; time 0 (AZUL) ataca a 1, time 1 (LARANJA) ataca a 0. Yaw: frente = (−sin, 0, −cos).
 - **Uma classe Godot por arquivo, com o mesmo nome do arquivo** (requisito do C# da Godot).

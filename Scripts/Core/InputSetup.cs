@@ -81,8 +81,12 @@ public static class InputSetup
         dict[action] = b;
     }
 
+    /// <summary>Muda a cada Apply (remapeamento) — a barra de dicas se redesenha.</summary>
+    public static int Revision { get; private set; }
+
     public static void Apply()
     {
+        Revision++;
         void Ensure(string a, float dz = 0.25f)
         {
             if (InputMap.HasAction(a)) InputMap.ActionEraseEvents(a);

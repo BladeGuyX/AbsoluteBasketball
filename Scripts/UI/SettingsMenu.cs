@@ -54,6 +54,11 @@ public partial class SettingsMenu : Control
         ctl.AddChild(UiKit.SliderRow("Sensibilidade do mouse", 0.1f, 3f, 0.05f, S.MouseSensitivity, v => S.MouseSensitivity = v, mult));
         ctl.AddChild(UiKit.SliderRow("Sensibilidade do analógico", 0.1f, 3f, 0.05f, S.StickSensitivity, v => S.StickSensitivity = v, mult));
         ctl.AddChild(UiKit.CheckRow("Inverter eixo Y da câmera", S.InvertY, b => S.InvertY = b));
+        ctl.AddChild(UiKit.CheckRow("Inverter eixo X da câmera", S.InvertX, b => S.InvertX = b));
+        ctl.AddChild(UiKit.SliderRow("Campo de visão", -15f, 20f, 1f, S.FovOffset, v => S.FovOffset = v, v => (v >= 0 ? "+" : "") + v.ToString("0") + "°"));
+        ctl.AddChild(UiKit.SliderRow("Distância da câmera", 0.7f, 1.5f, 0.05f, S.CameraDistanceMult, v => S.CameraDistanceMult = v, mult));
+        ctl.AddChild(UiKit.CheckRow("Vibração do controle", S.Vibration, b => S.Vibration = b));
+        ctl.AddChild(UiKit.SliderRow("Força da vibração", 0f, 1.5f, 0.05f, S.VibrationStrength, v => S.VibrationStrength = v, mult));
         ctl.AddChild(UiKit.CheckRow("Corrida: alternar (em vez de segurar)", S.SprintToggle, b => S.SprintToggle = b));
         ctl.AddChild(UiKit.Lbl("Clique em um atalho e pressione a nova tecla/botão (Esc cancela no teclado).", 20, new Color("5b6577")));
 

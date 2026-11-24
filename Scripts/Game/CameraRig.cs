@@ -29,12 +29,15 @@ public partial class CameraRig : Node3D
         if (e is InputEventMouseMotion mm)
         {
             if (Time.GetTicksMsec() < IgnoreMouseUntilMs || mm.ScreenRelative.Length() > 400f) return;
-            float k = Mathf.DegToRad(Tuning.I.MouseDegPerPixel) * UserSettings.I.MouseSensitivity;
-            Yaw -= mm.ScreenRelative.X * k;
+            float k = Mathf.DegToRad(Tuning.I.MouseDegPerPixel) * UserSettings.I.MouseSensitivity * ChargeMult();
+            Yaw -= mm.ScreenRelative.X * k * (UserSettings.I.InvertX ? -1f : 1f);
             Pitch -= mm.ScreenRelative.Y * k * (UserSettings.I.InvertY ? -1f : 1f);
             ClampPitch();
         }
     }
+
+    /// <summary>Carregando arremesso/passe: mira mais precisa (sensibilidade menor).</summary>
+    float ChargeMult() => Target != null && IsInstanceValid(Target) && (Target.ChargingShot || Target.ChargingPass) ? Tuning.I.ChargeLookMult : 1f;
 
     void ClampPitch() =>
         Pitch = Mathf.Clamp(Pitch, Mathf.DegToRad(Tuning.I.CameraPitchMinDeg), Mathf.DegToRad(Tuning.I.CameraPitchMaxDeg));
@@ -50,12 +53,15 @@ public partial class CameraRig : Node3D
     {
         float dt = (float)delta;
         var t = Tuning.I;
-        Cam.Fov = t.CameraFov;
+        Cam.Fov = Mathf.Clamp(t.CameraFov + UserSettings.I.FovOffset, 30f, 120f);
         if (LookEnabled)
         {
             var look = Input.GetVector(Act.LookL, Act.LookR, Act.LookU, Act.LookD);
-            float k = Mathf.DegToRad(t.StickDegPerSec) * UserSettings.I.StickSensitivity * dt;
-            Yaw -= look.X * k;
+            // curva: movimentos pequenos mais precisos, o máximo continua igual
+            float len = look.Length();
+            if (len > 0.001f) look = look / len * Mathf.Pow(Mathf.Min(len, 1f), Mathf.Max(t.StickLookExponent, 1f));
+            float k = Mathf.DegToRad(t.StickDegPerSec) * UserSettings.I.StickSensitivity * ChargeMult() * dt;
+            Yaw -= look.X * k * (UserSettings.I.InvertX ? -1f : 1f);
             Pitch -= look.Y * k * (UserSettings.I.InvertY ? -1f : 1f);
             ClampPitch();
         }
@@ -66,7 +72,7 @@ public partial class CameraRig : Node3D
         _pivot = _pivot.Lerp(targetPivot, 1f - Mathf.Exp(-t.CameraFollowSmooth * dt));
 
         var basis = Basis.FromEuler(new Vector3(Pitch, Yaw, 0));
-        var pos = _pivot + basis.Z * t.CameraDistance + basis.X * t.CameraShoulderOffset;
+        var pos = _pivot + basis.Z * t.CameraDistance * Mathf.Clamp(UserSettings.I.CameraDistanceMult, 0.5f, 2f) + basis.X * t.CameraShoulderOffset;
         if (pos.Y < 0.35f) pos.Y = 0.35f;
         Cam.GlobalTransform = new Transform3D(basis, pos);
     }

@@ -67,9 +67,9 @@ public partial class Hud : CanvasLayer
         row.AddChild(_dribblePips);
         bottom.AddChild(row);
 
-        var hint = UiKit.Outlined("Esq. arremesso · Dir. passe (R = alto) · Espaço salto / enterrada (Esq. ao tocar o aro) · E drible / roubo · Shift correr · Esc pausa",
-            18, new Color(1, 1, 1, 0.85f), HorizontalAlignment.Left, 6);
-        UiKit.Anchor(hint, 0, 1, 0, 1, 20, -44, 1500, -12);
+        // dicas com ícones de tecla/botão (trocam entre teclado e controle — Etapa 6)
+        var hint = new HintBar { Name = "HintBar" };
+        UiKit.Anchor(hint, 0, 1, 0, 1, 20, -48, 1600, -12);
         root.AddChild(hint);
 
         // ---- fim de jogo ----

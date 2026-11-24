@@ -32,6 +32,11 @@ public sealed class UserSettings
     public float StickSensitivity = 1.0f;
     public bool InvertY = false;
     public bool SprintToggle = false;
+    public bool InvertX = false;
+    public bool Vibration = true;
+    public float VibrationStrength = 1.0f;
+    public float FovOffset = 0f;              // graus somados ao FOV do tuning
+    public float CameraDistanceMult = 1.0f;   // multiplica a distância da câmera do tuning
     public Dictionary<string, Bind> KeyboardBinds = new();
     public Dictionary<string, Bind> PadBinds = new();
 

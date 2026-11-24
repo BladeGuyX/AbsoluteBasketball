@@ -210,6 +210,26 @@
     "default": 220
   },
   {
+    "key": "StickLookExponent",
+    "section": "C\u00E2mera",
+    "label": "Curva do anal\u00F3gico",
+    "desc": "Resposta do anal\u00F3gico direito: 1 = linear; maior = movimentos pequenos mais precisos (e o m\u00E1ximo continua igual).",
+    "min": 1,
+    "max": 3,
+    "step": 0.05,
+    "default": 1.6
+  },
+  {
+    "key": "ChargeLookMult",
+    "section": "C\u00E2mera",
+    "label": "Mira carregando o arremesso",
+    "desc": "Multiplicador da sensibilidade (mouse e anal\u00F3gico) enquanto carrega o arremesso ou o passe \u2014 mira mais precisa.",
+    "min": 0.2,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.65
+  },
+  {
     "key": "BallRadius",
     "section": "Bola",
     "label": "Raio da bola",
@@ -1398,6 +1418,66 @@
     "max": 5,
     "step": 0.1,
     "default": 1.4
+  },
+  {
+    "key": "RumbleLight",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso leve: for\u00E7a",
+    "desc": "For\u00E7a do pulso leve (pegar a bola, pousar, come\u00E7ar o drible, errar roubo). 0 = desliga.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.3
+  },
+  {
+    "key": "RumbleLightTime",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso leve: dura\u00E7\u00E3o",
+    "desc": "Segundos do pulso leve.",
+    "min": 0.02,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.08
+  },
+  {
+    "key": "RumbleMedium",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso m\u00E9dio: for\u00E7a",
+    "desc": "For\u00E7a do pulso m\u00E9dio (seu time pontuou, lance livre certo).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.55
+  },
+  {
+    "key": "RumbleMediumTime",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso m\u00E9dio: dura\u00E7\u00E3o",
+    "desc": "Segundos do pulso m\u00E9dio.",
+    "min": 0.02,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.18
+  },
+  {
+    "key": "RumbleStrong",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso forte: for\u00E7a",
+    "desc": "For\u00E7a do pulso forte (roubaram de voc\u00EA, enterrada certa, atordoado).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.9
+  },
+  {
+    "key": "RumbleStrongTime",
+    "section": "Vibra\u00E7\u00E3o (controle)",
+    "label": "Pulso forte: dura\u00E7\u00E3o",
+    "desc": "Segundos do pulso forte.",
+    "min": 0.02,
+    "max": 1.5,
+    "step": 0.01,
+    "default": 0.3
   },
   {
     "key": "DummyReactionTime",
