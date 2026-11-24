@@ -5,7 +5,8 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.10 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle) — primeira parte pronta: ícones de botões, vibração, ajustes de câmera; v0.10: arremesso no pulo, pulo mais rápido, rodapé menor, diagnóstico de controle.**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.11 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Etapa 6 feita (ícones, vibração, câmera, arremesso no pulo, enterrada no X). Em andamento: **Etapa 7 (arte)** — tudo preparado, guia em `docs/ARTE.md`; o usuário vai mandar as concept arts num chat novo.**
+- `docs/ARTE.md` — **guia da Etapa 7** (fluxo Blender → .glb → Godot, convenções, medidas, animações, integração). Ler antes de modelar.
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -77,6 +78,9 @@ O usuário fala português (pt-BR) — responda em pt-BR.
   - NetId de cliente é SEMPRE positivo (NetId < 0 = bot na escalação). O `SteamTransport` mapeia cada handle da Steam (uint grande, virava negativo) para 1, 2, 3... — bug da v0.8: o amigo virava bot.
 - Etapa 6: `Scripts/Core/InputDevice.cs` (último dispositivo usado, alimentado em `GameRoot._Input`; `Glyph(action)` = nome curto do botão atual), `Scripts/UI/HintBar.cs` (rodapé com teclinhas; redesenha ao trocar dispositivo ou `InputSetup.Revision`), `Scripts/Game/Rumble.cs` (vibração por transições de estado do jogador local — vale no cliente online; forças no Tuning "Vibração (controle)"), câmera: `UserSettings.InvertX/FovOffset/CameraDistanceMult/Vibration/VibrationStrength`, Tuning `StickLookExponent`/`ChargeLookMult`. Print com ícones do controle: `--screenshot <png> --pad`.
 - v0.10: arremesso no pulo em `Player.ServerTick` (com bola + `ChargingShot` → `HandleJump`; no ar só `HandleShot`; pouso com `ChargingShot` → `ReleaseShot`). `HandleJump` pula sozinho quando a carga enche. Teste: passos 5 e 6 do `--smoke-e2` (`pulo_arremesso_pouso` / `pulo_arremesso_ar`).
+- v0.11: enterrada também pelo botão de roubo quando é separado do drible (`Player.WantsDunk`: X no controle; no teclado E = drible+roubo, então não conta). Pulo só ao soltar. E3 faz a 1ª enterrada pelo X.
+- Etapa 7: `art_source/` (com `.gdignore`; `scripts/ab_common.py`, `make_rig_base.py`, `pipeline_test.py`, `render_preview.py`; `blend/rig_base.blend`; `concepts/`; `previews/` fora do git), `tools/blender.ps1` (roda script do Blender headless; Blender 5.3 em Program Files), `tools/inspect_glb.py`, `Scripts/Core/ArtCheck.cs` (`--inspect-model assets/models/x.glb`).
+- **Lembrar o usuário em toda entrega:** a predição do próprio jogador no cliente online está pendente (não fazer até ele pedir).
 - **Controle que não responde:** com a Steam iniciada (AppID 480 = Spacewar), o Steam Input do Spacewar captura o controle (o `localconfig.vdf` do usuário mostra `controller_config/480` em uso). Solução do lado do usuário: desativar o Steam Input do Spacewar. Diagnóstico: `InputDevice.PadReport()` (Configurações → Controles) e `[PAD]` no log.
 - `Scripts/UI/`: `OnlineMenu` (Steam: criar só amigos/público, código, procurar; IP direto: hospedar/entrar), `LobbyMenu` (times, configurações do host, convidar amigos, começar/sair), `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
 - Convenções: cesta 0 em −X, cesta 1 em +X; time 0 (AZUL) ataca a 1, time 1 (LARANJA) ataca a 0. Yaw: frente = (−sin, 0, −cos).
@@ -95,6 +99,27 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 2. Predição do jogador local no cliente (hoje o boneco do cliente responde com o atraso da rede): simular só o movimento
    localmente e corrigir suavemente pela posição do host.
 3. Compressão dos snapshots (posições em 16 bits, só o que mudou) se a banda pesar; reconexão de quem caiu.
+
+## Regras de arte 3D
+- Escala: 1 unidade do Blender = 1 metro.
+- Eixo: modele com Z para cima; exporte em glTF (.glb) com "+Y Up" ativado.
+- Origem do objeto no centro de massa (bola) ou nos pés (personagens).
+- Aplique escala/rotação (Ctrl+A) antes de exportar.
+- Todo modelo deve ter UV unwrap e materiais Principled BSDF simples.
+- Gere cada modelo por um script em art_source/scripts/ para ser reproduzível.
+- Exporte para assets/models/<nome>.glb.
+- As concept arts são apenas referências, então tente ignorar sombras e brilhos pintados e focar na forma e nas cores.
+
+## Regras de animação
+- Tente criar as animações na própria Godot quando possível.
+- Todos os personagens usam o mesmo esqueleto (rig_base.blend).
+- 30 fps. Animações "in place" (sem root motion), personagem não sai do lugar.
+- Cada animação é uma Action separada, nomeada em snake_case: idle, run, jump, shoot.
+- Animações em loop terminam com "-loop" no nome (ex: run-loop); a Godot ativa o loop automaticamente.
+- Primeiro e último frame de loops devem ser idênticos.
+- Exportar .glb com "Animation" ativado, modo Actions, sem "Always Sample Animations" desnecessário.
+- Use Actions com Fake User para não sumirem ao salvar.
+- Tente usar curvas Bézier com ease em vez de interpolação linear, para não ficar robótico.
 
 ## (histórico) Etapa 2 — já feita
 Passe (toque = aliado livre mais próximo; segurar = aliado na direção da câmera com marcador; variação = passe alto; checagem de linha livre; interceptação por qualquer jogador no caminho), salto (carga, bloqueio de arremessos subindo e passes altos → bola quica e cai; 0,5 s de trava ao pousar), roubo (impulso, falha = 2 s a 20% sem correr/pular/roubar; imune: driblando, no ar, carregando arremesso), drible (2 cargas, 1 s, 50% mais lento, recarga 10 s contínua). Adicionar estados ao `Ball` (Pass/HighPass) e flags no `Player`. Para testar sem bots, considerar bonecos parados (dummies) no time adversário.

@@ -5,3 +5,5 @@ obj/
 Build/*
 !Build/.gdignore
 tuning.json
+art_source/previews/
+*.blend1

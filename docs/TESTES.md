@@ -3,6 +3,15 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.11 — Enterrada no X, pulo só ao soltar (início da Etapa 7)
+
+1. Com controle: corra para a cesta com a bola até aparecerem as setinhas verdes e aperte **X** — sai a enterrada (o skill check continua no RT). O A também enterra.
+2. No teclado: o E com a bola continua sendo drible (não enterra); a enterrada é o Espaço.
+3. No rodapé, com controle, o X aparece como "roubo / enterrada".
+4. Segure o pulo: o jogador fica agachado carregando até você soltar (não pula mais sozinho). Toque rápido: pula ao soltar.
+5. O resto do jogo não mudou (a Etapa 7 até aqui é só preparação: scripts do Blender, esqueleto base e guia `docs/ARTE.md`).
+
+---
 ## v0.10 — Arremesso no pulo, pulo mais rápido, rodapé menor, controle
 
 **Antes:** apague o `Build	uning.json` antigo (o tempo de carga do salto mudou).

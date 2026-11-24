@@ -122,6 +122,11 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Pulo mais rápido:** carga do salto 0,18 s (antes 0,3); um toque pula ao soltar e, segurando, pula sozinho quando a carga enche (não fica mais agachado esperando). A trava ao pousar não mudou.
 - Rodapé de controles menor.
 
+## Revisões do usuário (v0.11) — prevalecem sobre as anteriores
+- **Enterrada também no X do controle** (o botão de roubo, que com a bola não fazia nada). No teclado continua só o Espaço (lá o E é drible e roubo).
+- **Pulo só sai ao soltar o botão** (segurando, fica carregado até soltar — desfeito o pulo automático da v0.10). Carga continua 0,18 s.
+- Etapa 7 (arte) começa: guia em `docs/ARTE.md`.
+
 ## Decisões de implementação (Claude)
 - **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
   `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.

@@ -66,7 +66,7 @@ public sealed class DunkScenario
         {
             // modo print (--e3-shot): espera um pouco com as setinhas de "pode enterrar" na tela
             _readyT += dt;
-            if (M.Cfg.ScreenshotPath == null || _readyT > 0.3f) { inp.Pressed |= Btn.Jump; _readyT = 0; }
+            if (M.Cfg.ScreenshotPath == null || _readyT > 0.3f) { inp.Pressed |= _step == 0 ? Btn.Steal : Btn.Jump; _readyT = 0; } // 1ª enterrada pelo X do controle (v0.11)
         }
     }
 

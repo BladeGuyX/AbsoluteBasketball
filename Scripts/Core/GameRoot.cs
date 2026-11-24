@@ -42,6 +42,8 @@ public partial class GameRoot : Node
         }
 
         if (args.Contains("--shot-stats")) { ShotStats(); GetTree().Quit(); return; }
+        int mi = Array.IndexOf(args, "--inspect-model"); // Etapa 7: como a Godot enxerga um .glb (ossos, animações, loop)
+        if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GetTree().Quit(); return; }
 
         // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
         bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--video-test");

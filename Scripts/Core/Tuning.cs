@@ -256,7 +256,7 @@ public sealed class Tuning
     public float JumpVelMin = 6.2f;
     [Param(SJump, "Impulso do salto carregado", "Velocidade vertical (m/s) segurando o salto até o fim da carga.", 1, 20, 0.1f)]
     public float JumpVelMax = 7.6f;
-    [Param(SJump, "Tempo de carga do salto", "Segundos segurando para o salto mais alto (parado enquanto carrega). Um toque pula ao soltar; segurando, pula sozinho quando a carga enche.", 0.05f, 2, 0.01f)]
+    [Param(SJump, "Tempo de carga do salto", "Segundos segurando para o salto mais alto (parado enquanto carrega). O salto sai ao soltar o botão.", 0.05f, 2, 0.01f)]
     public float JumpChargeTime = 0.18f;
     [Param(SJump, "Controle de direção do salto", "Fração da velocidade de movimento levada para o salto (direção escolhida antes de pular).", 0, 1.5f, 0.01f)]
     public float JumpCarry = 0.7f;

@@ -148,7 +148,7 @@ public partial class Player : CharacterBody3D
             else if (canAct && !IsDribbling)
             {
                 if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Dribble) && DribbleCharges > 0) StartDribble();
-                else if (!ChargingShot && !ChargingPass && inp.WasPressed(Btn.Jump) && CanDunk()) StartDunk();
+                else if (!ChargingShot && !ChargingPass && WantsDunk(inp) && CanDunk()) StartDunk();
                 else
                 {
                     if (!ChargingPass) HandleShot(inp, dt);
@@ -434,8 +434,7 @@ public partial class Player : CharacterBody3D
         if (!ChargingJump) return;
         JumpCharge = Mathf.Min(JumpCharge + dt, t.JumpChargeTime);
         if (wish.LengthSquared() > 0.01f) { _jumpWish = wish; _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0; }
-        // pula ao soltar ou, segurando, assim que a carga enche (v0.10: não fica mais esperando agachado)
-        if (inp.IsHeld(Btn.Jump) && JumpCharge < t.JumpChargeTime) return;
+        if (inp.IsHeld(Btn.Jump)) return; // pula só ao soltar (segurando, fica carregado até soltar)
 
         // pula: direção vem do movimento antes de pular, quase sem controle no ar
         float k = t.JumpChargeTime > 0 ? JumpCharge / t.JumpChargeTime : 1f;
@@ -452,6 +451,13 @@ public partial class Player : CharacterBody3D
     }
     Vector3 _jumpWish;
     bool _jumpRun;
+
+    /// <summary>
+    /// Enterrada: pulo ou o botão de roubo (X no controle) — v0.11. O roubo só conta quando é um botão separado do drible
+    /// (no teclado E faz os dois, então lá continua sendo só drible).
+    /// </summary>
+    static bool WantsDunk(PlayerInput inp) =>
+        inp.WasPressed(Btn.Jump) || (inp.WasPressed(Btn.Steal) && !inp.WasPressed(Btn.Dribble));
 
     // =====================================================================
     // Roubo
