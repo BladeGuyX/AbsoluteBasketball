@@ -3,6 +3,14 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.8.1 — Correção: pela Steam o amigo virava bot
+
+**Os dois PCs precisam desta build nova** (versões diferentes não conectam mais — aparece aviso).
+1. Pela Steam, crie o lobby e o amigo entra. Comecem a partida.
+2. O amigo deve ver e controlar **o próprio jogador** (câmera atrás dele), e não assistir o host.
+3. No host, o jogador do amigo deve se mexer conforme ele joga (não como bot).
+
+---
 ## v0.8 — Etapa 5: multiplayer online (primeira versão)
 
 **Antes:** a pasta `Build` agora tem `steam_api64.dll` e `steam_appid.txt` (480) ao lado do .exe — não apague. Para a Steam, deixe a Steam aberta.

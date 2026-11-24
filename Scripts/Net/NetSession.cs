@@ -260,6 +260,7 @@ public partial class NetSession : Node
                 if (InMatch) { Reject(peer, "A partida já começou. Espere voltar para o lobby."); return; }
                 if (Members.Count >= MaxPlayers) { Reject(peer, "O lobby está cheio."); return; }
                 _pendingHello.Remove(peer);
+                if (peer <= 0) { Reject(peer, "Erro de conexão (id inválido)."); return; }
                 int t0 = Members.Count(x => x.Team == 0), t1 = Members.Count(x => x.Team == 1);
                 var mem = new LobbyMember { NetId = peer, Name = UniqueName(name), Team = t0 <= t1 ? 0 : 1 };
                 Members.Add(mem);

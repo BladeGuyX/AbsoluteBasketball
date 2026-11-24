@@ -52,7 +52,15 @@ public sealed class SteamTransport : INetTransport
         return t;
     }
 
-    static int Key(HSteamNetConnection c) => (int)c.m_HSteamNetConnection;
+    // O handle da Steam é um uint grande: convertido para int podia virar NEGATIVO, e NetId < 0 = bot na escalação
+    // (o amigo virava bot e o cliente assistia o host). Cada conexão ganha um id pequeno e positivo.
+    readonly Dictionary<uint, int> _ids = new();
+    int _nextId = 1;
+    int Key(HSteamNetConnection c)
+    {
+        if (!_ids.TryGetValue(c.m_HSteamNetConnection, out int id)) _ids[c.m_HSteamNetConnection] = id = _nextId++;
+        return id;
+    }
 
     void OnStatus(SteamNetConnectionStatusChangedCallback_t s)
     {

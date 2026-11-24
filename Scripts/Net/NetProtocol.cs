@@ -63,7 +63,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 1;
+    public const int Version = 2;
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>
