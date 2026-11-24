@@ -336,6 +336,8 @@ public partial class Match : Node3D
             else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
             else if (_bots.TryGetValue(p, out var bot)) inp = bot.Build(dt);
             else if (_remote.TryGetValue(p, out int netId)) inp = NetSession.I.TakeInput(netId);
+            if (!_remote.ContainsKey(p)) inp.SkillT = -1; // local e bots: o host julga pelo próprio tempo
+            p.SkillGrace = _remote.TryGetValue(p, out int gid) ? NetSession.I.SkillGrace(gid) : 0f;
             if (p == FtShooter) _ftInput = inp;
             p.ServerTick(inp, dt);
         }
@@ -569,13 +571,17 @@ public partial class Match : Node3D
                 // igual ao skill check da enterrada: só o botão de arremesso; cedo = erra ao chegar na zona
                 FtT += dt;
                 float half = t.DunkWindow * 0.5f;
-                if (FtT >= 0 && !FtPressed && _ftInput.WasPressed(Btn.Shoot)) { FtPressed = true; FtPressT = FtT; }
+                if (FtT >= 0 && !FtPressed && _ftInput.WasPressed(Btn.Shoot))
+                {
+                    FtPressed = true;
+                    FtPressT = _ftInput.SkillT >= 0 ? Mathf.Min(_ftInput.SkillT, FtT) : FtT; // remoto: o que ele via
+                }
                 if (FtPressed)
                 {
                     if (Mathf.Abs(FtPressT - FtDur) <= half) FtResult(true);
                     else if (FtT >= FtDur) FtResult(false);
                 }
-                else if (FtT >= FtDur + half) FtResult(false);
+                else if (FtT >= FtDur + half + FtShooter.SkillGrace) FtResult(false);
                 break;
             }
             case FtStage.Flight:
@@ -882,6 +888,14 @@ public partial class Match : Node3D
         // input local → host (o personagem só se mexe quando o snapshot do host voltar)
         PlayerInput inp = _clientBot != null ? _clientBot.Build(dt) : _reader.Build(Cam, !InputBlocked);
         if (LocalPlayer != null) LocalPlayer.LastInput = inp;
+        if (NetSession.I != null) NetSession.I.ClientRenderTick = Mathf.RoundToInt(_renderTick);
+        // skill check: manda onde o ponteiro estava na tela quando apertou (o host julga por isso)
+        inp.SkillT = -1;
+        if (inp.WasPressed(Btn.Shoot) && LocalPlayer != null)
+        {
+            if (LocalPlayer.Flight == FlightKind.Dunk) inp.SkillT = LocalPlayer.FlightT;
+            else if (FtChecking && FtShooter == LocalPlayer) inp.SkillT = Mathf.Max(FtT, 0f);
+        }
         NetSession.I?.SendInput(inp);
 
         if (_snaps.Count > 0)
@@ -938,6 +952,7 @@ public partial class Match : Node3D
 
     float _netT, _netDist;
     int _netLeftPackets = -1;
+    int _netFtForced;
     string _netLeftName;
     Vector3 _netLast;
     bool _netInit, _netSawPlaying;
@@ -957,11 +972,22 @@ public partial class Match : Node3D
         _netT += dt;
         var rp = _remote.Keys.FirstOrDefault();
         Track(rp, ref _netInit, ref _netLast, ref _netDist);
+        // força lances livres para o cliente (skill checks julgados com o atraso da rede)
+        if (rp != null && Phase == MatchPhase.Playing && _netFtForced < 3 && _netT > 12f + _netFtForced * 16f)
+        {
+            _netFtForced++;
+            StartFreeThrows(rp);
+        }
         if (_netT < 75f) return;
         int acts = 0;
-        foreach (var k in new[] { "SHOT", "PASS", "HIGHPASS", "JUMP", "STEAL_TRY", "DRIBBLE", "DUNK" }) acts += RemoteEvents.GetValueOrDefault(k);
+        foreach (var k in new[] { "SHOT", "PASS", "HIGHPASS", "JUMP", "STEAL_TRY", "DRIBBLE", "DUNK", "FT_OK", "FT_MISS" }) acts += RemoteEvents.GetValueOrDefault(k);
         int packets = rp != null ? NetSession.I.InputPackets(_remote[rp]) : _netLeftPackets;
-        bool ok = (rp != null || _netLeftPackets >= 0) && _netDist > 15f && acts >= 2 && packets > 1000;
+        int dOk = RemoteEvents.GetValueOrDefault("DUNK_OK"), dFail = RemoteEvents.GetValueOrDefault("DUNK_FAIL");
+        int fOk = RemoteEvents.GetValueOrDefault("FT_OK"), fMiss = RemoteEvents.GetValueOrDefault("FT_MISS");
+        GD.Print($"[NETTEST-HOST] skill checks do remoto (com atraso de rede): enterradas {dOk}/{dOk + dFail}, lances livres {fOk}/{fOk + fMiss}");
+        // o bot do cliente erra pouco no Normal: se tentou 3+ skill checks e não acertou nenhum, o atraso não está compensado
+        bool skillOk = fOk + fMiss >= 4 && fOk >= 2 && (dOk + dFail < 3 || dOk > 0);
+        bool ok = (rp != null || _netLeftPackets >= 0) && _netDist > 15f && acts >= 1 && packets > 1000 && skillOk;
         GD.Print($"[NETTEST-HOST] remoto={rp?.PlayerName ?? _netLeftName + " (já saiu)"} pacotes_de_input={packets} andou={_netDist:0}m acoes_do_remoto={acts} " +
                  $"({string.Join(" ", RemoteEvents.Select(kv => kv.Key + "=" + kv.Value))}) placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         Cfg.SmokeNet = false;

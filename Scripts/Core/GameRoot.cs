@@ -103,6 +103,8 @@ public partial class GameRoot : Node
             return;
         }
         // teste de rede: duas instâncias (host e cliente) conversando por IP local, bots controlando os dois jogadores
+        int lag = Array.IndexOf(args, "--net-lag");
+        if (lag >= 0 && lag + 1 < args.Length && int.TryParse(args[lag + 1], out int lagMs)) EnetTransport.LagMs = lagMs;
         int nh = Array.IndexOf(args, "--net-smoke-host");
         if (nh >= 0)
         {

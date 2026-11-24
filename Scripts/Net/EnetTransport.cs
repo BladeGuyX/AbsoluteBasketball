@@ -13,6 +13,9 @@ public sealed class EnetTransport : INetTransport
     readonly ENetMultiplayerPeer _peer = new();
     readonly Queue<NetEvent> _pending = new();
     public bool IsServer { get; }
+    /// <summary>Teste: atraso artificial (ms) em cada pacote enviado (--net-lag).</summary>
+    public static int LagMs;
+    readonly List<(ulong at, int peer, byte[] data, bool rel)> _delayed = new();
 
     EnetTransport(bool server)
     {
@@ -44,6 +47,13 @@ public sealed class EnetTransport : INetTransport
 
     public void Poll(Queue<NetEvent> into)
     {
+        if (_delayed.Count > 0)
+        {
+            ulong now = Time.GetTicksMsec();
+            int n = 0;
+            while (n < _delayed.Count && _delayed[n].at <= now) { var d = _delayed[n]; RawSend(d.peer, d.data, d.rel); n++; }
+            _delayed.RemoveRange(0, n);
+        }
         _peer.Poll();
         while (_pending.Count > 0) into.Enqueue(_pending.Dequeue());
         while (_peer.GetAvailablePacketCount() > 0)
@@ -64,6 +74,16 @@ public sealed class EnetTransport : INetTransport
     public void Send(int peer, byte[] data, int length, bool reliable)
     {
         if (_peer.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return;
+        var copy0 = new byte[length];
+        System.Array.Copy(data, copy0, length);
+        if (LagMs > 0) { _delayed.Add((Time.GetTicksMsec() + (ulong)LagMs, peer, copy0, reliable)); return; }
+        RawSend(peer, copy0, reliable);
+    }
+
+    void RawSend(int peer, byte[] data, bool reliable)
+    {
+        if (_peer.GetConnectionStatus() != MultiplayerPeer.ConnectionStatus.Connected) return;
+        int length = data.Length;
         _peer.TransferMode = reliable ? MultiplayerPeer.TransferModeEnum.Reliable : MultiplayerPeer.TransferModeEnum.Unreliable;
         _peer.TransferChannel = 0; // canal padrão (o ENet separa confiável/não confiável sozinho)
         _peer.SetTargetPeer(IsServer ? peer : 1);

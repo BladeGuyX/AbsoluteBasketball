@@ -284,10 +284,19 @@ public partial class NetSession : Node
                 var move = r.V2(); float yaw = r.F(), pitch = r.F(); var held = (Btn)r.U16();
                 var counters = new byte[NetInputCounter.Buttons.Length];
                 for (int i = 0; i < counters.Length; i++) counters[i] = r.U8();
-                if (seq <= ri.LastSeq) break; // pacote velho fora de ordem
+                float skillT = r.F();
+                int renderTick = r.I32();
+                if (seq <= ri.LastSeq) break;
+                if (renderTick > 0)
+                {
+                    float late = Mathf.Max(0, (_hostTick - renderTick) / 60f);
+                    // sobe na hora, desce devagar (aguenta picos de atraso)
+                    ri.Lateness = late > ri.Lateness ? late : Mathf.Lerp(ri.Lateness, late, 0.02f);
+                } // pacote velho fora de ordem
                 ri.LastSeq = seq;
                 ri.Move = move.LimitLength(1f); ri.AimYaw = yaw; ri.AimPitch = pitch; ri.Held = held;
                 Array.Copy(counters, ri.Counters, counters.Length);
+                ri.ShootSkillT = skillT;
                 ri.Packets++;
                 break;
             }
@@ -555,11 +564,24 @@ public partial class NetSession : Node
         _counter.Count(inp);
         _w.Begin(Msg.Input); _w.I32(_counter.Seq); _w.V2(inp.Move); _w.F(inp.AimYaw); _w.F(inp.AimPitch); _w.U16((ushort)inp.Held);
         foreach (var c in _counter.Counters) _w.U8(c);
+        if (inp.WasPressed(Btn.Shoot)) _lastSkillT = inp.SkillT;
+        _w.F(_lastSkillT); // vai em todo pacote (se um se perder, o próximo leva)
+        _w.I32(ClientRenderTick);
         SendToHost(false);
         InputsSent++;
     }
 
     public int PingToHost() => _t?.Ping(0) ?? -1;
+    float _lastSkillT = -1;
+    /// <summary>Cliente: tick do host que está sendo desenhado agora (o Match atualiza).</summary>
+    public int ClientRenderTick;
+
+    /// <summary>Host: tempo extra (s) para esperar o aperto do skill check de um cliente (ping + atraso de desenho do cliente).</summary>
+    public float SkillGrace(int netId)
+    {
+        float late = _inputs.TryGetValue(netId, out var ri) ? ri.Lateness : 0.3f;
+        return Mathf.Clamp(late + 0.06f, 0.1f, 0.8f);
+    }
 
     // =====================================================================
 

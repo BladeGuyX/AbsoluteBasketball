@@ -11,6 +11,9 @@ try {
     Write-Host "== dotnet build ==" -ForegroundColor Cyan
     dotnet build -c ExportRelease | Out-Host
     if ($LASTEXITCODE -ne 0) { throw "dotnet build falhou" }
+    # os testes rodam pela Godot (headless), que usa a DLL de depuracao: compila ela tambem
+    dotnet build | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw "dotnet build (debug) falhou" }
 
     Write-Host "== import ==" -ForegroundColor Cyan
     & $godot --headless --path . --import | Out-Null
@@ -35,10 +38,10 @@ try {
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 4 falhou" }
         Write-Host "== smoke test etapa 5 (rede: host + cliente por IP local) ==" -ForegroundColor Cyan
         $hostLog = Join-Path $env:TEMP "ab_net_host.log"
-        $hostProc = Start-Process -FilePath $godot -ArgumentList "--headless", "--path", ".", "--", "--net-smoke-host" -PassThru -NoNewWindow -RedirectStandardOutput $hostLog
+        $hostProc = Start-Process -FilePath $godot -ArgumentList "--headless", "--path", ".", "--", "--net-smoke-host", "--net-lag", "60" -PassThru -NoNewWindow -RedirectStandardOutput $hostLog
         $null = $hostProc.Handle   # sem guardar o handle o PowerShell não informa o ExitCode
         Start-Sleep -Seconds 2
-        & $godot --headless --path . -- --net-smoke-client 2>&1 | Select-String "\[NETTEST-CLIENT\]|ERROR" | Out-Host
+        & $godot --headless --path . -- --net-smoke-client --net-lag 60 2>&1 | Select-String "\[NETTEST-CLIENT\]|ERROR" | Out-Host
         $clientExit = $LASTEXITCODE
         $hostProc.WaitForExit(120000) | Out-Null
         Select-String -Path $hostLog -Pattern "\[NETTEST-HOST\]" | ForEach-Object { $_.Line } | Out-Host

@@ -63,7 +63,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 2;
+    public const int Version = 3;
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>
@@ -113,11 +113,13 @@ public sealed class RemoteInput
     readonly byte[] _consumed = new byte[NetInputCounter.Buttons.Length];
     public int Packets;
     public int LastSeq = -1;
+    public float ShootSkillT = -1;   // SkillT do último aperto de arremesso
+    public float Lateness = 0.25f;   // quanto (s) o cliente está atrás do host: tick que ele desenha → chegada aqui
 
     /// <summary>Input deste tick: apertos = contadores que mudaram desde o último tick.</summary>
     public PlayerInput Take()
     {
-        var inp = new PlayerInput { Move = Move, AimYaw = AimYaw, AimPitch = AimPitch, Held = Held };
+        var inp = new PlayerInput { Move = Move, AimYaw = AimYaw, AimPitch = AimPitch, Held = Held, SkillT = ShootSkillT };
         for (int i = 0; i < Counters.Length; i++)
             if (Counters[i] != _consumed[i]) { inp.Pressed |= NetInputCounter.Buttons[i]; _consumed[i] = Counters[i]; }
         return inp;

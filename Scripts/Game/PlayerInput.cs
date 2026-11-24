@@ -27,6 +27,11 @@ public struct PlayerInput
     public float AimPitch;
     public Btn Held;
     public Btn Pressed;    // apertado neste tick
+    /// <summary>
+    /// Online: no aperto do arremesso, onde estava o ponteiro do skill check NA TELA do cliente (s; −1 = não informado).
+    /// O host julga por isso — sem isso o atraso da rede fazia o cliente errar todo skill check.
+    /// </summary>
+    public float SkillT;
 
     public readonly bool IsHeld(Btn b) => (Held & b) != 0;
     public readonly bool WasPressed(Btn b) => (Pressed & b) != 0;

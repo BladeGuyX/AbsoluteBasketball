@@ -3,6 +3,15 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.8.2 — Skill check do cliente compensando o atraso da rede
+
+**Os dois PCs precisam desta build nova** (versões diferentes não conectam).
+1. Pela Steam, comecem uma partida. O amigo (cliente) enterra: acertando o ponteiro na zona branca **na tela dele**, a enterrada entra.
+2. Faça o amigo sofrer uma falta (você pula na frente da enterrada dele): ele cobra os lances livres e consegue acertar normalmente.
+3. Apertar cedo/tarde na tela dele continua errando. Para você (host) nada mudou.
+4. Se o amigo errar sem apertar, o jogador dele fica uma fração de segundo a mais no aro antes de cair (é o host esperando o aperto chegar pela rede) — normal.
+
+---
 ## v0.8.1 — Correção: pela Steam o amigo virava bot
 
 **Os dois PCs precisam desta build nova** (versões diferentes não conectam mais — aparece aviso).

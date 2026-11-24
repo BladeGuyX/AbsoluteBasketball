@@ -29,7 +29,7 @@ public partial class MainMenu : Control
         _box.AddThemeConstantOverride("separation", 16);
         center.AddChild(_box);
 
-        var ver = UiKit.Outlined("v0.8.1 · Etapa 5 (online)", 20, Colors.White, HorizontalAlignment.Right, 6);
+        var ver = UiKit.Outlined("v0.8.2 · Etapa 5 (online)", 20, Colors.White, HorizontalAlignment.Right, 6);
         AddChild(UiKit.Anchor(ver, 1, 1, 1, 1, -520, -44, -20, -12));
         ShowHome();
     }

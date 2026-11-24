@@ -49,6 +49,8 @@ public partial class Player : CharacterBody3D
     public float FlightT, FlightDur;
     public int FlightHoop;
     public bool DunkPressed;
+    /// <summary>Host: tempo extra esperando o aperto de um jogador remoto antes de dar o skill check como perdido.</summary>
+    public float SkillGrace;
     public float DunkPressT;
     public float SkillFlash;          // >0: mostra o resultado do skill check (HUD)
     public bool SkillFlashOk;
@@ -572,14 +574,19 @@ public partial class Player : CharacterBody3D
         // enterrada: skill check SÓ com o botão de arremesso no momento de tocar a cesta (Espaço não vale — v0.7)
         float half = t.DunkWindow * 0.5f;
         if (!HasBall) { EndFlight(); return; }
-        if (!DunkPressed && inp.WasPressed(Btn.Shoot)) { DunkPressed = true; DunkPressT = FlightT; }
+        if (!DunkPressed && inp.WasPressed(Btn.Shoot))
+        {
+            DunkPressed = true;
+            // remoto: vale onde o ponteiro estava na tela dele (não quando o aperto chegou)
+            DunkPressT = inp.SkillT >= 0 ? Mathf.Min(inp.SkillT, FlightT) : FlightT;
+        }
         if (DunkPressed)
         {
             bool inWindow = Mathf.Abs(DunkPressT - FlightDur) <= half;
             if (inWindow) { FinishDunk(true); return; }
             if (FlightT >= FlightDur) { FinishDunk(false); return; } // apertou cedo demais: erra ao tocar a cesta
         }
-        else if (FlightT >= FlightDur + half) FinishDunk(false); // não apertou a tempo
+        else if (FlightT >= FlightDur + half + SkillGrace) FinishDunk(false); // não apertou a tempo (remoto: espera o atraso da rede)
     }
 
     void FinishDunk(bool ok)

@@ -116,7 +116,7 @@ public sealed class BotBrain
             {
                 // não precisa correr para enterrar (v0.7): corre se tiver estamina
                 Steer(ref inp, rim, sprint: P.Stamina > T.StaminaMinToRun, avoid: false);
-                if (P.CanDunk()) inp.Pressed |= Btn.Jump;
+                if (P.DunkReadyVisual) inp.Pressed |= Btn.Jump;
                 return;
             }
         }
