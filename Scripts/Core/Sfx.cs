@@ -97,8 +97,12 @@ public static class Sfx
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);
     }
 
+    /// <summary>Online (host): cada som tocado também vai para os clientes (junto do próximo snapshot).</summary>
+    public static Action<string, Vector3, float, float, bool> Broadcast;
+
     public static void Play3D(Node parent, string name, Vector3 pos, float volumeDb = 0f, float pitch = 1f)
     {
+        Broadcast?.Invoke(name, pos, volumeDb, pitch, true);
         Init();
         if (parent == null || !Streams.TryGetValue(name, out var s)) return;
         var p = new AudioStreamPlayer3D { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch, UnitSize = 6 };
@@ -110,6 +114,7 @@ public static class Sfx
 
     public static void Play2D(Node parent, string name, float volumeDb = 0f, float pitch = 1f)
     {
+        Broadcast?.Invoke(name, Vector3.Zero, volumeDb, pitch, false);
         Init();
         if (parent == null || !Streams.TryGetValue(name, out var s)) return;
         var p = new AudioStreamPlayer { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch };

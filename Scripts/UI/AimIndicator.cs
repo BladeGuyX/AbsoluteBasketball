@@ -57,7 +57,7 @@ public partial class AimIndicator : Control
         }
 
         // ---- dá para enterrar agora: duas setinhas verdes acima da mira ----
-        if (p.CanDunk()) DunkReady(c);
+        if (p.DunkReadyVisual) DunkReady(c);
 
         // ---- passe carregado ----
         if (p.ChargingPass && p.PassCharge >= t.PassTapTime)

@@ -3,6 +3,32 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.8 — Etapa 5: multiplayer online (primeira versão)
+
+**Antes:** a pasta `Build` agora tem `steam_api64.dll` e `steam_appid.txt` (480) ao lado do .exe — não apague. Para a Steam, deixe a Steam aberta.
+
+**Abertura do jogo**
+1. Com a Steam aberta, abra o `AbsoluteBasketball.exe`: a janela pode piscar uma vez (o jogo se reabre para o overlay da Steam entrar). Na Steam você aparece "jogando Spacewar" (é o app de teste).
+2. Shift+Tab deve abrir o overlay da Steam (se não abrir, o convite pela lista do jogo continua funcionando).
+
+**Teste sozinho, duas janelas no mesmo PC (IP direto)**
+3. Abra o jogo **duas vezes**. Na janela 1: Online → "Hospedar por IP". Aparece o lobby com você no AZUL e vagas de bot.
+4. Na janela 2: Online → troque o nome → "Entrar por IP" (127.0.0.1). Ela entra no lobby (aparece nas duas janelas, no time com menos gente).
+5. Troque de time nas duas janelas ("Entrar neste time"); mude as configurações no host (quadra, pontos, jogadores por time): o cliente vê mudar e não consegue mexer.
+6. Host → "Começar partida": as duas janelas entram na partida com contagem; vagas vazias são bots.
+7. Jogue um pouco em cada janela: mover, arremessar, passar, pular, roubar, driblar, enterrar. Tudo que um faz aparece no outro; placar, sons e mensagens iguais.
+8. Faça uma falta enterrando por cima de alguém: os lances livres aparecem nas duas janelas (o skill check só para quem cobra).
+9. Esc no cliente: abre o menu mas **o jogo não pausa**. "Sair da partida online" no cliente: no host aparece que um bot assumiu.
+10. Fim de jogo: no host "Jogar de novo" (recomeça para os dois) ou "Voltar ao lobby" (os dois voltam ao lobby). No cliente aparece "Aguardando o host...".
+11. Feche a janela do host no meio da partida: o cliente volta ao menu com o aviso de que a conexão caiu.
+
+**Com um amigo pela Steam (dois PCs, duas contas)**
+12. Os dois com a Steam aberta e o jogo aberto. Você: Online → "Criar lobby (só amigos)". No lobby aparece o **código** e, à direita, a lista de amigos online com "Convidar".
+13. Convide o amigo (pela lista ou "Abrir convite da Steam"). Ele aceita pelo chat da Steam **com o jogo já aberto** e entra no lobby. Se o convite não chegar: ele digita o código em Online → "Entrar com código".
+14. Comecem a partida e joguem uns minutos. Me diga o ping que aparece no lobby do cliente e se sentiu atraso no próprio boneco (ainda não tem predição — o boneco do cliente responde com o atraso da rede).
+15. "Criar lobby (público)" e, no outro PC, "Procurar lobbies públicos": o lobby aparece na lista.
+
+---
 ## v0.7 — Lances livres, enterrada sem corrida, bloqueio dos bots
 
 **Antes:** apague o `Build\tuning.json` antigo (vários valores padrão mudaram).

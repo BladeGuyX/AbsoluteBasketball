@@ -24,6 +24,11 @@ public sealed class MatchConfig
     public bool SmokeBlock;          // --smoke-block (bot bloqueando arremessos)
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
+    // ---- online (Etapa 5) ----
+    public NetRole Net;              // None = offline; Host = simula e manda snapshots; Client = só mostra e manda input
+    public List<RosterEntry> Roster; // escalação online (mesma ordem em todos → mesmos Player.Id)
+    public int MyNetId;
+    public bool SmokeNet;            // --net-smoke-* (bot controla o jogador local dos dois lados)
 
     public MatchConfig Clone() => (MatchConfig)MemberwiseClone();
 }
@@ -55,6 +60,7 @@ public partial class Match : Node3D
     readonly Dictionary<Player, DummyBrain> _dummies = new();
     readonly Dictionary<Player, BotBrain> _bots = new();
     public readonly Dictionary<string, int> EventCount = new();
+    public readonly Dictionary<string, int> RemoteEvents = new();   // eventos de jogadores remotos (teste de rede)
     PauseMenu _pause;
     AutoPilot _smoke;
     ScenarioPilot _scenario;
@@ -76,7 +82,8 @@ public partial class Match : Node3D
     public float FtPressT;
     public float FtFlash;             // >0: mostra o resultado do skill check (verde/vermelho)
     public bool FtFlashOk;
-    public bool FtChecking => Phase == MatchPhase.FreeThrow && _ftStage == FtStage.Check;
+    public bool FtChecking => IsClient ? _netFtChecking : Phase == MatchPhase.FreeThrow && _ftStage == FtStage.Check;
+    bool _netFtChecking;
     FtStage _ftStage;
     float _ftStageT;
     PlayerInput _ftInput;
@@ -84,7 +91,11 @@ public partial class Match : Node3D
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.SmokeBlock || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.SmokeBlock || Cfg.SmokeNet || Cfg.AutoPilotLocal;
+    public bool IsOnline => Cfg.Net != NetRole.None;
+    public bool IsHost => Cfg.Net == NetRole.Host;
+    public bool IsClient => Cfg.Net == NetRole.Client;
+    readonly Dictionary<Player, int> _remote = new();   // host: jogador → NetId do cliente que o controla
 
     public override void _Ready()
     {
@@ -95,15 +106,19 @@ public partial class Match : Node3D
         Ball = new Ball { M = this, Name = "Ball" };
         AddChild(Ball);
 
-        LocalPlayer = SpawnPlayer(0, "Você", isLocal: true);
-        int max = CourtGeo.MaxPlayers(Cfg.Size);
-        int allies = Mathf.Clamp(Cfg.AllyDummies, 0, max - 1);
-        int enemies = Mathf.Clamp(Cfg.EnemyDummies, 0, max - 1 - allies);
-        for (int i = 0; i < allies; i++) AddOther(0, $"Aliado {i + 1}");
-        for (int i = 0; i < enemies; i++) AddOther(1, $"Adversário {i + 1}");
-        if (Cfg.SmokeE4) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
+        if (Cfg.Roster != null) SpawnRoster();
+        else
+        {
+            LocalPlayer = SpawnPlayer(0, "Você", isLocal: true);
+            int max = CourtGeo.MaxPlayers(Cfg.Size);
+            int allies = Mathf.Clamp(Cfg.AllyDummies, 0, max - 1);
+            int enemies = Mathf.Clamp(Cfg.EnemyDummies, 0, max - 1 - allies);
+            for (int i = 0; i < allies; i++) AddOther(0, $"Aliado {i + 1}");
+            for (int i = 0; i < enemies; i++) AddOther(1, $"Adversário {i + 1}");
+            if (Cfg.SmokeE4) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
+        }
 
-        Cam = new CameraRig { Target = LocalPlayer, Name = "CameraRig" };
+        Cam = new CameraRig { Target = LocalPlayer ?? Players.FirstOrDefault(), Name = "CameraRig" };
         AddChild(Cam);
         _preview = new TrajectoryPreview { Name = "Trajectory" };
         AddChild(_preview);
@@ -117,7 +132,45 @@ public partial class Match : Node3D
         if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
         if (Cfg.SmokeE3) _dunkScenario = new DunkScenario(this, LocalPlayer);
         if (Cfg.SmokeBlock) _blockScenario = new BlockScenario(this, LocalPlayer);
+        if (IsOnline) NetSession.I?.RegisterMatch(this);
+        if (IsClient)
+        {
+            // cliente: não simula — tudo vem dos snapshots do host
+            Phase = MatchPhase.Countdown;
+            if (LocalPlayer != null) Cam.SnapBehind(ShotMath.YawOf(new Vector3(CourtGeo.HoopSign(CourtGeo.AttackHoop(LocalPlayer.Team)), 0, 0)));
+            if (Cfg.SmokeNet && LocalPlayer != null) _clientBot = new BotBrain(this, LocalPlayer, 4321);
+            return;
+        }
         StartRound(0, null, countdown: true);
+    }
+
+    /// <summary>Online: cria os jogadores na ordem da escalação. Host: bots têm cérebro; humanos remotos usam o input da rede.</summary>
+    void SpawnRoster()
+    {
+        foreach (var e in Cfg.Roster)
+        {
+            bool mine = !e.IsBot && e.NetId == Cfg.MyNetId;
+            var p = SpawnPlayer(e.Team, e.Name, isLocal: mine);
+            p.IsBot = e.IsBot;
+            if (mine) LocalPlayer = p;
+            if (!IsHost) continue;
+            if (e.IsBot) _bots[p] = new BotBrain(this, p, (ulong)(p.Id * 7919 + 17));
+            else if (!mine) _remote[p] = e.NetId;
+        }
+        if (IsHost && Cfg.SmokeNet && LocalPlayer != null) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
+    }
+
+    /// <summary>Host: um cliente saiu no meio da partida → um bot assume o jogador dele.</summary>
+    public void OnRemoteLeft(int netId, string name)
+    {
+        var p = _remote.FirstOrDefault(kv => kv.Value == netId).Key;
+        if (p == null) return;
+        _netLeftPackets = NetSession.I.InputPackets(netId);
+        _netLeftName = p.PlayerName;
+        _remote.Remove(p);
+        p.IsBot = true;
+        _bots[p] = new BotBrain(this, p, (ulong)(p.Id * 7919 + 17));
+        GameRoot.I.Toast($"{name} saiu — um bot assumiu o lugar.");
     }
 
     Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false)
@@ -204,10 +257,29 @@ public partial class Match : Node3D
         return Mathf.Clamp(sign * k * step, -halfW + 0.5f, halfW - 0.5f);
     }
 
+    // ---- HUD: no host também vai para os clientes ----
+    void UiCountdown(string text, float dur)
+    {
+        Hud?.ShowCountdown(text, dur);
+        if (IsHost) NetSession.I?.HostHud(0, text, dur, Colors.White, false, -1);
+    }
+
+    void UiMessage(string text, float dur, Color color)
+    {
+        Hud?.ShowMessage(text, dur, color: color);
+        if (IsHost) NetSession.I?.HostHud(1, text, dur, color, false, -1);
+    }
+
+    void UiEnd(int winner)
+    {
+        Hud?.ShowEnd(winner);
+        if (IsHost) NetSession.I?.HostHud(2, "", 0, Colors.White, false, winner);
+    }
+
     void BeginPlay()
     {
         Phase = MatchPhase.Playing;
-        Hud?.ShowCountdown("VAI!", 0.7f);
+        UiCountdown("VAI!", 0.7f);
         Sfx.Play2D(this, "go", -4);
     }
 
@@ -216,6 +288,7 @@ public partial class Match : Node3D
     public override void _PhysicsProcess(double delta)
     {
         float dt = (float)delta;
+        if (IsClient) { ClientPhysics(dt); return; }
         switch (Phase)
         {
             case MatchPhase.Countdown:
@@ -224,7 +297,7 @@ public partial class Match : Node3D
                 if (n != _lastCountShown && n > 0)
                 {
                     _lastCountShown = n;
-                    Hud?.ShowCountdown(n.ToString(), 1.0f);
+                    UiCountdown(n.ToString(), 1.0f);
                     Sfx.Play2D(this, "beep", -6);
                 }
                 if (PhaseTimer <= 0) BeginPlay();
@@ -262,6 +335,7 @@ public partial class Match : Node3D
             }
             else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
             else if (_bots.TryGetValue(p, out var bot)) inp = bot.Build(dt);
+            else if (_remote.TryGetValue(p, out int netId)) inp = NetSession.I.TakeInput(netId);
             if (p == FtShooter) _ftInput = inp;
             p.ServerTick(inp, dt);
         }
@@ -280,6 +354,8 @@ public partial class Match : Node3D
         if (Cfg.SmokeE3) SmokeE3Tick(dt);
         if (Cfg.SmokeE4) SmokeE4Tick(dt);
         if (Cfg.SmokeBlock) SmokeBlockTick(dt);
+        if (Cfg.SmokeNet) SmokeNetHostTick(dt);
+        if (IsHost) NetSession.I?.HostAfterTick(this);
     }
 
     void HandleBallHit(BallHit hit)
@@ -306,7 +382,7 @@ public partial class Match : Node3D
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
         Sfx.Play2D(this, "score", -7);
-        Hud?.ShowMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, color: Palette.Team[team]);
+        UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
         LogEvent(freeThrow ? "SCORE_FT" : Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
         GD.Print($"[SCORE] time {team} +{pts} ({(freeThrow ? "lance livre" : three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
 
@@ -330,7 +406,7 @@ public partial class Match : Node3D
         if (Score[0] == Score[1])
         {
             Overtime = true;
-            Hud?.ShowMessage("PRORROGAÇÃO! Próxima cesta vence", 2.5f);
+            UiMessage("PRORROGAÇÃO! Próxima cesta vence", 2.5f, Colors.White);
             return;
         }
         Winner = Score[0] > Score[1] ? 0 : 1;
@@ -341,7 +417,7 @@ public partial class Match : Node3D
     {
         Phase = MatchPhase.Ended;
         Sfx.Play2D(this, "win", -5);
-        Hud?.ShowEnd(Winner);
+        UiEnd(Winner);
     }
 
     // ------------------------------------------------------------------ bola: bloqueio e recepção
@@ -607,7 +683,8 @@ public partial class Match : Node3D
     public void LogEvent(string kind, Player a, Player b = null)
     {
         EventCount[kind] = EventCount.GetValueOrDefault(kind) + 1;
-        if (Automated && !Cfg.SmokeE4) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
+        if (a != null && _remote.ContainsKey(a)) RemoteEvents[kind] = RemoteEvents.GetValueOrDefault(kind) + 1;
+        if (Automated && !Cfg.SmokeE4 && !Cfg.SmokeNet) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
         _scenario?.OnEvent(kind, a, b);
         _dunkScenario?.OnEvent(kind, a, b);
         _blockScenario?.OnEvent(kind, a, b);
@@ -631,7 +708,11 @@ public partial class Match : Node3D
         var lp = LocalPlayer;
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
 
-        if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3) ScreenshotTick((float)delta);
+        if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3 && !Cfg.SmokeNet) ScreenshotTick((float)delta);
+        // teste de rede com --net-shot: prints do cliente aos 20 s e 40 s de jogo
+        if (Cfg.SmokeNet && IsClient && Cfg.ScreenshotPath != null)
+            foreach (int sec in new[] { 20, 40 })
+                if (_netT >= sec && !_e3Shots.Contains("net" + sec)) E3Shot("net" + sec);
         // diagnóstico: --smoke-e3 --e3-shot <png> salva prints: _ready (setinhas "pode enterrar"), _dunk (skill check da enterrada), _ft (lance livre)
         if (Cfg.SmokeE3 && Cfg.ScreenshotPath != null && lp != null)
         {
@@ -686,6 +767,7 @@ public partial class Match : Node3D
     /// <summary>Janela perdeu o foco (alt-tab): pausa a partida offline.</summary>
     public void OnFocusLost()
     {
+        if (IsOnline) return; // online não pausa: o jogo continua para os outros
         if (Automated || Phase == MatchPhase.Ended || _pause == null || _pause.IsOpen) return;
         _pause.Open();
     }
@@ -769,5 +851,134 @@ public partial class Match : Node3D
                  $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE2 = false;
+    }
+
+    // ------------------------------------------------------------------ online: cliente (só mostra o que o host manda)
+
+    const float InterpDelayTicks = 5f;   // desenha ~83 ms atrás do último snapshot (absorve perda e variação da rede)
+    readonly List<NetSnapshot> _snaps = new();
+    float _renderTick = -1;
+    BotBrain _clientBot;                 // teste de rede: bot gera o input do cliente
+    public int ClientSnapshotsApplied;
+
+    /// <summary>Cliente: snapshot recebido do host (guarda para interpolar).</summary>
+    public void ClientSnapshot(NetSnapshot s)
+    {
+        if (_snaps.Count > 0 && s.Tick <= _snaps[^1].Tick) return; // velho / fora de ordem
+        _snaps.Add(s);
+        if (_snaps.Count > 40) _snaps.RemoveAt(0);
+    }
+
+    /// <summary>Cliente: mensagem da HUD vinda do host.</summary>
+    public void ClientHud(int kind, string text, float dur, Color color, bool small, int winner)
+    {
+        if (kind == 0) Hud?.ShowCountdown(text, dur);
+        else if (kind == 1) Hud?.ShowMessage(text, dur, color, small);
+        else if (kind == 2) { Winner = winner; Phase = MatchPhase.Ended; Hud?.ShowEnd(winner); }
+    }
+
+    void ClientPhysics(float dt)
+    {
+        // input local → host (o personagem só se mexe quando o snapshot do host voltar)
+        PlayerInput inp = _clientBot != null ? _clientBot.Build(dt) : _reader.Build(Cam, !InputBlocked);
+        if (LocalPlayer != null) LocalPlayer.LastInput = inp;
+        NetSession.I?.SendInput(inp);
+
+        if (_snaps.Count > 0)
+        {
+            var last = _snaps[^1];
+            float target = last.Tick - InterpDelayTicks;
+            if (_renderTick < 0 || Mathf.Abs(_renderTick - target) > 30) _renderTick = target;
+            else _renderTick += 1f + (target - _renderTick) * 0.05f; // anda 1 tick por tick e corrige devagar
+            NetSnapshot a = _snaps[0], b = _snaps[0];
+            for (int i = 0; i < _snaps.Count; i++)
+                if (_snaps[i].Tick <= _renderTick) { a = _snaps[i]; b = i + 1 < _snaps.Count ? _snaps[i + 1] : _snaps[i]; }
+            float k = b.Tick > a.Tick ? Mathf.Clamp((_renderTick - a.Tick) / (b.Tick - a.Tick), 0, 1) : 1f;
+            while (_snaps.Count > 3 && _snaps[1].Tick < _renderTick - 4) _snaps.RemoveAt(0);
+            ApplyClientState(a, b, k, dt);
+        }
+        if (Cfg.SmokeNet) SmokeNetClientTick(dt);
+    }
+
+    Player ById(int id)
+    {
+        if (id <= 0) return null;
+        if (id - 1 < Players.Count && Players[id - 1].Id == id) return Players[id - 1];
+        return Players.FirstOrDefault(p => p.Id == id);
+    }
+
+    void ApplyClientState(NetSnapshot a, NetSnapshot b, float k, float dt)
+    {
+        ClientSnapshotsApplied++;
+        var prevPhase = Phase;
+        if (Phase != MatchPhase.Ended) Phase = b.Phase;
+        PhaseTimer = b.PhaseTimer; Score[0] = b.Score0; Score[1] = b.Score1; Clock = b.Clock; Overtime = b.Overtime; Possession = b.Possession;
+        if (Phase != MatchPhase.Ended) Winner = b.Winner;
+        FtShooter = ById(b.FtShooter); FtAttempt = b.FtAttempt; FtT = b.FtT; FtDur = b.FtDur; FtPressed = b.FtPressed; FtPressT = b.FtPressT;
+        FtFlash = b.FtFlash; FtFlashOk = b.FtFlashOk; FtFlashPlayer = ById(b.FtFlashPlayer); _netFtChecking = b.FtChecking;
+
+        foreach (var (id, sb) in b.Players)
+        {
+            var p = ById(id);
+            if (p == null) continue;
+            var sa = sb;
+            foreach (var (ida, s2) in a.Players) if (ida == id) { sa = s2; break; }
+            p.ClientApply(Player.Lerp(sa, sb, k), dt);
+        }
+        Ball.ClientApply(b.BallState, ById(b.BallHolder), b.BallThrowTeam, ById(b.BallLastThrower), ById(b.BallPassTarget),
+            a.BallPos.Lerp(b.BallPos, k), b.BallVel, b.BallFlightTime);
+
+        // câmera atrás do jogador quando um round/lance livre recomeça com ele teleportado
+        var lp = LocalPlayer;
+        if (lp != null && prevPhase != Phase && (Phase == MatchPhase.FreeThrow && FtShooter == lp || prevPhase == MatchPhase.Scored && Phase == MatchPhase.Playing))
+            Cam.SnapBehind(lp.Yaw);
+    }
+
+    // ------------------------------------------------------------------ teste de rede (--net-smoke-host / --net-smoke-client)
+
+    float _netT, _netDist;
+    int _netLeftPackets = -1;
+    string _netLeftName;
+    Vector3 _netLast;
+    bool _netInit, _netSawPlaying;
+
+    static void Track(Player p, ref bool init, ref Vector3 last, ref float dist)
+    {
+        if (p == null) return;
+        var pos = p.GlobalPosition;
+        float step = (pos - last).Length();
+        if (init && step < 0.5f) dist += step; // ignora teleportes (início de round)
+        last = pos;
+        init = true;
+    }
+
+    void SmokeNetHostTick(float dt)
+    {
+        _netT += dt;
+        var rp = _remote.Keys.FirstOrDefault();
+        Track(rp, ref _netInit, ref _netLast, ref _netDist);
+        if (_netT < 75f) return;
+        int acts = 0;
+        foreach (var k in new[] { "SHOT", "PASS", "HIGHPASS", "JUMP", "STEAL_TRY", "DRIBBLE", "DUNK" }) acts += RemoteEvents.GetValueOrDefault(k);
+        int packets = rp != null ? NetSession.I.InputPackets(_remote[rp]) : _netLeftPackets;
+        bool ok = (rp != null || _netLeftPackets >= 0) && _netDist > 15f && acts >= 2 && packets > 1000;
+        GD.Print($"[NETTEST-HOST] remoto={rp?.PlayerName ?? _netLeftName + " (já saiu)"} pacotes_de_input={packets} andou={_netDist:0}m acoes_do_remoto={acts} " +
+                 $"({string.Join(" ", RemoteEvents.Select(kv => kv.Key + "=" + kv.Value))}) placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
+        Cfg.SmokeNet = false;
+        GetTree().Quit(ok ? 0 : 1);
+    }
+
+    void SmokeNetClientTick(float dt)
+    {
+        _netT += dt;
+        Track(LocalPlayer, ref _netInit, ref _netLast, ref _netDist);
+        if (Phase == MatchPhase.Playing) _netSawPlaying = true;
+        if (_netT < 70f) return;
+        var ns = NetSession.I;
+        bool ok = ns.SnapshotsReceived > 1000 && ClientSnapshotsApplied > 1000 && _netDist > 15f && _netSawPlaying;
+        GD.Print($"[NETTEST-CLIENT] snapshots={ns.SnapshotsReceived} inputs_enviados={ns.InputsSent} andou={_netDist:0}m viu_jogo={_netSawPlaying} " +
+                 $"placar_visto={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
+        Cfg.SmokeNet = false;
+        GetTree().Quit(ok ? 0 : 1);
     }
 }

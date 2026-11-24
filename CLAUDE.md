@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.7 — Etapas 0 a 4 concluídas (bots) + revisão v0.7 (lances livres, bloqueio dos bots). Em andamento: Etapa 5 (multiplayer Steam).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.8 — Etapas 0 a 4 concluídas + Etapa 5 em andamento (online pela Steam e IP direto funcionando; falta testar entre 2 PCs e predição do jogador local).**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -31,6 +31,8 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - Teste automático de arremesso: `<godot_console> --headless --path . -- --smoke-test` (bandeja / meia distância / 3 pts).
 - Teste automático da Etapa 2: `... -- --smoke-e2` (passe rápido + devolução, passe carregado, drible, pulo/toco do boneco, roubo falhando por imunidade e roubo certo).
 - Teste automático da Etapa 3: `... -- --smoke-e3` (enterrada certa, errada + atordoado, enterrada andando com Espaço no skill check = erra, falta → 2 lances livres: acerta o 1º (+1), erra o 2º (bola viva)). `--e3-shot <png>` salva prints `_ready` (setinhas), `_dunk` e `_ft` (skill checks).
+- Teste de rede (Etapa 5): host e cliente em dois processos por IP local — `<godot_console> --headless --path . -- --net-smoke-host` e, em paralelo, `... -- --net-smoke-client` (bots controlam os dois humanos; o cliente confere snapshots/movimento/placar, o host confere inputs e ações do remoto). `--net-shot <png>` no cliente salva prints aos 20 s e 40 s. O build.ps1 roda os dois.
+- Steam: `... -- --steam-test` (só inicia e fecha a Steam; precisa da Steam aberta). Prints dos menus: `--screenshot <png> --online` / `--lobby`.
 - Teste do bloqueio dos bots: `... -- --smoke-block` (16 arremessos com bot Normal marcando; exige tocos e quase nenhum pulo inútil).
 - Teste automático da Etapa 4: `... -- --smoke-e4` (3x3 só de bots, 150 s de jogo: pontos dos dois lados, arremessos, passes, trocas de posse; imprime estatísticas). O build.ps1 roda os quatro.
 - **ATENÇÃO:** rodando pela Godot (headless) o jogo lê `tuning.json` da RAIZ do projeto, que guarda valores antigos. O build.ps1 apaga esse arquivo antes dos testes; ao testar manualmente, apague-o também.
@@ -64,7 +66,11 @@ O usuário fala português (pt-BR) — responda em pt-BR.
   - `Ball` + `BallPhys` — física própria (gravidade, quiques, aro em toro, tabela AABB, poste, paredes) e detecção de cesta. `ShotMath.Plan()` = arremesso (distância = `PitchDistance(câmera)` limitada por `ShotRangeMax`; assistências suaves só na cesta adversária; sem bandeja; ângulo mínimo de entrada). `BallPhys`: aro amigável e tabelinha (`CourtGeo.Bank*`) só valem com `assistHoop` (arremesso na cesta adversária); `UpThroughHoop` + `Ball._noScoreHoop` = cesta por baixo não vale — compartilhado por jogador, prévia, HUD e bots.
   - `CourtGeo` (geometria lógica, 3 tamanhos, `IsThree`) e `CourtBuilder` (visual + colisores + ambiente).
   - `CameraRig` (+ `LocalInputReader`), `TrajectoryPreview`, `AutoPilot` (piloto do teste; base para os bots).
-- `Scripts/UI/`: `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
+- `Scripts/Net/` (Etapa 5): `NetSession` (nó filho do GameRoot, ANTES da partida na árvore: lobby, conexões, escalação, input dos clientes, snapshots, HUD/sons replicados), `NetProtocol` (mensagens `Msg`, `NetWriter/Reader`, `OnlineSettings`, `RosterEntry`, `RemoteInput` com contadores de aperto, `NetSnapshot`), `INetTransport` + `SteamTransport` (P2P Steam) + `EnetTransport` (IP direto, ENet só como cano de pacotes), `SteamService` (init/callbacks/reabrir para o overlay; resolve o `steam_api64.dll`), `SteamLobby` (lobby, convites, código, públicos).
+  - `Match` online: `Cfg.Net` (Host/Client), `Cfg.Roster`, `SpawnRoster`, `_remote` (jogador → NetId), `OnRemoteLeft` (bot assume), `UiCountdown/UiMessage/UiEnd` (HUD também vai aos clientes). Cliente: `ClientPhysics` (manda input, interpola snapshots `InterpDelayTicks`), `ApplyClientState`, `ClientHud`. `Player.NetState`/`CaptureNet`/`ClientApply`, `Ball.ClientApply`, `Sfx.Broadcast`, `Tuning.ApplyJson`.
+  - Steamworks.NET 2025.164.1 (oficial, rlabrecque) em `ThirdParty/Steamworks/` (referenciado no .csproj). O build.ps1 copia `steam_api64.dll` e `steam_appid.txt` (480) para `Build/`. Testes automáticos NÃO iniciam a Steam.
+  - **Mudou o formato de alguma mensagem/snapshot? Suba `NetProtocol.Version`.**
+- `Scripts/UI/`: `OnlineMenu` (Steam: criar só amigos/público, código, procurar; IP direto: hospedar/entrar), `LobbyMenu` (times, configurações do host, convidar amigos, começar/sair), `UiKit` (tema/widgets; use `UiKit.Anchor`/`FullRect` — nunca `Position` em controles ancorados), `Hud`, `MainMenu`, `SettingsMenu`, `PauseMenu`.
 - Convenções: cesta 0 em −X, cesta 1 em +X; time 0 (AZUL) ataca a 1, time 1 (LARANJA) ataca a 0. Yaw: frente = (−sin, 0, −cos).
 - **Uma classe Godot por arquivo, com o mesmo nome do arquivo** (requisito do C# da Godot).
 - Physics interpolation ligada: ao teleportar nós, chamar `ResetPhysicsInterpolation()`.
@@ -76,10 +82,11 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - `tuning.json`: no editor fica na raiz do projeto; na build fica **ao lado do .exe** (criado automaticamente; campos novos são acrescentados mantendo os valores do usuário). Não vai para o .pck.
 - Settings do jogador: `%APPDATA%\Godot\app_userdata\Absolute Basketball\settings.json`.
 
-## Próximos passos (Etapa 5 — multiplayer pela Steam)
-Steamworks (AppID 480/Spacewar, sem publicar), lobby (criar/entrar/convidar), host autoritativo: clientes mandam
-`PlayerInput`, host manda snapshots (jogadores, bola, placar, fase). Interpolação no cliente. Bots preenchem vagas.
-Perguntar ao usuário antes de instalar/baixar o Steamworks.NET (ou GodotSteam .NET) se houver dúvida.
+## Próximos passos (resto da Etapa 5)
+1. Esperar o teste real do usuário entre 2 PCs pela Steam (roteiro v0.8 em `docs/TESTES.md`) e corrigir o que aparecer.
+2. Predição do jogador local no cliente (hoje o boneco do cliente responde com o atraso da rede): simular só o movimento
+   localmente e corrigir suavemente pela posição do host.
+3. Compressão dos snapshots (posições em 16 bits, só o que mudou) se a banda pesar; reconexão de quem caiu.
 
 ## (histórico) Etapa 2 — já feita
 Passe (toque = aliado livre mais próximo; segurar = aliado na direção da câmera com marcador; variação = passe alto; checagem de linha livre; interceptação por qualquer jogador no caminho), salto (carga, bloqueio de arremessos subindo e passes altos → bola quica e cai; 0,5 s de trava ao pousar), roubo (impulso, falha = 2 s a 20% sem correr/pular/roubar; imune: driblando, no ar, carregando arremesso), drible (2 cargas, 1 s, 50% mais lento, recarga 10 s contínua). Adicionar estados ao `Ball` (Pass/HighPass) e flags no `Player`. Para testar sem bots, considerar bonecos parados (dummies) no time adversário.

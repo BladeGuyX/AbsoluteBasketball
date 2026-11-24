@@ -6,4 +6,12 @@
     <Nullable>disable</Nullable>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <!-- Steamworks.NET 2025.164.1 (standalone, Windows x64) — multiplayer pela Steam (Etapa 5). -->
+  <ItemGroup>
+    <Reference Include="Steamworks.NET">
+      <HintPath>ThirdParty\Steamworks\Steamworks.NET.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <None Include="ThirdParty\Steamworks\steam_api64.dll" Link="steam_api64.dll" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

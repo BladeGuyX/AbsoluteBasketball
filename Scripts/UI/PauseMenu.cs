@@ -27,8 +27,10 @@ public partial class PauseMenu : Control
         _first = UiKit.Btn("Continuar", Close);
         vb.AddChild(_first);
         vb.AddChild(UiKit.Btn("Configurações", OpenSettings));
-        vb.AddChild(UiKit.Btn("Reiniciar partida", () => GameRoot.I.Rematch()));
-        vb.AddChild(UiKit.Btn("Sair para o menu", () => GameRoot.I.ShowMainMenu()));
+        if (M == null || !M.IsOnline) vb.AddChild(UiKit.Btn("Reiniciar partida", () => GameRoot.I.Rematch()));
+        vb.AddChild(UiKit.Btn(M != null && M.IsHost ? "Encerrar partida online" : M != null && M.IsClient ? "Sair da partida online" : "Sair para o menu",
+            () => GameRoot.I.LeaveToMenu()));
+        if (M != null && M.IsOnline) vb.AddChild(UiKit.Lbl("Online o jogo não pausa.", 20, new Color("5b6577"), HorizontalAlignment.Center));
     }
 
     void OpenSettings()
@@ -47,7 +49,7 @@ public partial class PauseMenu : Control
     public void Open()
     {
         Visible = true;
-        GetTree().Paused = true;
+        if (M == null || !M.IsOnline) GetTree().Paused = true;
         _first.GrabFocus();
     }
 

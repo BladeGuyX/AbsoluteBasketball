@@ -109,6 +109,23 @@ public partial class Ball : Node3D
         return hit;
     }
 
+    /// <summary>Online (cliente): aplica o estado vindo do host. Na mão, a bola segue a mão do dono (calculada aqui).</summary>
+    public void ClientApply(BallState st, Player holder, int throwTeam, Player lastThrower, Player passTarget, Vector3 pos, Vector3 vel, float flightTime)
+    {
+        State = st;
+        Holder = st == BallState.Held ? holder : null;
+        ThrowTeam = throwTeam;
+        LastThrower = lastThrower;
+        PassTarget = passTarget;
+        Vel = vel;
+        FlightTime = flightTime;
+        var np = Holder != null ? Holder.HeldBallPosition() : pos;
+        bool jump = np.DistanceTo(GlobalPosition) > 4f;
+        Spin(np - GlobalPosition);
+        GlobalPosition = np;
+        if (jump) ResetPhysicsInterpolation();
+    }
+
     void Spin(Vector3 delta)
     {
         var h = new Vector3(delta.X, 0, delta.Z);

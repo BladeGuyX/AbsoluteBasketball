@@ -43,6 +43,16 @@ public partial class GameRoot : Node
 
         if (args.Contains("--shot-stats")) { ShotStats(); GetTree().Quit(); return; }
 
+        // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
+        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--video-test");
+        if (!automated)
+        {
+            if (SteamService.RelaunchForOverlay(args)) { GetTree().Quit(); return; }
+            SteamService.Init();
+        }
+        else if (args.Contains("--steam-test")) SteamService.Init();
+        AddChild(new NetSession { Name = "Net" });
+
         _ui = new CanvasLayer { Layer = 20 };
         AddChild(_ui);
         SetupCursor(args);
@@ -65,9 +75,11 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            if (args.Contains("--menu"))
+            if (args.Contains("--menu") || args.Contains("--online") || args.Contains("--lobby"))
             {
-                ShowMainMenu();
+                if (args.Contains("--online")) ShowOnlineMenu();
+                else if (args.Contains("--lobby")) { NetSession.I.HostDirect(NetSmokePort, "Blade", loopbackOnly: true); NetSession.I.SetMyTeam(0); }
+                else ShowMainMenu();
                 GetTree().CreateTimer(1.5).Timeout += () =>
                 {
                     GetViewport().GetTexture().GetImage().SavePng(args[si + 1]);
@@ -88,6 +100,44 @@ public partial class GameRoot : Node
         {
             SetTestSpeed(3.0f);
             StartMatch(new MatchConfig { SmokeE4 = true, Size = CourtSize.Medium, TargetScore = 999, AllyDummies = 2, EnemyDummies = 3, BotDifficulty = 1 });
+            return;
+        }
+        // teste de rede: duas instâncias (host e cliente) conversando por IP local, bots controlando os dois jogadores
+        int nh = Array.IndexOf(args, "--net-smoke-host");
+        if (nh >= 0)
+        {
+            SetTestSpeed(2.0f);
+            var ns = NetSession.I;
+            ns.SmokeNet = true;
+            if (!ns.HostDirect(NetSmokePort, "Host", loopbackOnly: true)) { GD.Print("[NETTEST-HOST] não abriu a porta -> FALHOU"); GetTree().Quit(1); return; }
+            ns.HostSetSettings(new OnlineSettings { Size = CourtSize.Small, TeamSize = 2, TargetScore = 99, BotDifficulty = 1 });
+            ns.LobbyChanged += () => { if (!ns.InMatch && ns.Members.Count >= 2) ns.HostStartMatch(); };
+            GetTree().CreateTimer(60).Timeout += () => { if (!ns.InMatch) { GD.Print("[NETTEST-HOST] o cliente não entrou -> FALHOU"); GetTree().Quit(1); } };
+            return;
+        }
+        if (args.Contains("--net-smoke-client"))
+        {
+            SetTestSpeed(2.0f);
+            var ns = NetSession.I;
+            ns.SmokeNet = true;
+            int shot = Array.IndexOf(args, "--net-shot");
+            if (shot >= 0 && shot + 1 < args.Length) ns.SmokeShot = args[shot + 1];
+            // tenta algumas vezes (o host pode ainda estar abrindo)
+            int tries = 0;
+            void TryJoin()
+            {
+                if (ns.InMatch || (ns.Active && ns.Connected)) return;
+                if (++tries > 20) { GD.Print("[NETTEST-CLIENT] não conectou -> FALHOU"); GetTree().Quit(1); return; }
+                ns.JoinDirect("127.0.0.1", NetSmokePort, "Cliente");
+                GetTree().CreateTimer(3).Timeout += TryJoin;
+            }
+            TryJoin();
+            return;
+        }
+        if (args.Contains("--steam-test"))
+        {
+            GD.Print(SteamService.Initialized ? $"[STEAMTEST] OK: Steam iniciada como {SteamService.LocalName}" : $"[STEAMTEST] Steam indisponível: {SteamService.Error}");
+            GetTree().Quit(0);
             return;
         }
         if (args.Contains("--smoke-block"))
@@ -175,6 +225,8 @@ public partial class GameRoot : Node
         Engine.MaxPhysicsStepsPerFrame = 24;
     }
 
+    const int NetSmokePort = 27961;
+
     public void ShowMainMenu()
     {
         FreeMatch();
@@ -193,6 +245,31 @@ public partial class GameRoot : Node
     }
 
     public void Rematch() => StartMatch(_lastCfg.Clone());
+
+    /// <summary>Tela Online (criar/entrar em lobby).</summary>
+    public void ShowOnlineMenu(string status = null)
+    {
+        FreeMatch();
+        CloseMenu();
+        _menu = new OnlineMenu { Name = "OnlineMenu", Status = status };
+        _ui.AddChild(_menu);
+    }
+
+    /// <summary>Tela do lobby (depois de criar/entrar, ou quando a partida online acaba).</summary>
+    public void ShowLobby()
+    {
+        FreeMatch();
+        CloseMenu();
+        _menu = new LobbyMenu { Name = "LobbyMenu" };
+        _ui.AddChild(_menu);
+    }
+
+    /// <summary>Sair para o menu principal (online: sai da sessão; se for o host, a partida acaba para todos).</summary>
+    public void LeaveToMenu()
+    {
+        if (NetSession.I != null && NetSession.I.Active) NetSession.I.Leave(toMenu: true);
+        else ShowMainMenu();
+    }
 
     void FreeMatch()
     {
@@ -223,6 +300,7 @@ public partial class GameRoot : Node
     {
         if (e.IsActionPressed(Act.ReloadTuning))
         {
+            if (NetSession.I != null && NetSession.I.IsClient && NetSession.I.InMatch) { Toast("Online: os valores de tuning são os do host."); return; }
             string msg = Tuning.Load();
             Toast(msg + (_match != null ? "  · tamanhos de quadra/aro valem na próxima partida" : ""));
         }
@@ -232,6 +310,11 @@ public partial class GameRoot : Node
     {
         // Não mexe no modo do mouse com a janela sem foco (isso deixava o cursor "congelado" ao voltar do alt-tab);
         // o modo certo é aplicado em UpdateMouse() quando o foco volta.
+        if (what == NotificationWMCloseRequest || what == NotificationPredelete)
+        {
+            if (NetSession.I != null && NetSession.I.Active) NetSession.I.Leave(toMenu: false);
+            SteamService.Shutdown();
+        }
         if (what == NotificationApplicationFocusOut)
         {
             if (_match != null && IsInstanceValid(_match)) _match.OnFocusLost();
@@ -256,7 +339,7 @@ public partial class GameRoot : Node
         var tex = ImageTexture.CreateFromImage(img);
         foreach (Input.CursorShape shape in System.Enum.GetValues(typeof(Input.CursorShape)))
             Input.SetCustomMouseCursor(tex, shape, Vector2.Zero);
-        if (args.Contains("--screenshot") || args.Contains("--smoke-test") || args.Contains("--smoke-e2") || args.Contains("--smoke-e3") || args.Contains("--smoke-block")) return;
+        if (args.Contains("--screenshot") || args.Contains("--smoke-test") || args.Contains("--smoke-e2") || args.Contains("--smoke-e3") || args.Contains("--smoke-block") || args.Any(a => a.StartsWith("--net-smoke"))) return;
         var layer = new CanvasLayer { Layer = 128 };
         AddChild(layer);
         layer.AddChild(new SoftCursor { Name = "SoftCursor" });

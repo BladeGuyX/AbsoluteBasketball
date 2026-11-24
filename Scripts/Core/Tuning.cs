@@ -415,6 +415,17 @@ public sealed class Tuning
 
     public static string ToJson() => JsonSerializer.Serialize(I, JsonOpts);
 
+    /// <summary>Online (cliente): usa os valores do host só em memória (não grava o tuning.json local).</summary>
+    public static void ApplyJson(string json)
+    {
+        try
+        {
+            var t = JsonSerializer.Deserialize<Tuning>(json, JsonOpts);
+            if (t != null) { I = t; Revision++; }
+        }
+        catch (Exception e) { GD.PushError("Tuning do host inválido: " + e.Message); }
+    }
+
     /// <summary>Esquema com seções/rótulos/limites/padrões — usado para gerar o artifact.</summary>
     public static string SchemaJson()
     {

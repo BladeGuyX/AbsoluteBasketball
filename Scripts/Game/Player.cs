@@ -619,6 +619,112 @@ public partial class Player : CharacterBody3D
         Velocity = Vector3.Zero;
     }
 
+    // =====================================================================
+    // Rede (Etapa 5): estado replicado do host para os clientes
+
+    /// <summary>Tudo que o cliente precisa para desenhar/animar este jogador e mostrar a HUD dele.</summary>
+    public struct NetState
+    {
+        public Vector3 Pos, Vel;
+        public float Yaw;
+        public ushort Flags;
+        public float Stamina, ShotCharge, PassCharge, Stun, StealFail, StealDash, DribbleActive, LandLock, DribblePhase,
+            ReleaseT, PassReleaseT, FlightT, FlightDur, DunkPressT, SkillFlash, DribbleRecharge;
+        public byte DribbleCharges;
+    }
+
+    [System.Flags]
+    enum NF : ushort
+    {
+        Running = 1, ChargingShot = 2, ChargingPass = 4, PassHigh = 8, ChargingJump = 16, Airborne = 32, Dunk = 64,
+        DunkPressed = 128, SkillFlashOk = 256, StunOnLand = 512, DunkReady = 1024,
+    }
+
+    /// <summary>Cliente: "pode enterrar" calculado no host (o boneco do cliente não tem física de chão).</summary>
+    public bool NetDunkReady;
+    /// <summary>Setinhas de "pode enterrar" (host: calcula; cliente: o que o host mandou).</summary>
+    public bool DunkReadyVisual => M != null && M.IsClient ? NetDunkReady : CanDunk();
+
+    public NetState CaptureNet()
+    {
+        NF f = 0;
+        if (Running) f |= NF.Running;
+        if (ChargingShot) f |= NF.ChargingShot;
+        if (ChargingPass) f |= NF.ChargingPass;
+        if (PassHigh) f |= NF.PassHigh;
+        if (ChargingJump) f |= NF.ChargingJump;
+        if (Airborne) f |= NF.Airborne;
+        if (Flight == FlightKind.Dunk) f |= NF.Dunk;
+        if (DunkPressed) f |= NF.DunkPressed;
+        if (SkillFlashOk) f |= NF.SkillFlashOk;
+        if (_stunOnLand) f |= NF.StunOnLand;
+        if (IsLocalHuman || !IsBot) { if (CanDunk()) f |= NF.DunkReady; }
+        return new NetState
+        {
+            Pos = GlobalPosition, Vel = Velocity, Yaw = Yaw, Flags = (ushort)f,
+            Stamina = Stamina, ShotCharge = ShotCharge, PassCharge = PassCharge, Stun = Stun, StealFail = StealFail, StealDash = StealDash,
+            DribbleActive = DribbleActive, LandLock = LandLock, DribblePhase = DribblePhase, ReleaseT = _releaseT, PassReleaseT = _passReleaseT,
+            FlightT = FlightT, FlightDur = FlightDur, DunkPressT = DunkPressT, SkillFlash = SkillFlash, DribbleRecharge = DribbleRecharge,
+            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255),
+        };
+    }
+
+    public static void WriteNet(NetWriter w, in NetState s)
+    {
+        w.V3(s.Pos); w.V3(s.Vel); w.F(s.Yaw); w.U16(s.Flags);
+        w.F(s.Stamina); w.F(s.ShotCharge); w.F(s.PassCharge); w.F(s.Stun); w.F(s.StealFail); w.F(s.StealDash); w.F(s.DribbleActive);
+        w.F(s.LandLock); w.F(s.DribblePhase); w.F(s.ReleaseT); w.F(s.PassReleaseT); w.F(s.FlightT); w.F(s.FlightDur); w.F(s.DunkPressT);
+        w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges);
+    }
+
+    public static NetState ReadNet(NetReader r) => new()
+    {
+        Pos = r.V3(), Vel = r.V3(), Yaw = r.F(), Flags = r.U16(),
+        Stamina = r.F(), ShotCharge = r.F(), PassCharge = r.F(), Stun = r.F(), StealFail = r.F(), StealDash = r.F(), DribbleActive = r.F(),
+        LandLock = r.F(), DribblePhase = r.F(), ReleaseT = r.F(), PassReleaseT = r.F(), FlightT = r.F(), FlightDur = r.F(), DunkPressT = r.F(),
+        SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(),
+    };
+
+    /// <summary>Cliente: aplica o estado (já interpolado) e anima. Não simula nada.</summary>
+    public void ClientApply(in NetState s, float dt)
+    {
+        var f = (NF)s.Flags;
+        bool jump = s.Pos.DistanceTo(GlobalPosition) > 4f; // teleporte (início de round / lance livre): não desliza
+        GlobalPosition = s.Pos;
+        if (jump) ResetPhysicsInterpolation();
+        Velocity = s.Vel;
+        Yaw = s.Yaw;
+        Running = (f & NF.Running) != 0;
+        ChargingShot = (f & NF.ChargingShot) != 0;
+        ChargingPass = (f & NF.ChargingPass) != 0;
+        PassHigh = (f & NF.PassHigh) != 0;
+        ChargingJump = (f & NF.ChargingJump) != 0;
+        Airborne = (f & NF.Airborne) != 0;
+        Flight = (f & NF.Dunk) != 0 ? FlightKind.Dunk : FlightKind.None;
+        DunkPressed = (f & NF.DunkPressed) != 0;
+        SkillFlashOk = (f & NF.SkillFlashOk) != 0;
+        _stunOnLand = (f & NF.StunOnLand) != 0;
+        NetDunkReady = (f & NF.DunkReady) != 0;
+        Stamina = s.Stamina; ShotCharge = s.ShotCharge; PassCharge = s.PassCharge; Stun = s.Stun; StealFail = s.StealFail; StealDash = s.StealDash;
+        DribbleActive = s.DribbleActive; LandLock = s.LandLock; DribblePhase = s.DribblePhase; _releaseT = s.ReleaseT; _passReleaseT = s.PassReleaseT;
+        FlightT = s.FlightT; FlightDur = s.FlightDur; DunkPressT = s.DunkPressT; SkillFlash = s.SkillFlash; DribbleRecharge = s.DribbleRecharge;
+        DribbleCharges = s.DribbleCharges;
+        _shotPlanValid = false;
+        ApplyPose(dt, new Vector2(s.Vel.X, s.Vel.Z).Length());
+    }
+
+    /// <summary>Interpola dois estados (posição, rotação e cronômetros contínuos); o resto vem do mais novo.</summary>
+    public static NetState Lerp(in NetState a, in NetState b, float k)
+    {
+        var s = b;
+        s.Pos = a.Pos.Lerp(b.Pos, k);
+        s.Vel = a.Vel.Lerp(b.Vel, k);
+        s.Yaw = Mathf.LerpAngle(a.Yaw, b.Yaw, k);
+        s.DribblePhase = Mathf.Lerp(a.DribblePhase, b.DribblePhase, k);
+        s.FlightT = Mathf.Lerp(a.FlightT, b.FlightT, k);
+        return s;
+    }
+
     /// <summary>Animação de soltar o arremesso (usada no lance livre automático).</summary>
     public void PlayReleaseAnim() => _releaseT = ReleaseAnimTime;
 

@@ -33,12 +33,25 @@ try {
         Write-Host "== smoke test etapa 4 (partida so de bots) ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e4 2>&1 | Select-String "\[E4\]|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 4 falhou" }
+        Write-Host "== smoke test etapa 5 (rede: host + cliente por IP local) ==" -ForegroundColor Cyan
+        $hostLog = Join-Path $env:TEMP "ab_net_host.log"
+        $hostProc = Start-Process -FilePath $godot -ArgumentList "--headless", "--path", ".", "--", "--net-smoke-host" -PassThru -NoNewWindow -RedirectStandardOutput $hostLog
+        $null = $hostProc.Handle   # sem guardar o handle o PowerShell não informa o ExitCode
+        Start-Sleep -Seconds 2
+        & $godot --headless --path . -- --net-smoke-client 2>&1 | Select-String "\[NETTEST-CLIENT\]|ERROR" | Out-Host
+        $clientExit = $LASTEXITCODE
+        $hostProc.WaitForExit(120000) | Out-Null
+        Select-String -Path $hostLog -Pattern "\[NETTEST-HOST\]" | ForEach-Object { $_.Line } | Out-Host
+        if ($clientExit -ne 0 -or $hostProc.ExitCode -ne 0) { throw "smoke test etapa 5 (rede) falhou" }
     }
 
     Write-Host "== export ==" -ForegroundColor Cyan
     New-Item -ItemType Directory -Force "Build" | Out-Null
     & $godot --headless --path . --export-release "Windows Desktop" "Build/AbsoluteBasketball.exe" 2>&1 | Select-String "ERROR|error|savepack|Export" | Out-Host
     if (-not (Test-Path "Build\AbsoluteBasketball.exe")) { throw "export falhou" }
+    # Steam: a DLL nativa e o steam_appid.txt (480 = app de teste da Valve) ficam ao lado do .exe
+    Copy-Item "ThirdParty\Steamworks\steam_api64.dll" "Build\" -Force
+    Copy-Item "steam_appid.txt" "Build\" -Force
     Write-Host "OK -> $root\Build\AbsoluteBasketball.exe" -ForegroundColor Green
 }
 finally { Pop-Location }

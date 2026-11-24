@@ -110,8 +110,24 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - Bots/bonecos sem a bola e sem marcar ninguém devem agir de forma mais natural (mesmo espalhados).
 
 ## Decisões de implementação (Claude)
-- **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
-  (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.
+- **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
+  `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.
+  - **Transporte trocável** (`INetTransport`): `SteamTransport` (SteamNetworkingSockets P2P pelos relays da Steam,
+    Steamworks.NET 2025.164.1, AppID 480 de teste) e `EnetTransport` (IP direto, para testar com duas janelas no mesmo PC /
+    rede local e para o teste automático).
+  - **Lobby** mantido pelo host (`NetSession`): membros (nome, time), configurações (quadra, vitória, pontos/tempo,
+    jogadores por time, dificuldade dos bots). Vagas vazias viram bots. Steam: lobby só amigos ou público, código do lobby,
+    lista de públicos, convite direto pela Steam (sem overlay) ou pela janela do overlay; "Entrar no jogo" no perfil
+    (rich presence `+connect_lobby`). O jogo se reabre uma vez ao iniciar para a Steam colocar o overlay (truque do Just Fall).
+  - **Partida:** o host manda `Start` (configurações, escalação na mesma ordem para todos → mesmos `Player.Id`, e o tuning
+    do host, aplicado só em memória no cliente). Cliente manda input a cada tick (não confiável; apertos como contadores por
+    botão → pacote perdido não perde aperto). Host manda snapshot a cada 2 ticks (~30/s, não confiável): fase, placar,
+    relógio, lances livres, bola e o estado de cada jogador (`Player.NetState`) + os sons tocados. Mensagens da HUD
+    (contagem, placar, prorrogação, fim) vão confiáveis.
+  - **Cliente não simula:** desenha ~5 ticks (~83 ms) atrás do último snapshot, interpolando posição/rotação; a bola na
+    mão é calculada pela mão do dono. Ainda **sem predição** do jogador local (ele responde com o atraso da rede).
+  - Online o jogo não pausa (Esc só abre o menu). Cliente que cai: um bot assume o jogador dele. Host que sai: a partida
+    acaba para todos. Fim de jogo: o host escolhe "Jogar de novo" ou "Voltar ao lobby".
 - **Física da bola própria** (não RigidBody): determinística, a mesma função alimenta o voo real e a prévia de trajetória.
 - **Arremesso (v0.2):** direção = yaw da câmera (+ assistência na cesta adversária). Distância alvo = alcance da carga ×
   fator da inclinação da câmera, com assistência de distância perto da cesta adversária. A velocidade é calculada para a

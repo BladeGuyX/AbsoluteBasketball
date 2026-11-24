@@ -81,9 +81,21 @@ public partial class Hud : CanvasLayer
         _endScore = UiKit.Lbl("", 40, null, HorizontalAlignment.Center);
         vb.AddChild(_endTitle);
         vb.AddChild(_endScore);
-        _rematchBtn = UiKit.Btn("Jogar de novo", () => GameRoot.I.Rematch());
-        vb.AddChild(_rematchBtn);
-        vb.AddChild(UiKit.Btn("Menu principal", () => GameRoot.I.ShowMainMenu()));
+        if (M != null && M.IsOnline)
+        {
+            // online: só o host decide (jogar de novo / voltar ao lobby); o cliente pode sair
+            _rematchBtn = UiKit.Btn(M.IsHost ? "Jogar de novo" : "Aguardando o host...", M.IsHost ? () => NetSession.I.HostStartMatch() : null);
+            _rematchBtn.Disabled = !M.IsHost;
+            vb.AddChild(_rematchBtn);
+            if (M.IsHost) vb.AddChild(UiKit.Btn("Voltar ao lobby", () => NetSession.I.HostBackToLobby()));
+            vb.AddChild(UiKit.Btn(M.IsHost ? "Encerrar e ir ao menu" : "Sair", () => GameRoot.I.LeaveToMenu()));
+        }
+        else
+        {
+            _rematchBtn = UiKit.Btn("Jogar de novo", () => GameRoot.I.Rematch());
+            vb.AddChild(_rematchBtn);
+            vb.AddChild(UiKit.Btn("Menu principal", () => GameRoot.I.ShowMainMenu()));
+        }
         panel.AddChild(vb);
         _endPanel.AddChild(panel);
         root.AddChild(_endPanel);

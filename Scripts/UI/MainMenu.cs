@@ -29,7 +29,7 @@ public partial class MainMenu : Control
         _box.AddThemeConstantOverride("separation", 16);
         center.AddChild(_box);
 
-        var ver = UiKit.Outlined("v0.6 · Etapa 4 (bots)", 20, Colors.White, HorizontalAlignment.Right, 6);
+        var ver = UiKit.Outlined("v0.8 · Etapa 5 (online)", 20, Colors.White, HorizontalAlignment.Right, 6);
         AddChild(UiKit.Anchor(ver, 1, 1, 1, 1, -520, -44, -20, -12));
         ShowHome();
     }
@@ -47,9 +47,7 @@ public partial class MainMenu : Control
         _box.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
         var play = UiKit.Btn("Jogar (local)", ShowSetup, 420);
         _box.AddChild(Centered(play));
-        var online = UiKit.Btn("Online (Etapa 5)", null, 420);
-        online.Disabled = true;
-        _box.AddChild(Centered(online));
+        _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 420)));
         _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 420)));
         _box.AddChild(Centered(UiKit.Btn("Sair", () => GetTree().Quit(), 420)));
         play.CallDeferred(Control.MethodName.GrabFocus);
