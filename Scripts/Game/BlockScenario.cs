@@ -14,6 +14,10 @@ public sealed class BlockScenario
     readonly RandomNumberGenerator R = new() { Seed = 4242 };
     public const int TrialCount = 16;
     public int Trials, Blocks, Jumps, UselessJumps;
+    public const int DribbleCount = 10;
+    public int Dribbles, Baited, StolenDuringDribble;
+    public bool OnTopTested, SlidOff;
+    bool _baitThis;
     public bool Done;
     int _stage;          // 0 = posicionar, 1 = esperando, 2 = carregando, 3 = bola no ar
     float _t, _hold;
@@ -28,6 +32,8 @@ public sealed class BlockScenario
     {
         if (kind == "BLOCK" && a == Bot && _stage == 3) _blockedThis = true;
         if (kind == "JUMP" && a == Bot && _stage >= 2) _jumpedThis = true;
+        if (kind == "STEAL_TRY" && a == Bot && _stage == 11) _baitThis = true;
+        if (kind == "STEAL" && a == Bot && _stage == 11) StolenDuringDribble++;
     }
 
     public PlayerInput Build(float dt)
@@ -41,7 +47,8 @@ public sealed class BlockScenario
         {
             case 0:
             {
-                if (bot == null || Trials >= TrialCount) { Done = true; break; }
+                if (bot == null) { Done = true; break; }
+                if (Trials >= TrialCount) { _stage = 10; _t = 0; break; }
                 var inward = new Vector3(-CourtGeo.HoopSign(Hoop), 0, 0);
                 var dir = inward.Rotated(Vector3.Up, Mathf.DegToRad(R.RandfRange(-50f, 50f)));
                 var pos = (rim with { Y = 0 }) + dir * 8f + Vector3.Up * 0.05f;
@@ -77,6 +84,47 @@ public sealed class BlockScenario
                     if (_jumpedThis) { Jumps++; if (!_blockedThis) UselessJumps++; }
                     GD.Print($"[BLOCK] tentativa {Trials}: toco={_blockedThis} pulou={_jumpedThis}");
                     _stage = 0; _t = 0;
+                }
+                break;
+            case 10: // fase do drible: perto do bot, dribla e vê se ele cai na finta
+            {
+                if (Dribbles >= DribbleCount) { _stage = 20; _t = 0; break; }
+                var inward = new Vector3(-CourtGeo.HoopSign(Hoop), 0, 0);
+                var pos = (rim with { Y = 0 }) + inward * 9f + Vector3.Up * 0.05f;
+                P.Teleport(pos, ShotMath.YawOf(-inward));
+                P.ResetForRound();
+                bot.Teleport(pos - inward * 1.6f, ShotMath.YawOf(inward));
+                bot.ResetForRound();
+                M.Ball.GiveTo(P);
+                _baitThis = false;
+                _stage = 11; _t = 0;
+                break;
+            }
+            case 20: // solta o jogador em cima da cabeça do bot (parado): tem que escorregar para o chão
+            {
+                var bp = bot.GlobalPosition;
+                P.Teleport(bp + Vector3.Up * 2.1f, P.Yaw);
+                P.Airborne = true;
+                _stage = 21; _t = 0;
+                break;
+            }
+            case 21:
+                if (_t > 1.5f)
+                {
+                    OnTopTested = true;
+                    SlidOff = P.GlobalPosition.Y < 0.4f;
+                    GD.Print($"[BLOCK] em cima do bot: altura depois de 1,5 s = {P.GlobalPosition.Y:0.00} -> {(SlidOff ? "escorregou" : "FICOU EM CIMA")}");
+                    Done = true;
+                }
+                break;
+            case 11:
+                if (_t > 0.4f && _t < 0.45f && P.HasBall && P.DribbleCharges > 0) inp.Pressed |= Btn.Dribble;
+                if (_t > 1.8f)
+                {
+                    Dribbles++;
+                    if (_baitThis) Baited++;
+                    GD.Print($"[BLOCK] drible {Dribbles}: bot deu o bote={_baitThis}");
+                    _stage = 10; _t = 0;
                 }
                 break;
         }

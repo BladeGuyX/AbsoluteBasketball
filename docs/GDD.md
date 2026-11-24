@@ -109,6 +109,14 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - Bots pulavam em lugares que não impediam a bola → corrigido.
 - Bots/bonecos sem a bola e sem marcar ninguém devem agir de forma mais natural (mesmo espalhados).
 
+## Revisões do usuário (v0.9) — prevalecem sobre as anteriores
+- **Início de round:** estamina e todos os cooldowns (drible, roubo, atordoado, trava do pouso) resetam.
+- **Skill check (enterrada e lance livre):** apertou na hora errada → o anel some e o jogador erra NA HORA (não espera o ponteiro).
+- **Lance livre errado:** o jogador ainda arremessa, mas erra garantido. Errou o 1º → o 2º começa quando a bola toca o chão.
+- **Drible útil contra bots:** bots caem na finta e dão o bote durante o drible (e erram, ficando lentos).
+- **Ninguém fica em cima de outro jogador.**
+- Investigar o crash (0xc000001d no motor): guardas contra NaN e logs preservados.
+
 ## Decisões de implementação (Claude)
 - **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
   `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.

@@ -101,6 +101,15 @@ public partial class Ball : Node3D
             float hd = new Vector2(p.X - c.X, p.Z - c.Z).Length();
             if (p.Y < c.Y - 0.6f || hd > Tuning.I.RimRadius + Tuning.I.BallRadius + 0.4f) _noScoreHoop = -1;
         }
+        if (!float.IsFinite(p.X) || !float.IsFinite(p.Y) || !float.IsFinite(p.Z) || !float.IsFinite(Vel.X) || !float.IsFinite(Vel.Y) || !float.IsFinite(Vel.Z))
+        {
+            // valor inválido nunca chega no motor (suspeito do crash da v0.8): bola volta para o meio da quadra
+            GD.PushWarning($"[SAFE] bola com posição/velocidade inválida ({p} / {Vel}) — recolocada");
+            p = new Vector3(0, 2f, 0);
+            Vel = Vector3.Zero;
+            State = BallState.Loose;
+            ResetPhysicsInterpolation();
+        }
         Spin(p - GlobalPosition);
         GlobalPosition = p;
         FlightTime += dt;

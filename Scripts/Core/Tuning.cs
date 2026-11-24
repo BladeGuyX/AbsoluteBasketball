@@ -351,6 +351,8 @@ public sealed class Tuning
     public float BotContestedShotChance = 0.06f;
     [Param(SBots, "Chance de roubo por segundo", "Chance por segundo de tentar roubar quando colado em quem tem a bola (Normal).", 0, 5, 0.05f)]
     public float BotStealChancePerSec = 0.2f;
+    [Param(SBots, "Chance de cair no drible", "Quando quem ele marca começa o drible especial por perto, chance de o bot dar o bote mesmo assim (e errar, ficando lento). Normal; o Fácil cai mais, o Difícil menos.", 0, 1, 0.01f)]
+    public float BotDribbleBaitChance = 0.6f;
     [Param(SBots, "Chance de pular para bloquear", "Chance de o bot pular contra um arremesso/enterrada perto dele (Normal).", 0, 1, 0.01f)]
     public float BotBlockChance = 0.45f;
     [Param(SBots, "Reação ao arremesso (s)", "Atraso do bot (já posicionado na frente da bola) para pular quando o adversário solta o arremesso (Normal). Acima de ~0,1 s quase não bloqueia.", 0, 0.5f, 0.005f)]

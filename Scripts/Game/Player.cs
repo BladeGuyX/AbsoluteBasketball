@@ -202,11 +202,13 @@ public partial class Player : CharacterBody3D
         else v.Y = IsOnFloor() && !Airborne ? -0.5f : v.Y - t.PlayerGravity * dt;
         Velocity = new Vector3(hv.X, v.Y, hv.Z);
         MoveAndSlide();
+        bool onPlayer = SlideOffPlayers();
+        SanitizeState();
 
         if (Airborne)
         {
             _airTime += dt;
-            if (_airTime > 0.08f && IsOnFloor())
+            if (_airTime > 0.08f && IsOnFloor() && !onPlayer)
             {
                 Airborne = false;
                 if (_stunOnLand) { _stunOnLand = false; Stun = t.DunkStunTime; }
@@ -229,6 +231,60 @@ public partial class Player : CharacterBody3D
         _shotPlanValid = ChargingShot;
         if (ChargingShot) _shotPlan = ShotMath.Plan(GlobalPosition, Team, inp.AimYaw, inp.AimPitch, M.Geo);
         ApplyPose(dt, new Vector2(Velocity.X, Velocity.Z).Length());
+    }
+
+    /// <summary>
+    /// Ninguém fica em cima de outro jogador (v0.9): pisou na cabeça/ombro de alguém → escorrega para o lado e continua caindo.
+    /// </summary>
+    bool SlideOffPlayers()
+    {
+        bool on = false;
+        for (int i = 0; i < GetSlideCollisionCount(); i++)
+        {
+            var c = GetSlideCollision(i);
+            if (c.GetCollider() is not Player o || c.GetNormal().Y < 0.3f) continue;
+            on = true;
+            var away = GlobalPosition - o.GlobalPosition; away.Y = 0;
+            away = away.LengthSquared() > 1e-4f ? away.Normalized() : (Forward.LengthSquared() > 0.5f ? -Forward : Vector3.Right);
+            GlobalPosition += away * 0.12f;
+            Velocity = new Vector3(away.X * 3f, Mathf.Min(Velocity.Y, 0f), away.Z * 3f);
+        }
+        if (on && !Airborne) { Airborne = true; _airTime = 0.08f; _jumpVel = Vector3.Zero; }
+        return on;
+    }
+
+    /// <summary>Valor inválido (NaN/infinito) nunca chega na física: volta para um lugar seguro.</summary>
+    void SanitizeState()
+    {
+        var p = GlobalPosition; var v = Velocity;
+        if (float.IsFinite(p.X) && float.IsFinite(p.Y) && float.IsFinite(p.Z) && float.IsFinite(v.X) && float.IsFinite(v.Y) && float.IsFinite(v.Z)
+            && float.IsFinite(Yaw) && p.Y > -5f && p.Y < 50f) return;
+        GD.PushWarning($"[SAFE] {PlayerName}: posição/velocidade inválida ({p} / {v}) — reposicionado");
+        GlobalPosition = HomePos with { Y = 0.05f };
+        Velocity = Vector3.Zero;
+        _jumpVel = Vector3.Zero;
+        if (!float.IsFinite(Yaw)) Yaw = 0;
+        Airborne = false;
+        ResetPhysicsInterpolation();
+    }
+
+    /// <summary>Início de round (v0.9): estamina cheia e todos os cooldowns zerados.</summary>
+    public void ResetForRound()
+    {
+        var t = Tuning.I;
+        Stamina = t.StaminaMax;
+        _regenDelay = 0;
+        DribbleCharges = Mathf.RoundToInt(t.DribbleCharges);
+        DribbleRecharge = 0;
+        DribbleActive = 0;
+        StealFail = 0;
+        StealDash = 0;
+        LandLock = 0;
+        Stun = 0;
+        _stunOnLand = false;
+        BallLockoutTimer = 0;
+        SkillFlash = 0;
+        Running = false;
     }
 
     void TickTimers(float dt)
@@ -583,8 +639,8 @@ public partial class Player : CharacterBody3D
         if (DunkPressed)
         {
             bool inWindow = Mathf.Abs(DunkPressT - FlightDur) <= half;
-            if (inWindow) { FinishDunk(true); return; }
-            if (FlightT >= FlightDur) { FinishDunk(false); return; } // apertou cedo demais: erra ao tocar a cesta
+            FinishDunk(inWindow); // errou (cedo ou tarde): erra NA HORA (v0.9) — o anel some, o jogador cai
+            return;
         }
         else if (FlightT >= FlightDur + half + SkillGrace) FinishDunk(false); // não apertou a tempo (remoto: espera o atraso da rede)
     }
@@ -593,7 +649,8 @@ public partial class Player : CharacterBody3D
     {
         var t = Tuning.I;
         var rim = M.Geo.RimCenter[FlightHoop];
-        if (Flight == FlightKind.Dunk) { SkillFlash = 0.6f; SkillFlashOk = ok; }
+        // acertou: flash verde; errou: o anel some (v0.9)
+        if (Flight == FlightKind.Dunk) { SkillFlash = ok ? 0.6f : 0f; SkillFlashOk = ok; }
         if (ok)
         {
             BallLockoutTimer = 0.8f;
@@ -607,7 +664,9 @@ public partial class Player : CharacterBody3D
             // bola cai do lado da cesta; o jogador cai e fica atordoado
             var side = Right;
             BallLockoutTimer = 0.8f;
-            M.Ball.Drop(rim + side * (t.RimRadius + 0.45f) + Vector3.Up * 0.1f, side * 1.4f + Vector3.Down * 1f);
+            // longe do aro: a bola escapa da mão; perto: cai do lado do aro (nunca dentro)
+            if (FlightT < FlightDur * 0.7f) M.Ball.Drop(HeldBallPosition(), side * 1.6f + Forward * 0.5f + Vector3.Up * 0.5f);
+            else M.Ball.Drop(rim + side * (t.RimRadius + 0.45f) + Vector3.Up * 0.1f, side * 1.4f + Vector3.Down * 1f);
             Sfx.Play3D(M, "rim", rim, 0, 1.25f);
             _stunOnLand = true;
             M.LogEvent("DUNK_FAIL", this);

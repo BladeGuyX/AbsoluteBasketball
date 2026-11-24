@@ -1340,6 +1340,16 @@
     "default": 0.2
   },
   {
+    "key": "BotDribbleBaitChance",
+    "section": "Bots",
+    "label": "Chance de cair no drible",
+    "desc": "Quando quem ele marca come\u00E7a o drible especial por perto, chance de o bot dar o bote mesmo assim (e errar, ficando lento). Normal; o F\u00E1cil cai mais, o Dif\u00EDcil menos.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.6
+  },
+  {
     "key": "BotBlockChance",
     "section": "Bots",
     "label": "Chance de pular para bloquear",

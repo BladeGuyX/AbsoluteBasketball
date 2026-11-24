@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.8 — Etapas 0 a 4 concluídas + Etapa 5 em andamento (online pela Steam e IP direto funcionando; falta testar entre 2 PCs e predição do jogador local).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.9 — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Em andamento: Etapa 6 (refinos de controle).**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -19,7 +19,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Decisões do usuário a lembrar
 - **Multiplayer pela Steam** (Steamworks, sem publicar: AppID de teste 480/Spacewar, como já foi feito em outro jogo do usuário). Só na Etapa 5.
 - Controle de versão: **git** neste diretório (commits só quando o usuário pedir ou ao fechar uma entrega combinada).
-- Revisões de regras (v0.2 a v0.7) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
+- Revisões de regras (v0.2 a v0.9) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
 
 ## Ferramentas instaladas
 - Godot: `%LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine.Mono_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe`
@@ -33,7 +33,9 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - Teste automático da Etapa 3: `... -- --smoke-e3` (enterrada certa, errada + atordoado, enterrada andando com Espaço no skill check = erra, falta → 2 lances livres: acerta o 1º (+1), erra o 2º (bola viva)). `--e3-shot <png>` salva prints `_ready` (setinhas), `_dunk` e `_ft` (skill checks).
 - Teste de rede (Etapa 5): host e cliente em dois processos por IP local — `<godot_console> --headless --path . -- --net-smoke-host` e, em paralelo, `... -- --net-smoke-client` (bots controlam os dois humanos; o cliente confere snapshots/movimento/placar, o host confere inputs e ações do remoto). `--net-shot <png>` no cliente salva prints aos 20 s e 40 s. O build.ps1 roda os dois.
 - Steam: `... -- --steam-test` (só inicia e fecha a Steam; precisa da Steam aberta). Prints dos menus: `--screenshot <png> --online` / `--lobby`.
-- Teste do bloqueio dos bots: `... -- --smoke-block` (16 arremessos com bot Normal marcando; exige tocos e quase nenhum pulo inútil).
+- Teste do bloqueio dos bots: `... -- --smoke-block` (16 arremessos com bot Normal marcando: tocos e quase nenhum pulo inútil; 10 dribles perto do bot: ele cai na finta ≥3 e nunca rouba driblando; solta o jogador em cima do bot: tem que escorregar).
+- **Crash da v0.8 (0xc000001d = checagem fatal do motor, sem símbolos):** causa não identificada. Guardas `Player.SanitizeState` / `Ball.ServerTick` (NaN → reposiciona, loga `[SAFE]`), logs: `debug/file_logging/max_log_files=40` (pasta `%APPDATA%\Godot\app_userdata\Absolute Basketball\logs`; os testes também escrevem lá). Se o usuário mandar um log de crash, procurar `[SAFE]`/`CrashHandler`.
+- v0.9: `Player.ResetForRound` (chamado no `PlaceTeams`), `Player.SlideOffPlayers` (pisou em jogador → escorrega), skill check errado termina na hora (anel some; `SkillFlash`/`FtFlash` só no acerto; cliente esconde com `Match.ClientSkillHideT`), lance livre errado arremessa e erra (1º: o 2º começa quando a bola toca o chão, em `HandleBallHit`), `BotBrain` cai no drible (`BotDribbleBaitChance`).
 - Teste automático da Etapa 4: `... -- --smoke-e4` (3x3 só de bots, 150 s de jogo: pontos dos dois lados, arremessos, passes, trocas de posse; imprime estatísticas). O build.ps1 roda os quatro.
 - **ATENÇÃO:** rodando pela Godot (headless) o jogo lê `tuning.json` da RAIZ do projeto, que guarda valores antigos. O build.ps1 apaga esse arquivo antes dos testes; ao testar manualmente, apague-o também.
 - Estatística de arremesso com erro humano simulado: `... -- --shot-stats` (use para calibrar assistências/aro/tabelinha).

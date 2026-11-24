@@ -36,6 +36,8 @@ public partial class AimIndicator : Control
         var t = Tuning.I;
         var c = Size / 2f;
 
+        if (M.IsClient && M.ClientSkillHideT > 0 && (p.Flight == FlightKind.Dunk || M.FtShooter == p)) return; // errou: anel some
+
         // ---- enterrada: skill check ----
         if (p.Flight == FlightKind.Dunk || p.SkillFlash > 0)
         {

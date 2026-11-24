@@ -245,6 +245,7 @@ public partial class Match : Node3D
                     if (list.Count == 1) z = 0;
                 }
                 list[i].Teleport(new Vector3(x, 0.05f, z), yaw);
+                list[i].ResetForRound(); // v0.9: estamina e cooldowns zerados a cada round
             }
         }
     }
@@ -362,6 +363,8 @@ public partial class Match : Node3D
 
     void HandleBallHit(BallHit hit)
     {
+        // 1º lance livre errado: o 2º começa assim que a bola toca o chão
+        if (hit.Floor && Phase == MatchPhase.FreeThrow && _ftStage == FtStage.Flight && FtAttempt == 1 && FtShooter != null) BeginFtAttempt(2);
         var pos = Ball.GlobalPosition;
         float vol(float imp) => Mathf.Clamp(Mathf.LinearToDb(Mathf.Clamp(imp / 8f, 0.05f, 1f)), -30, 0);
         if (hit.Rim) Sfx.Play3D(this, "rim", pos, vol(hit.Impact) + 2);
@@ -576,11 +579,7 @@ public partial class Match : Node3D
                     FtPressed = true;
                     FtPressT = _ftInput.SkillT >= 0 ? Mathf.Min(_ftInput.SkillT, FtT) : FtT; // remoto: o que ele via
                 }
-                if (FtPressed)
-                {
-                    if (Mathf.Abs(FtPressT - FtDur) <= half) FtResult(true);
-                    else if (FtT >= FtDur) FtResult(false);
-                }
+                if (FtPressed) FtResult(Mathf.Abs(FtPressT - FtDur) <= half); // errou: erra NA HORA (v0.9)
                 else if (FtT >= FtDur + half + FtShooter.SkillGrace) FtResult(false);
                 break;
             }
@@ -602,7 +601,7 @@ public partial class Match : Node3D
     void FtResult(bool ok)
     {
         var t = Tuning.I;
-        FtFlash = 0.6f;
+        FtFlash = ok ? 0.6f : 0f; // errou: o anel some (v0.9)
         FtFlashOk = ok;
         FtFlashPlayer = FtShooter;
         LogEvent(ok ? "FT_OK" : "FT_MISS", FtShooter);
@@ -614,8 +613,10 @@ public partial class Match : Node3D
         }
         else if (FtAttempt == 1)
         {
-            _ftStage = FtStage.Gap; // errou o 1º: vai direto para o 2º
-            _ftStageT = t.FreeThrowGap;
+            // errou o 1º: arremessa e erra; o 2º começa quando a bola tocar o chão (v0.9)
+            ThrowFreeThrow(false);
+            _ftStage = FtStage.Flight;
+            _ftStageT = 0;
         }
         else
         {
@@ -826,11 +827,13 @@ public partial class Match : Node3D
     void SmokeBlockTick(float dt)
     {
         _smokeTime += dt;
-        if (!_blockScenario.Done && _smokeTime < 150f) return;
+        if (!_blockScenario.Done && _smokeTime < 220f) return;
         var s = _blockScenario;
         // bot Normal tenta contestar ~45% das vezes; precisa bloquear de verdade e quase não pular à toa
-        bool ok = s.Trials >= BlockScenario.TrialCount && s.Blocks >= 3 && s.UselessJumps <= s.Jumps / 2;
-        GD.Print($"[BLOCKTEST] tentativas={s.Trials} tocos={s.Blocks} pulos={s.Jumps} pulos_inuteis={s.UselessJumps} -> {(ok ? "OK" : "FALHOU")}");
+        bool ok = s.Trials >= BlockScenario.TrialCount && s.Blocks >= 3 && s.UselessJumps <= s.Jumps / 2
+                  && s.Dribbles >= BlockScenario.DribbleCount && s.Baited >= 3 && s.StolenDuringDribble == 0 && s.OnTopTested && s.SlidOff;
+        GD.Print($"[BLOCKTEST] tentativas={s.Trials} tocos={s.Blocks} pulos={s.Jumps} pulos_inuteis={s.UselessJumps} " +
+                 $"dribles={s.Dribbles} bot_caiu_no_drible={s.Baited} roubou_driblando={s.StolenDuringDribble} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeBlock = false;
     }
@@ -864,7 +867,9 @@ public partial class Match : Node3D
     const float InterpDelayTicks = 5f;   // desenha ~83 ms atrás do último snapshot (absorve perda e variação da rede)
     readonly List<NetSnapshot> _snaps = new();
     float _renderTick = -1;
-    BotBrain _clientBot;                 // teste de rede: bot gera o input do cliente
+    BotBrain _clientBot;
+    /// <summary>Cliente: errou o skill check na própria tela → esconde o anel por um instante (sem esperar o host).</summary>
+    public float ClientSkillHideT;                 // teste de rede: bot gera o input do cliente
     public int ClientSnapshotsApplied;
 
     /// <summary>Cliente: snapshot recebido do host (guarda para interpolar).</summary>
@@ -893,9 +898,13 @@ public partial class Match : Node3D
         inp.SkillT = -1;
         if (inp.WasPressed(Btn.Shoot) && LocalPlayer != null)
         {
-            if (LocalPlayer.Flight == FlightKind.Dunk) inp.SkillT = LocalPlayer.FlightT;
-            else if (FtChecking && FtShooter == LocalPlayer) inp.SkillT = Mathf.Max(FtT, 0f);
+            float dur = -1;
+            if (LocalPlayer.Flight == FlightKind.Dunk) { inp.SkillT = LocalPlayer.FlightT; dur = LocalPlayer.FlightDur; }
+            else if (FtChecking && FtShooter == LocalPlayer) { inp.SkillT = Mathf.Max(FtT, 0f); dur = FtDur; }
+            // errou na tela dele: o anel some na hora (o host confirma depois)
+            if (dur > 0 && Mathf.Abs(inp.SkillT - dur) > Tuning.I.DunkWindow * 0.5f) ClientSkillHideT = 1.0f;
         }
+        if (ClientSkillHideT > 0) ClientSkillHideT -= dt;
         NetSession.I?.SendInput(inp);
 
         if (_snaps.Count > 0)

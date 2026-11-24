@@ -3,6 +3,19 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.9 — Correções (round, skill check, lance livre, drible, em cima de jogador, crash)
+
+**Antes:** apague o `Build\tuning.json` antigo.
+
+1. **Round:** gaste a estamina e as 2 cargas de drible, faça um roubo errado; quando a cesta sair e o round recomeçar, estamina cheia, 2 cargas e sem lentidão.
+2. **Skill check da enterrada:** aperte bem cedo: o anel some **na hora**, a bola escapa da mão e você cai atordoado. Acertando: zona verde e cesta, como antes.
+3. **Lance livre:** aperte cedo no 1º: o anel some, o jogador arremessa e a bola **bate no aro e erra**; quando ela toca o chão, o 2º lance começa. Erre o 2º também: a bola bate no aro e o jogo continua.
+4. **Drible:** com um bot (Normal) colado em você, use o drible (E): na maioria das vezes ele dá o bote, erra e fica lento — passe por ele. No Difícil ele cai menos; no Fácil, mais. (Ajuste: "Chance de cair no drible" no artifact.)
+5. **Em cima de jogador:** pule sobre um jogador parado: você escorrega para o lado e cai no chão, nunca fica em cima.
+6. **Online:** o cliente que erra o skill check vê o anel sumir na hora também.
+7. **Crash:** se o jogo fechar sozinho de novo, me mande o arquivo mais novo de `%APPDATA%\Godot\app_userdata\Absolute Basketball\logs\` (agora ficam até 40) e o horário aproximado.
+
+---
 ## v0.8.2 — Skill check do cliente compensando o atraso da rede
 
 **Os dois PCs precisam desta build nova** (versões diferentes não conectam).

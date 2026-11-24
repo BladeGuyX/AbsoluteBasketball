@@ -31,6 +31,7 @@ public sealed class BotBrain
     Player _threat; float _threatT; bool _threatDecided;
     bool _blockTry; float _blockErr; float _relT = -1;
     float _stealCd;
+    bool _sawDribble; float _baitT;
     float _dribbleCd;
     // sem a bola: posição escolhida (troca de tempos em tempos) + balanço parado
     Vector3 _roam; float _roamT; bool _cut; float _sway;
@@ -393,6 +394,29 @@ public sealed class BotBrain
         var spot = tp + (toRim.LengthSquared() > 0.01f ? toRim.Normalized() : Vector3.Zero) * Mathf.Min(markDist, toRim.Length() * 0.5f);
         float far = (Flat(P.GlobalPosition) - spot).Length();
         Steer(ref inp, spot, sprint: far > 3f && P.Stamina > T.StaminaMinToRun * 2f);
+
+        // drible do adversário perto: o bot cai na finta e dá o bote (que falha: driblando é imune) — v0.9
+        bool drib = target == carrier && carrier.IsDribbling;
+        if (drib && !_sawDribble)
+        {
+            float near = Flat(carrier.GlobalPosition - P.GlobalPosition).Length();
+            float chance = Mathf.Clamp(T.BotDribbleBaitChance * Mult, 0f, 0.95f);
+            if (near < T.StealReach + 1.6f && P.StealFail <= 0 && !P.Airborne && R.Randf() < chance)
+                _baitT = 0.08f + R.Randf() * 0.2f * Mult;
+        }
+        _sawDribble = drib;
+        if (_baitT > 0)
+        {
+            _baitT -= dt;
+            if (_baitT <= 0 && carrier.IsDribbling && !P.Airborne && P.StealFail <= 0)
+            {
+                var d = Flat(carrier.GlobalPosition - P.GlobalPosition).Normalized();
+                inp.Move = new Vector2(d.X, d.Z);
+                inp.Pressed |= Btn.Steal;
+                _stealCd = 2.0f;
+                return;
+            }
+        }
 
         // roubo
         if (target == carrier && _stealCd <= 0 && !P.Airborne && P.StealFail <= 0)
