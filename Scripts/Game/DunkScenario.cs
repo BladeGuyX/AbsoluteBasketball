@@ -5,7 +5,8 @@ namespace AB;
 
 /// <summary>
 /// Teste automático da Etapa 3 (--smoke-e3): enterrada certa, enterrada errada (atordoado),
-/// tapinha (bola solta perto do aro) e falta (boneco bloqueia a enterrada).
+/// enterrada ANDANDO com Espaço no skill check (tem que errar: Espaço não vale), falta (boneco bloqueia a enterrada)
+/// e os 2 lances livres (acerta o 1º = +1; erra o 2º = bola viva e jogo continua).
 /// </summary>
 public sealed class DunkScenario
 {
@@ -14,8 +15,10 @@ public sealed class DunkScenario
     int _step;
     float _t;
     int _tick;
-    bool _setup, _reachedWaypoint, _pressed, _sawFoulRestart;
-    public bool DunkOk, DunkFailOk, StunOk, SpaceOk, FoulOk, FoulCarrierOk;
+    bool _setup, _reachedWaypoint, _pressed, _sawFt;
+    int _scoreAtFoul = -1;
+    float _readyT;
+    public bool DunkOk, DunkFailOk, StunOk, WalkDunkOk, SpaceIgnoredOk, FoulOk, FtPointOk, FtLiveOk;
     public bool Done;
 
     public DunkScenario(Match m, Player p) { M = m; P = p; }
@@ -26,8 +29,9 @@ public sealed class DunkScenario
     {
         if (kind == "DUNK_OK" && a == P && _step == 0) DunkOk = true;
         if (kind == "DUNK_FAIL" && a == P && _step == 1) DunkFailOk = true;
-        if (kind == "DUNK_OK" && a == P && _step == 2) SpaceOk = true;
-        if (kind == "FOUL" && b == P && _step == 3) FoulOk = true;
+        if (kind == "DUNK" && a == P && _step == 2) WalkDunkOk = true;
+        if (kind == "DUNK_FAIL" && a == P && _step == 2) SpaceIgnoredOk = true;
+        if (kind == "FOUL" && b == P && _step == 3) { FoulOk = true; _scoreAtFoul = M.Score[P.Team]; }
     }
 
     void Next() { _step++; _t = 0; _tick = 0; _setup = false; _reachedWaypoint = false; _pressed = false; GD.Print($"[E3] passo {_step}"); }
@@ -46,7 +50,7 @@ public sealed class DunkScenario
     }
 
     /// <summary>Corre até a cesta (passando por um ponto lateral) e salta para enterrar; opcionalmente acerta o skill check.</summary>
-    void DunkRun(ref PlayerInput inp, float dt, bool hitSkill, Btn button = Btn.Shoot)
+    void DunkRun(ref PlayerInput inp, float dt, bool hitSkill, Btn button = Btn.Shoot, bool sprint = true)
     {
         if (P.Flight == FlightKind.Dunk)
         {
@@ -57,19 +61,27 @@ public sealed class DunkScenario
         var wp = Rim - new Vector3(S * 11f, 0, -3f); wp.Y = 0;
         if (!_reachedWaypoint && (P.GlobalPosition - wp).Length() < 1f) _reachedWaypoint = true;
         var rimFlat = Rim with { Y = 0 };
-        RunTo(ref inp, P, _reachedWaypoint ? rimFlat : wp, true);
-        if (_reachedWaypoint && P.CanDunk()) inp.Pressed |= Btn.Jump;
+        RunTo(ref inp, P, _reachedWaypoint ? rimFlat : wp, sprint);
+        if (_reachedWaypoint && P.CanDunk())
+        {
+            // modo print (--e3-shot): espera um pouco com as setinhas de "pode enterrar" na tela
+            _readyT += dt;
+            if (M.Cfg.ScreenshotPath == null || _readyT > 0.3f) { inp.Pressed |= Btn.Jump; _readyT = 0; }
+        }
     }
 
     public PlayerInput Build(float dt)
     {
         var inp = new PlayerInput { AimYaw = P.Yaw };
         _t += dt;
-        if (!M.CanAct)
+        // lances livres: acerta o 1º (aperta na hora certa), erra o 2º (não aperta)
+        if (M.Phase == MatchPhase.FreeThrow && M.FtShooter == P)
         {
-            if (_step == 3 && FoulOk) _sawFoulRestart = true;
+            _sawFt = true;
+            if (M.FtAttempt == 1 && M.FtChecking && !M.FtPressed && M.FtT + dt * 1.5f >= M.FtDur) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; }
             return inp;
         }
+        if (!M.CanAct) return inp;
         _tick++;
         if (_t > 25f) { Next(); return inp; }
         switch (_step)
@@ -92,10 +104,10 @@ public sealed class DunkScenario
                 else if (!P.Airborne) Next();
                 break;
             }
-            case 2: // enterrada certa apertando ESPAÇO no skill check
+            case 2: // enterrada ANDANDO (sem Shift) apertando ESPAÇO na hora certa: Espaço não vale → erra
             {
                 if (!_setup) { if (!P.HasBall) M.Ball.GiveTo(P); _setup = true; }
-                if (!SpaceOk) { DunkRun(ref inp, dt, true, Btn.Jump); break; }
+                if (!SpaceIgnoredOk) { DunkRun(ref inp, dt, true, Btn.Jump, sprint: false); break; }
                 if (!P.Airborne) Next();
                 break;
             }
@@ -114,12 +126,15 @@ public sealed class DunkScenario
                     _reachedWaypoint = true;
                     _setup = true;
                 }
-                if (_sawFoulRestart)
+                if (_sawFt && M.Phase == MatchPhase.Playing)
                 {
-                    FoulCarrierOk = M.Ball.Holder == P;
+                    // errou o 2º lance: o jogo continua com a bola viva (ninguém com ela)
+                    FtLiveOk = M.Ball.State != BallState.Held;
+                    FtPointOk = M.Score[P.Team] == _scoreAtFoul + 1;
                     Next();
                     break;
                 }
+                if (_sawFt) break;
                 if (!FoulOk) DunkRun(ref inp, dt, false);
                 break;
             }

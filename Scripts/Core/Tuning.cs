@@ -51,6 +51,7 @@ public sealed class Tuning
     const string SSteal = "Roubo";
     const string SDrib = "Drible";
     const string SDunk = "Enterrada";
+    const string SFree = "Lances livres";
     const string SDummy = "Bonecos de treino";
     const string SBots = "Bots";
 
@@ -66,7 +67,7 @@ public sealed class Tuning
     [Param(SMove, "Rapidez para virar", "Suavização da rotação do personagem (maior = vira mais rápido).", 1, 40, 0.5f)]
     public float TurnSpeed = 14f;
     [Param(SMove, "Multiplicador com a bola", "Velocidade de quem está com a bola (1 = igual).", 0.3f, 1.5f, 0.01f)]
-    public float CarrierSpeedMult = 0.92f;
+    public float CarrierSpeedMult = 0.87f;
     [Param(SMove, "Gravidade dos jogadores", "Gravidade aplicada aos jogadores (m/s²).", 5, 60, 0.5f)]
     public float PlayerGravity = 22f;
 
@@ -140,7 +141,7 @@ public sealed class Tuning
     [Param(SShot, "Alcance máximo", "Distância máxima (m) do arremesso, disponível desde o início (não depende de segurar). Para usar, suba a câmera.", 2, 40, 0.1f)]
     public float ShotRangeMax = 14f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
-    public float ShotAutoReleaseTime = 4f;
+    public float ShotAutoReleaseTime = 3f;
     [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
@@ -239,7 +240,7 @@ public sealed class Tuning
     [Param(SPass, "Passe carregado alto: elevação", "Graus somados à inclinação da câmera no passe carregado alto.", 0, 80, 0.5f)]
     public float AimHighPassLiftDeg = 32f;
     [Param(SPass, "Passe automático", "Segurando o passe por esse tempo (s), o jogador passa sozinho na direção da câmera.", 0.5f, 10, 0.1f)]
-    public float PassAutoReleaseTime = 4f;
+    public float PassAutoReleaseTime = 3f;
     [Param(SPass, "Velocidade carregando o passe", "Multiplicador de velocidade enquanto carrega o passe (não pode ter a bola roubada).", 0, 1, 0.01f)]
     public float PassChargeMoveMult = 0.25f;
     [Param(SPass, "Bloqueio de repegar", "Segundos em que quem passou não pode pegar a própria bola.", 0, 2, 0.05f)]
@@ -282,8 +283,8 @@ public sealed class Tuning
     public float DribbleCharges = 2f;
     [Param(SDrib, "Duração do drible", "Segundos de drible (imune a roubo).", 0.2f, 4, 0.05f)]
     public float DribbleDuration = 1f;
-    [Param(SDrib, "Velocidade driblando", "Multiplicador de velocidade durante o drible.", 0.1f, 1.5f, 0.01f)]
-    public float DribbleSpeedMult = 0.5f;
+    [Param(SDrib, "Velocidade driblando", "Velocidade durante o drible como fração da velocidade ANDANDO (não corre driblando; o multiplicador de quem tem a bola não se aplica).", 0.1f, 1.5f, 0.01f)]
+    public float DribbleSpeedMult = 0.7f;
     [Param(SDrib, "Recarga por carga", "Segundos para recuperar 1 carga (conta sempre que falta alguma).", 1, 60, 0.5f)]
     public float DribbleRecharge = 10f;
     [Param(SDrib, "Quique driblando", "Multiplicador da velocidade do quique durante o drible (maior = quica mais rápido).", 1, 5, 0.1f)]
@@ -292,15 +293,15 @@ public sealed class Tuning
     public float DribbleCrouch = 0.8f;
 
     // ---------------- Enterrada ----------------
-    [Param(SDunk, "Distância para enterrar", "Com a bola, correndo na direção da cesta adversária e a até esta distância (m) do aro, o salto vira enterrada.", 0.5f, 8, 0.1f)]
+    [Param(SDunk, "Distância para enterrar", "Com a bola, indo (ou virado) na direção da cesta adversária e a até esta distância (m) do aro, o salto vira enterrada. Não precisa correr.", 0.5f, 8, 0.1f)]
     public float DunkRange = 7f;
-    [Param(SDunk, "Ângulo da corrida", "A corrida precisa estar dentro deste ângulo (graus) da direção da cesta para enterrar.", 5, 90, 1)]
+    [Param(SDunk, "Ângulo da corrida", "O movimento (ou, parado, a frente do jogador) precisa estar dentro deste ângulo (graus) da direção da cesta para enterrar.", 5, 90, 1)]
     public float DunkMaxAngleDeg = 45f;
     [Param(SDunk, "Duração do voo", "Segundos do salto da enterrada até tocar a cesta (momento do skill check).", 0.3f, 2, 0.05f)]
     public float DunkFlightTime = 0.8f;
-    [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
-    public float DunkWindow = 0.05f;
-    [Param(SDunk, "Variação da duração do voo", "Cada enterrada dura a duração do voo ± até este valor (s), sorteado: o ponteiro do skill check muda de velocidade e não dá para decorar.", 0, 0.6f, 0.01f)]
+    [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso (Espaço não vale), centrada no toque na cesta. Vale também para os lances livres. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
+    public float DunkWindow = 0.06f;
+    [Param(SDunk, "Variação da duração do voo", "Cada enterrada (e cada lance livre) dura a duração ± até este valor (s), sorteado: o ponteiro do skill check muda de velocidade e não dá para decorar.", 0, 0.6f, 0.01f)]
     public float DunkFlightJitter = 0.2f;
     [Param(SDunk, "Alcance da mão", "Altura (m) da bola acima dos pés com os braços esticados na enterrada.", 1.5f, 3.5f, 0.05f)]
     public float DunkHandReach = 2.3f;
@@ -309,6 +310,20 @@ public sealed class Tuning
     [Param(SDunk, "Pausa da falta", "Segundos entre a falta (enterrada bloqueada) e o reinício do round.", 0, 4, 0.1f)]
     public float FoulDelay = 1.2f;
 
+    // ---------------- Lances livres ----------------
+    [Param(SFree, "Pontos por lance livre", "Pontos de cada lance livre convertido (a falta dá 2 lances).", 1, 5, 1)]
+    public float FreeThrowPoints = 1f;
+    [Param(SFree, "Distância da linha", "Distância (m) do aro até onde o jogador cobra os lances livres.", 2, 15, 0.1f)]
+    public float FreeThrowDistance = 5.5f;
+    [Param(SFree, "Duração do skill check", "Segundos até o ponteiro chegar na zona certa (± a variação da enterrada). A janela é a mesma da enterrada.", 0.3f, 3, 0.05f)]
+    public float FreeThrowSkillTime = 0.8f;
+    [Param(SFree, "Preparação", "Segundos parado antes do ponteiro começar a girar em cada lance livre.", 0, 3, 0.05f)]
+    public float FreeThrowPrep = 0.9f;
+    [Param(SFree, "Pausa entre os lances", "Segundos entre o 1º e o 2º lance livre (depois de errar ou da bola cair na cesta).", 0, 3, 0.05f)]
+    public float FreeThrowGap = 0.8f;
+    [Param(SFree, "Tempo de voo da bola", "Segundos de voo da bola no lance livre convertido (maior = arco mais alto).", 0.5f, 2.5f, 0.05f)]
+    public float FreeThrowFlightTime = 1.15f;
+
     // ---------------- Bots ----------------
     [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]
     public float BotAimErrorDeg = 4f;
@@ -316,7 +331,7 @@ public sealed class Tuning
     public float BotDistErrorM = 1.3f;
     [Param(SBots, "Erro no skill check da enterrada (s)", "Erro máximo do bot ao apertar no skill check (Normal). Compare com metade da janela da enterrada.", 0, 0.3f, 0.005f)]
     public float BotDunkTimingError = 0.05f;
-    [Param(SBots, "Tempo de reação (s)", "Atraso do bot para pular contra arremesso/enterrada (Normal).", 0, 2, 0.01f)]
+    [Param(SBots, "Tempo de reação (s)", "Atraso do bot para pular contra uma enterrada e para começar a se posicionar contra um arremesso (Normal).", 0, 2, 0.01f)]
     public float BotReactionTime = 0.3f;
     [Param(SBots, "Fácil: multiplicador", "Multiplica erros e tempos de reação dos bots no Fácil (e divide as chances de roubo/bloqueio).", 1, 4, 0.05f)]
     public float BotEasyMult = 1.8f;
@@ -338,6 +353,12 @@ public sealed class Tuning
     public float BotStealChancePerSec = 0.2f;
     [Param(SBots, "Chance de pular para bloquear", "Chance de o bot pular contra um arremesso/enterrada perto dele (Normal).", 0, 1, 0.01f)]
     public float BotBlockChance = 0.45f;
+    [Param(SBots, "Reação ao arremesso (s)", "Atraso do bot (já posicionado na frente da bola) para pular quando o adversário solta o arremesso (Normal). Acima de ~0,1 s quase não bloqueia.", 0, 0.5f, 0.005f)]
+    public float BotBlockReaction = 0.03f;
+    [Param(SBots, "Erro de posição no bloqueio (m)", "Erro lateral máximo do bot ao se colocar na frente do arremesso (Normal).", 0, 2, 0.05f)]
+    public float BotBlockPosError = 0.35f;
+    [Param(SBots, "Troca de posição sem a bola (s)", "A cada quanto tempo (em média) um bot sem a bola e sem marcar ninguém procura outro espaço livre.", 0.5f, 15, 0.1f)]
+    public float BotRoamInterval = 3.5f;
     [Param(SBots, "Distância da marcação", "Distância (m) que o bot fica de quem tem a bola, entre ele e a cesta.", 0.5f, 5, 0.1f)]
     public float BotMarkDistance = 1.4f;
 
@@ -352,6 +373,8 @@ public sealed class Tuning
     public float DummySpeedMult = 0.6f;
     [Param(SDummy, "Marcação perto da cesta", "Boneco adversário vai para a frente da cesta quando quem tem a bola chega a esta distância (m) dela. 0 = desliga.", 0, 20, 0.5f)]
     public float DummyGuardRange = 7f;
+    [Param(SDummy, "Raio do passeio", "Bonecos sem a bola e sem marcar andam devagar por pontos até esta distância (m) da posição inicial, parando de vez em quando. 0 = ficam parados.", 0, 8, 0.1f)]
+    public float DummyWanderRadius = 2.2f;
 
     // =====================================================================
 

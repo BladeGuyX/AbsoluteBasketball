@@ -7,8 +7,10 @@ namespace AB;
 /// <summary>
 /// Bot (Etapa 4). Gera um PlayerInput por tick, como um jogador humano — roda só no host.
 /// Ataque com a bola: infiltra, enterra (com skill check imperfeito), arremessa com erro calibrado, passa para quem está livre, dribla sob pressão.
-/// Ataque sem a bola: se espalha em posições em volta da cesta. Defesa: marcação individual (quem está com a bola primeiro),
-/// roubo, salto contra arremesso/enterrada. Bola solta/arremesso no ar: o mais perto de cada time vai no rebote.
+/// Ataque sem a bola: procura espaços livres em volta da cesta (troca de lugar, faz cortes, se mexe parado).
+/// Defesa: marcação individual (quem está com a bola primeiro), roubo; contra arremesso se coloca NA trajetória
+/// (lê o plano do arremesso) e pula quando a bola sai — só se o salto alcançar a bola. Sem marcar: zona.
+/// Bola solta/arremesso no ar: o mais perto de cada time vai no rebote. Lances livres: skill check com erro.
 /// Dificuldade (0 fácil, 1 normal, 2 difícil) multiplica erros e tempos de reação.
 /// </summary>
 public sealed class BotBrain
@@ -27,8 +29,13 @@ public sealed class BotBrain
     Vector3 _sideStep;
     // defesa
     Player _threat; float _threatT; bool _threatDecided;
+    bool _blockTry; float _blockErr; float _relT = -1;
     float _stealCd;
     float _dribbleCd;
+    // sem a bola: posição escolhida (troca de tempos em tempos) + balanço parado
+    Vector3 _roam; float _roamT; bool _cut; float _sway;
+    // lance livre
+    float _ftPressAt = -1; int _ftAttempt;
 
     public BotBrain(Match m, Player p, ulong seed) { M = m; P = p; R.Seed = seed; }
 
@@ -51,6 +58,14 @@ public sealed class BotBrain
         var inp = new PlayerInput { AimYaw = P.Yaw, AimPitch = ShotMath.PitchForDistance(T.ShotRangeMin) };
         if (_stealCd > 0) _stealCd -= dt;
         if (_dribbleCd > 0) _dribbleCd -= dt;
+        _sway += dt;
+        _roamT -= dt;
+        if (M.Phase == MatchPhase.FreeThrow)
+        {
+            if (M.FtShooter == P) FreeThrowSkill(ref inp, dt);
+            ResetActions(); _hold = 0; _threat = null;
+            return inp;
+        }
         if (!M.CanAct) { ResetActions(); _hold = 0; return inp; }
 
         if (P.Flight == FlightKind.Dunk) { DunkSkill(ref inp, dt); return inp; }
@@ -63,7 +78,7 @@ public sealed class BotBrain
         var ball = M.Ball;
         if (ball.State == BallState.Held && ball.Holder != null)
         {
-            if (ball.Holder.Team == P.Team) OffBall(ref inp, ball.Holder);
+            if (ball.Holder.Team == P.Team) OffBall(ref inp, dt, ball.Holder);
             else Defend(ref inp, dt, ball.Holder);
         }
         else if (ball.State is BallState.Pass or BallState.HighPass && ball.ThrowTeam == P.Team && ball.PassTarget == P)
@@ -96,10 +111,11 @@ public sealed class BotBrain
 
         if (_driving)
         {
-            if (LaneBlocked(me, rim, 1.2f, 2.0f) || P.Stamina < T.StaminaMinToRun) _driving = false;
+            if (LaneBlocked(me, rim, 1.2f, 2.0f)) _driving = false;
             else
             {
-                Steer(ref inp, rim, sprint: true, avoid: false);
+                // não precisa correr para enterrar (v0.7): corre se tiver estamina
+                Steer(ref inp, rim, sprint: P.Stamina > T.StaminaMinToRun, avoid: false);
                 if (P.CanDunk()) inp.Pressed |= Btn.Jump;
                 return;
             }
@@ -128,7 +144,7 @@ public sealed class BotBrain
             return true;
         }
         // infiltração para enterrar
-        if (d <= T.DunkRange + 5f && !LaneBlocked(me, rim, 1.4f, 0f) && P.Stamina > T.StaminaMax * 0.35f && R.Randf() < T.BotDunkChance)
+        if (d <= T.DunkRange + 5f && !LaneBlocked(me, rim, 1.4f, 0f) && R.Randf() < T.BotDunkChance)
         {
             _driving = true;
             return false;
@@ -294,32 +310,75 @@ public sealed class BotBrain
         _driving = false;
     }
 
+    // ---------- lance livre: mesmo skill check, com o mesmo erro da enterrada ----------
+    void FreeThrowSkill(ref PlayerInput inp, float dt)
+    {
+        if (M.FtAttempt != _ftAttempt || M.FtT < -dt * 2f) { _ftAttempt = M.FtAttempt; _ftPressAt = -1; }
+        if (!M.FtChecking || M.FtPressed || M.FtT < -dt * 2f) return;
+        if (_ftPressAt < 0) _ftPressAt = M.FtDur + Noise(T.BotDunkTimingError * Mult);
+        // o Match soma dt antes de ler o aperto: aperta no tick mais próximo do instante escolhido
+        if (M.FtT + dt * 1.5f >= _ftPressAt && M.FtT + dt >= 0) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; }
+    }
+
     // =====================================================================
     // Sem a bola
 
-    /// <summary>Ataque sem a bola: posições espalhadas em volta da cesta, longe de quem está com a bola.</summary>
-    void OffBall(ref PlayerInput inp, Player carrier)
+    /// <summary>
+    /// Ataque sem a bola: escolhe um espaço livre em volta da cesta (longe de defensores, aliados e de quem tem a bola),
+    /// troca de lugar de tempos em tempos, às vezes corta para a cesta, e se mexe um pouco quando chega.
+    /// </summary>
+    void OffBall(ref PlayerInput inp, float dt, Player carrier)
     {
-        var mates = M.Players.Where(q => q.Team == P.Team && q != carrier).OrderBy(q => q.Id).ToList();
-        int idx = mates.IndexOf(P);
-        var spot = OffenseSpot(idx, carrier);
-        Steer(ref inp, spot, sprint: (Flat(P.GlobalPosition) - spot).Length() > 7f && P.Stamina > T.StaminaMax * 0.5f);
+        var me = Flat(P.GlobalPosition);
+        var cp = carrier != null ? Flat(carrier.GlobalPosition) : (Vector3?)null;
+        bool bad = _roam == Vector3.Zero
+            || (cp.HasValue && (cp.Value - _roam).Length() < 3.5f)
+            || Mates.Any(q => q != carrier && (Flat(q.GlobalPosition) - _roam).Length() < 2.2f && (Flat(q.GlobalPosition) - me).Length() > 1f);
+        if (_roamT <= 0 || bad) PickRoam(carrier);
+        Roam(ref inp);
     }
 
-    Vector3 OffenseSpot(int idx, Player carrier)
+    void PickRoam(Player carrier)
     {
-        float[] angles = { 0f, 55f, -55f, 85f, -85f, 30f, -30f };
-        float[] radii = { 7.5f, 8.5f, 8.5f, 6.5f, 6.5f, 10f, 10f };
         var rim = RimFlat(AttackHoop);
         var inward = new Vector3(-CourtGeo.HoopSign(AttackHoop), 0, 0);
-        var cp = carrier != null ? Flat(carrier.GlobalPosition) : rim + inward * 30f;
-        for (int k = 0; k < angles.Length; k++)
+        var me = Flat(P.GlobalPosition);
+        bool cut = carrier != null && R.Randf() < 0.2f;
+        float maxR = Mathf.Max(5.5f, Mathf.Min(ShootRange() + 0.5f, T.ShotRangeMax - 1f));
+        float best = float.MinValue; var bestP = me;
+        for (int i = 0; i < 12; i++)
         {
-            int i = (idx + k) % angles.Length;
-            var spot = ClampCourt(rim + inward.Rotated(Vector3.Up, Mathf.DegToRad(angles[i])) * radii[i]);
-            if ((spot - cp).Length() > 4f) return spot;
+            float ang = Mathf.DegToRad(R.RandfRange(-88f, 88f));
+            float rad = cut ? R.RandfRange(2.0f, 3.5f) : R.RandfRange(4.5f, maxR);
+            var c = ClampCourt(rim + inward.Rotated(Vector3.Up, ang) * rad);
+            float open = Mathf.Min(Opps.Select(o => (Flat(o.GlobalPosition) - c).Length()).DefaultIfEmpty(9f).Min(), 6f);
+            float mate = Mathf.Min(Mates.Where(q => q != carrier).Select(q => (Flat(q.GlobalPosition) - c).Length()).DefaultIfEmpty(9f).Min(), 6f);
+            float car = carrier != null ? (Flat(carrier.GlobalPosition) - c).Length() : 8f;
+            float travel = (c - me).Length();
+            float score = open + mate * 0.8f + Mathf.Min(car, 8f) * 0.3f - Mathf.Abs(travel - 5f) * 0.25f + R.Randf() * 1.5f;
+            if (car < 3.5f) score -= 10f;
+            if (score > best) { best = score; bestP = c; }
         }
-        return ClampCourt(rim + inward * 9f);
+        _roam = bestP;
+        _cut = cut;
+        _roamT = cut ? R.RandfRange(1.2f, 2.0f) : T.BotRoamInterval * R.RandfRange(0.6f, 1.4f);
+    }
+
+    /// <summary>Vai até _roam; chegando, fica se mexendo de leve (passos laterais) em vez de parar duro.</summary>
+    void Roam(ref PlayerInput inp)
+    {
+        var me = Flat(P.GlobalPosition);
+        float d = (me - _roam).Length();
+        if (d > 0.9f)
+        {
+            Steer(ref inp, _roam, sprint: (d > 7f && P.Stamina > T.StaminaMax * 0.5f) || (_cut && d > 1.5f && P.Stamina > T.StaminaMinToRun));
+            return;
+        }
+        var toBall = Flat(M.Ball.GlobalPosition) - me;
+        var perp = toBall.LengthSquared() > 0.01f ? new Vector3(-toBall.Z, 0, toBall.X).Normalized() : Vector3.Right;
+        float k = Mathf.Sin(_sway * 2.3f + P.Id * 1.7f) * 0.3f + Mathf.Sin(_sway * 0.9f + P.Id) * 0.12f;
+        var mv = perp * k;
+        inp.Move = new Vector2(mv.X, mv.Z);
     }
 
     /// <summary>Defesa: marcação individual (atribuição gulosa: quem tem a bola primeiro).</summary>
@@ -327,7 +386,7 @@ public sealed class BotBrain
     {
         var target = Assignment(carrier);
         var ownRim = RimFlat(DefendHoop);
-        if (target == null) { Steer(ref inp, ClampCourt(ownRim + (Flat(carrier.GlobalPosition) - ownRim).Normalized() * 5f), false); return; }
+        if (target == null) { Zone(ref inp, carrier); return; }
         var tp = Flat(target.GlobalPosition);
         float markDist = target == carrier ? T.BotMarkDistance : T.BotMarkDistance + 1.2f;
         var toRim = ownRim - tp;
@@ -348,6 +407,21 @@ public sealed class BotBrain
                 _stealCd = 2.0f;
             }
         }
+    }
+
+    /// <summary>Defensor sem marcação: zona entre a bola e a própria cesta, deslocado para o lado, acompanhando a bola.</summary>
+    void Zone(ref PlayerInput inp, Player carrier)
+    {
+        var ownRim = RimFlat(DefendHoop);
+        var toBall = Flat(carrier.GlobalPosition) - ownRim;
+        var dir = toBall.LengthSquared() > 0.01f ? toBall.Normalized() : new Vector3(-CourtGeo.HoopSign(DefendHoop), 0, 0);
+        var perp = new Vector3(-dir.Z, 0, dir.X);
+        float side = P.Id % 2 == 0 ? 1f : -1f;
+        float dist = Mathf.Clamp(toBall.Length() * 0.45f, 3f, 6.5f);
+        _roam = ClampCourt(ownRim + dir * dist + perp * side * 2.2f);
+        _roamT = 0.5f;
+        _cut = false;
+        Roam(ref inp);
     }
 
     Player Assignment(Player carrier)
@@ -376,8 +450,8 @@ public sealed class BotBrain
         // os outros: quem arremessou/passou fica no ataque; o outro time volta para defender
         if (M.Ball.ThrowTeam == P.Team)
         {
-            var mates = M.Players.Where(q => q.Team == P.Team).OrderBy(q => q.Id).ToList();
-            Steer(ref inp, OffenseSpot(mates.IndexOf(P), null), false);
+            if (_roamT <= 0 || _roam == Vector3.Zero) PickRoam(null);
+            Roam(ref inp);
         }
         else
         {
@@ -407,22 +481,108 @@ public sealed class BotBrain
     // ---------- salto contra arremesso / enterrada ----------
     void BlockThreats(ref PlayerInput inp, float dt)
     {
-        if (P.Airborne || P.LandLock > 0 || P.Stun > 0 || P.StealFail > 0) return;
-        var threat = Opps.Where(o => o.ChargingShot || o.Flight == FlightKind.Dunk)
-            .OrderBy(o => (o.GlobalPosition - P.GlobalPosition).LengthSquared()).FirstOrDefault();
-        float range = threat == null ? 0 : threat.Flight == FlightKind.Dunk ? 4.5f : 3.2f;
-        if (threat == null || Flat(threat.GlobalPosition - P.GlobalPosition).Length() > range)
-        { _threat = null; return; }
-        if (threat != _threat) { _threat = threat; _threatT = 0; _threatDecided = false; }
-        _threatT += dt;
-        if (_threatDecided || _threatT < T.BotReactionTime * Mult) return;
-        _threatDecided = true;
-        if (R.Randf() < T.BotBlockChance / Mathf.Max(Mult, 0.5f) * 0.9f)
+        if (P.Airborne || P.LandLock > 0 || P.Stun > 0 || P.StealFail > 0) { _threat = null; _relT = -1; return; }
+        float Dist(Player o) => Flat(o.GlobalPosition - P.GlobalPosition).Length();
+
+        // enterrada: pula na direção de quem voa (encostar = falta)
+        var dunker = Opps.Where(o => o.Flight == FlightKind.Dunk).OrderBy(Dist).FirstOrDefault();
+        if (dunker != null && Dist(dunker) <= 4.5f)
         {
-            var to = Flat(threat.GlobalPosition - P.GlobalPosition);
-            if (to.LengthSquared() > 0.01f) { var d = to.Normalized(); inp.Move = new Vector2(d.X, d.Z) * 0.5f; }
-            inp.Pressed |= Btn.Jump;
+            if (dunker != _threat) { _threat = dunker; _threatT = 0; _threatDecided = false; _relT = -1; }
+            _threatT += dt;
+            if (_threatDecided || _threatT < T.BotReactionTime * Mult) return;
+            _threatDecided = true;
+            if (R.Randf() < T.BotBlockChance / Mathf.Max(Mult, 0.5f) * 0.9f)
+            {
+                var to = Flat(dunker.GlobalPosition - P.GlobalPosition);
+                if (to.LengthSquared() > 0.01f) { var d = to.Normalized(); inp.Move = new Vector2(d.X, d.Z) * 0.5f; }
+                inp.Pressed |= Btn.Jump;
+            }
+            return;
         }
+
+        // arremesso já saiu da mão de quem eu estava contestando: pula se o salto alcança a bola
+        var ball = M.Ball;
+        if (_threat != null && !_threat.ChargingShot)
+        {
+            bool released = ball.State == BallState.Shot && ball.LastThrower == _threat && ball.FlightTime < 0.3f;
+            if (!released || !_blockTry) { _threat = null; _relT = -1; return; }
+            if (_relT < 0) _relT = 0;
+            _relT += dt;
+            if (_relT < T.BotBlockReaction * Mult) return;
+            // o salto herda o embalo: escolhe entre plantar os pés ou pular na direção da bola, o que alcançar
+            inp.Move = Vector2.Zero;
+            inp.Held &= ~Btn.Sprint;
+            bool reach = false;
+            foreach (var m in JumpOptions(ball.GlobalPosition, ball.Vel))
+            {
+                if (!JumpCanReach(ball.GlobalPosition, ball.Vel, m)) continue;
+                inp.Move = new Vector2(m.X, m.Z);
+                reach = true;
+                break;
+            }
+            if (reach || (M.Cfg.BotDifficulty == 0 && R.Randf() < 0.25f)) inp.Pressed |= Btn.Jump;
+            _threat = null; _relT = -1;
+            return;
+        }
+
+        // carregando arremesso perto: decide se contesta e vai para a frente da bola, na trajetória
+        var shooter = Opps.Where(o => o.ChargingShot).OrderBy(Dist).FirstOrDefault();
+        if (shooter == null || Dist(shooter) > 5f) { _threat = null; _relT = -1; return; }
+        if (shooter != _threat)
+        {
+            _threat = shooter; _threatT = 0; _relT = -1;
+            _blockTry = R.Randf() < T.BotBlockChance / Mathf.Max(Mult, 0.5f);
+            _blockErr = Noise(T.BotBlockPosError * Mult);
+        }
+        _threatT += dt;
+        if (!_blockTry || _threatT < T.BotReactionTime * Mult * 0.5f) return;
+        if (!shooter.GetShotPlan(out var plan)) return;
+        var dir = Flat(plan.Vel);
+        if (dir.LengthSquared() < 0.01f) return;
+        dir = dir.Normalized();
+        var perp = new Vector3(-dir.Z, 0, dir.X);
+        var spot = Flat(shooter.GlobalPosition) + dir * 1.05f + perp * _blockErr;
+        float far = (Flat(P.GlobalPosition) - spot).Length();
+        Steer(ref inp, spot, sprint: far > 1.5f && P.Stamina > T.StaminaMinToRun, avoid: false);
+        inp.AimYaw = ShotMath.YawOf(-dir);
+    }
+
+    /// <summary>Direções de salto a testar: parado e na direção de pontos do caminho da bola.</summary>
+    IEnumerable<Vector3> JumpOptions(Vector3 bp, Vector3 bv)
+    {
+        yield return Vector3.Zero;
+        var me = Flat(P.GlobalPosition);
+        foreach (float tau in new[] { 0.08f, 0.14f, 0.2f })
+        {
+            var to = Flat(bp + bv * tau) - me;
+            if (to.LengthSquared() > 0.01f) yield return to.Normalized();
+        }
+    }
+
+    /// <summary>
+    /// Se eu pular agora (salto rápido) com este direcional, meus braços encontram a bola? Mesma regra do Match.CheckBlocks
+    /// e mesmo embalo do Player.HandleJump (direcional × andar × JumpCarry, ou a velocidade atual × JumpCarry se for maior).
+    /// </summary>
+    bool JumpCanReach(Vector3 bp, Vector3 bv, Vector3 move)
+    {
+        var me = P.GlobalPosition;
+        var h = move * T.WalkSpeed * T.JumpCarry;
+        var cur = Flat(P.Velocity);
+        if (cur.Length() > h.Length()) h = cur * T.JumpCarry;
+        float vy = T.JumpVelMin, g = T.PlayerGravity, gb = T.BallGravity;
+        float rad = T.BlockRadius + T.BallRadius;
+        const float step = 1f / 60f;
+        for (float tau = step; tau <= 0.45f; tau += step)
+        {
+            var b = bp + bv * tau + Vector3.Down * (0.5f * gb * tau * tau);
+            float feet = me.Y + Mathf.Max(0, vy * tau - 0.5f * g * tau * tau);
+            var pp = me + h * tau;
+            float hd = new Vector2(b.X - pp.X, b.Z - pp.Z).Length();
+            float ry = b.Y - feet;
+            if (hd <= rad && ry >= 0.8f && ry <= T.BlockReach + T.BallRadius) return true;
+        }
+        return false;
     }
 
     // =====================================================================

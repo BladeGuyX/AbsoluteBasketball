@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.6 — Etapas 0 a 4 concluídas (bots). Próxima: Etapa 5 (multiplayer Steam).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.7 — Etapas 0 a 4 concluídas (bots) + revisão v0.7 (lances livres, bloqueio dos bots). Em andamento: Etapa 5 (multiplayer Steam).**
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
 
@@ -19,7 +19,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 ## Decisões do usuário a lembrar
 - **Multiplayer pela Steam** (Steamworks, sem publicar: AppID de teste 480/Spacewar, como já foi feito em outro jogo do usuário). Só na Etapa 5.
 - Controle de versão: **git** neste diretório (commits só quando o usuário pedir ou ao fechar uma entrega combinada).
-- Revisões de regras (v0.2 a v0.6) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
+- Revisões de regras (v0.2 a v0.7) estão em `docs/GDD.md` ("Revisões do usuário") e prevalecem sobre o texto original.
 
 ## Ferramentas instaladas
 - Godot: `%LOCALAPPDATA%\Microsoft\WinGet\Packages\GodotEngine.GodotEngine.Mono_Microsoft.Winget.Source_8wekyb3d8bbwe\Godot_v4.7.2-stable_mono_win64\Godot_v4.7.2-stable_mono_win64_console.exe`
@@ -30,7 +30,8 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - Só compilar: `dotnet build`
 - Teste automático de arremesso: `<godot_console> --headless --path . -- --smoke-test` (bandeja / meia distância / 3 pts).
 - Teste automático da Etapa 2: `... -- --smoke-e2` (passe rápido + devolução, passe carregado, drible, pulo/toco do boneco, roubo falhando por imunidade e roubo certo).
-- Teste automático da Etapa 3: `... -- --smoke-e3` (enterrada certa, errada + atordoado, certa com Espaço, falta com bola para quem sofreu). `--e3-shot <png>` salva print do skill check.
+- Teste automático da Etapa 3: `... -- --smoke-e3` (enterrada certa, errada + atordoado, enterrada andando com Espaço no skill check = erra, falta → 2 lances livres: acerta o 1º (+1), erra o 2º (bola viva)). `--e3-shot <png>` salva prints `_ready` (setinhas), `_dunk` e `_ft` (skill checks).
+- Teste do bloqueio dos bots: `... -- --smoke-block` (16 arremessos com bot Normal marcando; exige tocos e quase nenhum pulo inútil).
 - Teste automático da Etapa 4: `... -- --smoke-e4` (3x3 só de bots, 150 s de jogo: pontos dos dois lados, arremessos, passes, trocas de posse; imprime estatísticas). O build.ps1 roda os quatro.
 - **ATENÇÃO:** rodando pela Godot (headless) o jogo lê `tuning.json` da RAIZ do projeto, que guarda valores antigos. O build.ps1 apaga esse arquivo antes dos testes; ao testar manualmente, apague-o também.
 - Estatística de arremesso com erro humano simulado: `... -- --shot-stats` (use para calibrar assistências/aro/tabelinha).
@@ -51,10 +52,10 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - `Scenes/Main.tscn` → `Scripts/Core/GameRoot.cs`: inicializa settings/input/tuning, menus ↔ partida, F5 recarrega tuning, args de linha de comando.
 - `Scripts/Core/`: `Tuning` (valores + esquema), `UserSettings` (user://settings.json: volume, fullscreen, sensibilidade, corrida alternar, binds), `InputSetup` (InputMap em código, remapeamento com troca automática de conflitos), `Mat` (materiais toon + contorno, paleta), `Sfx` (sons procedurais placeholder).
 - `Scripts/Game/`:
-  - `Match` — **autoridade** (host/offline). Fases Countdown→Playing→Scored→(Ended). Lê `PlayerInput` de cada jogador, chama `Player.ServerTick`, `Ball.ServerTick`, pontuação, posse, relógio, pickups.
+  - `Match` — **autoridade** (host/offline). Fases Countdown→Playing→Scored→(FreeThrow)→(Ended). Lances livres: `StartFreeThrows`/`FreeThrowTick`/`FtResult`/`ThrowFreeThrow` (campos `Ft*` lidos pela HUD e pelos bots). Lê `PlayerInput` de cada jogador, chama `Player.ServerTick`, `Ball.ServerTick`, pontuação, posse, relógio, pickups.
   - `Player` (CharacterBody3D) — movimento, estamina, arremesso (segurar não muda nada; distância = câmera; auto em 4 s), passe (toque = aliado; carregado = lança na direção da câmera, 25% de velocidade, imune a roubo, auto em 4 s), salto (corpo vira para a câmera carregando), roubo, drible especial (agachado, quique rápido), quique automático (sempre).
-  - Enterrada: `Player.Flight` (None/Dunk), `FlightTick` (voo roteirizado + skill check com arremesso ou Espaço), `FinishDunk`, `EndFlight`, `Stun`. `Match.CheckFlightBlocks` (falta) e `OnFoul` (`_nextCarrier`).
-  - `BotBrain` — bots (Etapa 4). `Match._bots`; `MatchConfig.TrainingDummies` escolhe bots × bonecos; `BotDifficulty`. `Match.EventCount` conta eventos (estatística do `--smoke-e4`). `DunkScenario` = roteiro do `--smoke-e3`. `DummyBrain.GuardSpot` (boneco marca a frente da cesta).
+  - Enterrada: `Player.CanDunk` (sem precisar correr; usado pela HUD), `Player.Flight` (None/Dunk), `FlightTick` (voo roteirizado + skill check SÓ com arremesso), `FinishDunk`, `EndFlight`, `Stun`. `Match.CheckFlightBlocks` (falta) e `OnFoul` (`_pendingFt` → lances livres).
+  - `BotBrain` — bots (Etapa 4; v0.7: `BlockThreats`/`JumpCanReach` = bloqueio na trajetória, `PickRoam`/`Roam`/`Zone` = movimento sem a bola, `FreeThrowSkill`). `BlockScenario` = roteiro do `--smoke-block`. `Match._bots`; `MatchConfig.TrainingDummies` escolhe bots × bonecos; `BotDifficulty`. `Match.EventCount` conta eventos (estatística do `--smoke-e4`). `DunkScenario` = roteiro do `--smoke-e3`. `DummyBrain.GuardSpot` (boneco marca a frente da cesta).
   - Prévia do arremesso: `Player._shotPlan` é calculado no fim de cada tick e o arremesso usa exatamente esse plano.
   - `Passing` — passe rápido (aliado livre mais próximo, corredor livre, trajetória normal/alta) e `AimedVelocity` (passe carregado sem alvo).
   - `DummyBrain` — bonecos de treino (precursor dos bots). `ScenarioPilot` — roteiro do `--smoke-e2`.

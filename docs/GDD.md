@@ -95,6 +95,20 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - Skill check bem mais difícil; **Espaço também vale** no skill check (além do botão de arremesso).
 - **Tapinha removido.**
 
+## Revisões do usuário (v0.7) — prevalecem sobre as anteriores
+- **Espaço não vale mais** no skill check da enterrada (só o botão de arremesso).
+- Indicação de quando dá para enterrar (setinhas verdes acima da mira — sem texto).
+- Janela certa do skill check = **0,06 s**.
+- Arremesso automático e passe automático: **3 s** (1 s a menos).
+- **Não precisa mais estar correndo** para enterrar.
+- Redução de velocidade de quem tem a bola **+5%** (multiplicador 0,92 → 0,87).
+- **Falta = 2 lances livres** de 1 ponto, sem ninguém interferir. Errou o 1º → vai direto para o 2º. Errou o 2º → todos se mexem e o
+  jogo continua (rebote). Os lances livres são **só skill checks** tão difíceis quanto o da enterrada; acertou = arremesso automático
+  que entra garantido.
+- Velocidade driblando = **70% da velocidade andando**.
+- Bots pulavam em lugares que não impediam a bola → corrigido.
+- Bots/bonecos sem a bola e sem marcar ninguém devem agir de forma mais natural (mesmo espalhados).
+
 ## Decisões de implementação (Claude)
 - **Rede:** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de `PlayerInput`
   (humano local, bot ou cliente remoto). Offline = host sem clientes. Plano de rede na Etapa 5.
@@ -122,16 +136,33 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   Apertar arremesso dentro da janela = cesta (2 pts). Apertar cedo = erra ao tocar; não apertar = erra no fim da janela.
   Erro: bola cai do lado do aro, jogador cai e fica atordoado `DunkStunTime` (estrelinhas, anel cinza).
 - **Falta:** adversário NO AR encostando na mão/bola ou no corpo de quem está enterrando = falta: apito, pausa `FoulDelay`,
-  round recomeça (sem contagem) com quem sofreu a falta com a bola.
-- **Skill check (v0.6):** janela `DunkWindow` = 0,05 s; a duração do voo varia ± `DunkFlightJitter` a cada enterrada
-  (o ponteiro muda de velocidade, não dá para decorar). Botão de arremesso OU Espaço.
+  depois **2 lances livres** (v0.7, ver abaixo).
+- **Lances livres (v0.7, `Match` fase `FreeThrow`):** quem sofreu vai para a linha (`FreeThrowDistance` do aro); os outros ficam
+  nos lados do garrafão (defensores mais perto da cesta); ninguém se mexe nem age. Cada lance: preparação `FreeThrowPrep`,
+  depois o mesmo anel do skill check da enterrada (duração `FreeThrowSkillTime` ± `DunkFlightJitter`, janela `DunkWindow`,
+  só botão de arremesso). Acertou: bola sai sozinha numa parábola calculada até o centro do aro (`FreeThrowFlightTime`) =
+  `FreeThrowPoints` (1). Errou o 1º: pausa `FreeThrowGap` e 2º lance. Converteu o 2º: round reinicia com o outro time.
+  Errou o 2º: a bola é lançada contra a frente do aro e a fase volta a `Playing` (rebote valendo). Se a bola do lance
+  livre errado ainda entrar, vale 1 ponto (`Ball.FreeThrow`).
+- **Skill check (v0.7):** janela `DunkWindow` = 0,06 s; a duração do voo varia ± `DunkFlightJitter` a cada enterrada
+  (o ponteiro muda de velocidade, não dá para decorar). **Só o botão de arremesso** (Espaço não vale desde a v0.7).
+- **Enterrada sem corrida (v0.7):** `Player.CanDunk()` = com a bola, no chão, a até `DunkRange` do aro, movimento (ou, parado,
+  a frente do jogador) dentro de `DunkMaxAngleDeg` da cesta. Quando é verdade, a HUD mostra **duas setinhas verdes** acima da mira.
+- **Drible (v0.7):** velocidade = `WalkSpeed × DribbleSpeedMult` (0,7), sem correr e sem o multiplicador de quem tem a bola.
 - **Bots (Etapa 4, `BotBrain`):** com a bola: decide a cada ~0,25 s — drible especial sob pressão, infiltração para enterrar
   (caminho livre), passe carregado para o aliado mais livre/mais perto da cesta (alto se o corredor estiver fechado),
   arremesso livre dentro de `BotShootRange` (marcado só com pequena chance; impaciente após `BotMaxHoldTime`).
   Erros de mira/distância/skill check sorteados (triangulares) e multiplicados pela dificuldade (Fácil ×1,8, Difícil ×0,55).
-  Sem a bola no ataque: posições espalhadas em volta da cesta. Defesa: marcação individual gulosa (quem tem a bola
-  primeiro), entre o atacante e a cesta; rouba só quando dá (Fácil às vezes erra), pula contra arremesso/enterrada após
-  o tempo de reação. Bola solta/no ar: o mais perto de cada time vai no rebote, o resto se posiciona.
+  Sem a bola no ataque (v0.7): escolhe um espaço livre em volta da cesta (longe de defensores/aliados/da bola), troca de
+  lugar a cada ~`BotRoamInterval`, às vezes corta para a cesta e, parado, faz passos laterais. Defesa: marcação individual
+  gulosa (quem tem a bola primeiro), entre o atacante e a cesta; sem marcação = zona entre a bola e a cesta.
+  **Bloqueio (v0.7):** contra arremesso, o bot lê o plano do arremesso (`Player.GetShotPlan`), se coloca ~1 m à frente de quem
+  arremessa NA trajetória (erro `BotBlockPosError`) e, quando a bola sai, pula após `BotBlockReaction` — só se a simulação do
+  salto (com o embalo herdado, mesma regra do `CheckBlocks`) alcança a bola; escolhe pular parado ou na direção da bola.
+  Contra enterrada: pula na direção de quem voa (gera falta). Teste: `--smoke-block`.
+  Lances livres: mesmo erro do skill check da enterrada. Bola solta/no ar: o mais perto de cada time vai no rebote.
+- **Bonecos de treino (v0.7):** sem a bola e sem marcar, passeiam devagar perto da posição inicial (`DummyWanderRadius`),
+  com pausas; o adversário volta para a posição quando o ataque se aproxima da cesta dele.
   Os aliados bots passam para você também. Menu: "Outros jogadores" = Bots ou Bonecos de treino; dificuldade.
 - **Indicativos sem texto (`AimIndicator`):** passe carregado: seta reta amarela (normal) / arco rosa (alto) abaixo da mira +
   anel até o passe automático; arremesso: anel laranja até o automático; anéis curtos que esvaziam: drible (laranja),

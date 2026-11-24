@@ -19,6 +19,7 @@ public partial class Ball : Node3D
     public Vector3 ShotOrigin;     // pés de quem arremessou (2 ou 3 pontos)
     public Player PassTarget;
     public float FlightTime;
+    public bool FreeThrow;         // lance livre: se entrar vale FreeThrowPoints (some ao tocar o chão / ser pega)
     int _noScoreHoop = -1;         // passou subindo pelo aro: a descida não vale cesta
 
     MeshInstance3D _mesh;
@@ -43,6 +44,7 @@ public partial class Ball : Node3D
         Vel = Vector3.Zero;
         PassTarget = null;
         _noScoreHoop = -1;
+        FreeThrow = false;
         GlobalPosition = p.HeldBallPosition();
         ResetPhysicsInterpolation();
     }
@@ -56,6 +58,7 @@ public partial class Ball : Node3D
         ThrowTeam = by.Team;
         ShotOrigin = by.GlobalPosition;
         _noScoreHoop = -1;
+        FreeThrow = false;
         PassTarget = target;
         FlightTime = 0;
         GlobalPosition = pos;
@@ -68,6 +71,7 @@ public partial class Ball : Node3D
         Holder = null;
         State = BallState.Loose;
         PassTarget = null;
+        FreeThrow = false;
         GlobalPosition = pos;
         Vel = vel;
         ResetPhysicsInterpolation();
@@ -101,6 +105,7 @@ public partial class Ball : Node3D
         GlobalPosition = p;
         FlightTime += dt;
         if (hit.Floor && State != BallState.Loose) { State = BallState.Loose; PassTarget = null; }
+        if (hit.Floor) FreeThrow = false;
         return hit;
     }
 

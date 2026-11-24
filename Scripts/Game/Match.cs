@@ -4,7 +4,7 @@ using Godot;
 
 namespace AB;
 
-public enum MatchPhase { Countdown, Playing, Scored, Ended }
+public enum MatchPhase { Countdown, Playing, Scored, FreeThrow, Ended }
 public enum WinMode { Points, Time }
 
 public sealed class MatchConfig
@@ -21,6 +21,7 @@ public sealed class MatchConfig
     public bool SmokeTest;           // --smoke-test (arremessos)
     public bool SmokeE2;             // --smoke-e2 (passe, drible, bloqueio, roubo)
     public bool SmokeE3;             // --smoke-e3 (enterrada, skill check, falta)
+    public bool SmokeBlock;          // --smoke-block (bot bloqueando arremessos)
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
 
@@ -58,16 +59,32 @@ public partial class Match : Node3D
     AutoPilot _smoke;
     ScenarioPilot _scenario;
     DunkScenario _dunkScenario;
+    BlockScenario _blockScenario;
     int _lastCountShown = -1;
     float _stuckTimer;
     float _smokeTime;
     int _nextPossession;
-    Player _nextCarrier;              // falta: quem sofreu recomeça com a bola
+    Player _pendingFt;                // falta: quem sofreu cobra 2 lances livres depois da pausa
+
+    // ---- lances livres (v0.7): 2 skill checks; acertou = arremesso automático que sempre entra ----
+    enum FtStage { Check, Flight, Gap }
+    public Player FtShooter;          // quem está cobrando (null fora dos lances livres)
+    public Player FtFlashPlayer;      // de quem é o flash do resultado (continua depois do fim dos lances)
+    public int FtAttempt;             // 1 ou 2
+    public float FtT, FtDur;          // FtT < 0 = preparação; o ponteiro chega na zona certa em FtT = FtDur
+    public bool FtPressed;
+    public float FtPressT;
+    public float FtFlash;             // >0: mostra o resultado do skill check (verde/vermelho)
+    public bool FtFlashOk;
+    public bool FtChecking => Phase == MatchPhase.FreeThrow && _ftStage == FtStage.Check;
+    FtStage _ftStage;
+    float _ftStageT;
+    PlayerInput _ftInput;
 
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.SmokeBlock || Cfg.AutoPilotLocal;
 
     public override void _Ready()
     {
@@ -99,6 +116,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeTest || Cfg.AutoPilotLocal) _smoke = new AutoPilot(this, LocalPlayer);
         if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
         if (Cfg.SmokeE3) _dunkScenario = new DunkScenario(this, LocalPlayer);
+        if (Cfg.SmokeBlock) _blockScenario = new BlockScenario(this, LocalPlayer);
         StartRound(0, null, countdown: true);
     }
 
@@ -223,8 +241,9 @@ public partial class Match : Node3D
                 if (PhaseTimer <= 0)
                 {
                     if (Winner >= 0) EndMatch();
-                    else StartRound(_nextPossession, _nextCarrier, countdown: false);
-                    _nextCarrier = null;
+                    else if (_pendingFt != null && IsInstanceValid(_pendingFt)) StartFreeThrows(_pendingFt);
+                    else StartRound(_nextPossession, null, countdown: false);
+                    _pendingFt = null;
                 }
                 break;
         }
@@ -237,13 +256,17 @@ public partial class Match : Node3D
                 if (_bots.TryGetValue(p, out var lb)) inp = lb.Build(dt);
                 else if (_scenario != null) inp = _scenario.Build(dt);
                 else if (_dunkScenario != null) inp = _dunkScenario.Build(dt);
+                else if (_blockScenario != null) inp = _blockScenario.Build(dt);
                 else if (_smoke != null) inp = _smoke.Build(dt);
                 else inp = _reader.Build(Cam, !InputBlocked);
             }
             else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
             else if (_bots.TryGetValue(p, out var bot)) inp = bot.Build(dt);
+            if (p == FtShooter) _ftInput = inp;
             p.ServerTick(inp, dt);
         }
+        if (FtFlash > 0) FtFlash -= dt;
+        if (Phase == MatchPhase.FreeThrow) FreeThrowTick(dt);
 
         var hit = Ball.ServerTick(dt);
         HandleBallHit(hit);
@@ -256,6 +279,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeE2) SmokeE2Tick(dt);
         if (Cfg.SmokeE3) SmokeE3Tick(dt);
         if (Cfg.SmokeE4) SmokeE4Tick(dt);
+        if (Cfg.SmokeBlock) SmokeBlockTick(dt);
     }
 
     void HandleBallHit(BallHit hit)
@@ -267,28 +291,36 @@ public partial class Match : Node3D
         if (hit.Floor && hit.Impact > 1.0f) Sfx.Play3D(this, "bounce", pos, vol(hit.Impact));
         if (hit.Rim) LogEvent("RIM", null);
         if (hit.Board) LogEvent("BOARD", null);
-        if (hit.ScoredHoop >= 0 && Phase == MatchPhase.Playing) OnScore(hit.ScoredHoop);
+        if (hit.ScoredHoop >= 0 && Phase is MatchPhase.Playing or MatchPhase.FreeThrow) OnScore(hit.ScoredHoop);
     }
 
     void OnScore(int hoop)
     {
         var t = Tuning.I;
         int team = CourtGeo.ScoringTeamForHoop(hoop);
-        bool three = Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotOrigin, hoop);
-        int pts = Mathf.RoundToInt(three ? t.PointsOutside : t.PointsInside);
+        bool freeThrow = Ball.FreeThrow;
+        bool three = !freeThrow && Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotOrigin, hoop);
+        int pts = Mathf.RoundToInt(freeThrow ? t.FreeThrowPoints : three ? t.PointsOutside : t.PointsInside);
+        Ball.FreeThrow = false;
         Score[team] += pts;
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
         Sfx.Play2D(this, "score", -7);
         Hud?.ShowMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, color: Palette.Team[team]);
-        LogEvent(Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
-        GD.Print($"[SCORE] time {team} +{pts} ({(three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
+        LogEvent(freeThrow ? "SCORE_FT" : Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
+        GD.Print($"[SCORE] time {team} +{pts} ({(freeThrow ? "lance livre" : three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
 
+        bool wins = (Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime);
+        if (Phase == MatchPhase.FreeThrow)
+        {
+            // 1º lance convertido: vai para o 2º (a não ser que já tenha vencido)
+            if (!wins && FtAttempt == 1) { _ftStage = FtStage.Gap; _ftStageT = t.FreeThrowGap; return; }
+            FtShooter = null;
+        }
         _nextPossession = 1 - team;
         Phase = MatchPhase.Scored;
         PhaseTimer = t.PostScoreDelay;
-        if ((Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime))
-            Winner = team;
+        if (wins) Winner = team;
     }
 
     void OnTimeUp()
@@ -368,10 +400,178 @@ public partial class Match : Node3D
         Sfx.Play2D(this, "whistle", -6);
         LogEvent("FOUL", fouler, victim);
         _nextPossession = victim.Team;
-        _nextCarrier = victim;
+        _pendingFt = victim;          // depois da pausa: 2 lances livres
         Phase = MatchPhase.Scored;
         PhaseTimer = Tuning.I.FoulDelay;
     }
+
+    // ------------------------------------------------------------------ lances livres
+
+    /// <summary>Falta: quem sofreu vai para a linha e cobra 2 lances livres. Ninguém se mexe até o fim.</summary>
+    void StartFreeThrows(Player shooter)
+    {
+        Phase = MatchPhase.FreeThrow;
+        FtShooter = shooter;
+        Possession = shooter.Team;
+        PlaceFreeThrow(shooter);
+        LogEvent("FREE_THROWS", shooter);
+        BeginFtAttempt(1);
+    }
+
+    Vector3 FtSpot(Player shooter, out float yaw)
+    {
+        int hoop = CourtGeo.AttackHoop(shooter.Team);
+        var rim = Geo.RimCenter[hoop] with { Y = 0 };
+        var inward = new Vector3(-CourtGeo.HoopSign(hoop), 0, 0);
+        yaw = ShotMath.YawOf(-inward);
+        var spot = rim + inward * Tuning.I.FreeThrowDistance;
+        return new Vector3(Mathf.Clamp(spot.X, -Geo.HalfL + 1f, Geo.HalfL - 1f), 0.05f, spot.Z);
+    }
+
+    /// <summary>Arremessador na linha; os outros nos lados do garrafão (defensores mais perto da cesta), virados para o aro.</summary>
+    void PlaceFreeThrow(Player shooter)
+    {
+        var t = Tuning.I;
+        int hoop = CourtGeo.AttackHoop(shooter.Team);
+        var rim = Geo.RimCenter[hoop] with { Y = 0 };
+        var inward = new Vector3(-CourtGeo.HoopSign(hoop), 0, 0);
+        var spot = FtSpot(shooter, out float yaw);
+        shooter.Teleport(spot, yaw, setHome: false);
+
+        var def = Players.Where(p => p.Team != shooter.Team).ToList();
+        var att = Players.Where(p => p.Team == shooter.Team && p != shooter).ToList();
+        var order = new List<Player>();
+        int di = 0, ai = 0;
+        while (di < def.Count || ai < att.Count)
+        {
+            for (int k = 0; k < 2 && di < def.Count; k++) order.Add(def[di++]);
+            for (int k = 0; k < 2 && ai < att.Count; k++) order.Add(att[ai++]);
+        }
+        float laneEnd = Mathf.Max(t.FreeThrowDistance - 1.0f, 2f);
+        for (int i = 0; i < order.Count; i++)
+        {
+            Vector3 pos;
+            int row = i / 2;
+            float side = i % 2 == 0 ? 1f : -1f;
+            if (row < 3)
+            {
+                float along = Mathf.Lerp(1.6f, laneEnd, row / 2f);
+                pos = rim + inward * along + new Vector3(0, 0, side * 2.6f);
+            }
+            else
+            {
+                int k = i - 6;
+                pos = rim + inward * (t.FreeThrowDistance + 2.5f + (k / 4) * 2f) + new Vector3(0, 0, (k % 4 - 1.5f) * 2.4f);
+            }
+            pos = new Vector3(Mathf.Clamp(pos.X, -Geo.HalfL + 0.8f, Geo.HalfL - 0.8f), 0.05f, Mathf.Clamp(pos.Z, -Geo.HalfW + 0.8f, Geo.HalfW - 0.8f));
+            order[i].Teleport(pos, ShotMath.YawOf(rim - pos), setHome: false);
+        }
+    }
+
+    void BeginFtAttempt(int n)
+    {
+        var t = Tuning.I;
+        FtAttempt = n;
+        _ftStage = FtStage.Check;
+        FtT = -t.FreeThrowPrep;
+        FtPressed = false;
+        FtDur = Mathf.Max(0.25f, t.FreeThrowSkillTime + (float)GD.RandRange(-t.DunkFlightJitter, t.DunkFlightJitter));
+        var spot = FtSpot(FtShooter, out float yaw);
+        FtShooter.Teleport(spot, yaw, setHome: false);
+        Ball.GiveTo(FtShooter);
+        if (FtShooter == LocalPlayer) Cam.SnapBehind(yaw);
+    }
+
+    void FreeThrowTick(float dt)
+    {
+        var t = Tuning.I;
+        if (FtShooter == null || !IsInstanceValid(FtShooter)) { EndFreeThrows(); return; }
+        switch (_ftStage)
+        {
+            case FtStage.Check:
+            {
+                // igual ao skill check da enterrada: só o botão de arremesso; cedo = erra ao chegar na zona
+                FtT += dt;
+                float half = t.DunkWindow * 0.5f;
+                if (FtT >= 0 && !FtPressed && _ftInput.WasPressed(Btn.Shoot)) { FtPressed = true; FtPressT = FtT; }
+                if (FtPressed)
+                {
+                    if (Mathf.Abs(FtPressT - FtDur) <= half) FtResult(true);
+                    else if (FtT >= FtDur) FtResult(false);
+                }
+                else if (FtT >= FtDur + half) FtResult(false);
+                break;
+            }
+            case FtStage.Flight:
+                _ftStageT += dt;
+                if (_ftStageT > 3.5f) // segurança: a bola não entrou
+                {
+                    if (FtAttempt == 1) { _ftStage = FtStage.Gap; _ftStageT = t.FreeThrowGap; }
+                    else EndFreeThrows();
+                }
+                break;
+            case FtStage.Gap:
+                _ftStageT -= dt;
+                if (_ftStageT <= 0) BeginFtAttempt(2);
+                break;
+        }
+    }
+
+    void FtResult(bool ok)
+    {
+        var t = Tuning.I;
+        FtFlash = 0.6f;
+        FtFlashOk = ok;
+        FtFlashPlayer = FtShooter;
+        LogEvent(ok ? "FT_OK" : "FT_MISS", FtShooter);
+        if (ok)
+        {
+            ThrowFreeThrow(true);
+            _ftStage = FtStage.Flight;
+            _ftStageT = 0;
+        }
+        else if (FtAttempt == 1)
+        {
+            _ftStage = FtStage.Gap; // errou o 1º: vai direto para o 2º
+            _ftStageT = t.FreeThrowGap;
+        }
+        else
+        {
+            ThrowFreeThrow(false); // errou o 2º: bola bate no aro e o jogo continua (rebote)
+            EndFreeThrows();
+        }
+    }
+
+    /// <summary>Lança a bola do lance livre: convertido = cai no centro do aro; errado = bate na frente do aro.</summary>
+    void ThrowFreeThrow(bool make)
+    {
+        var t = Tuning.I;
+        var s = FtShooter;
+        var rim = Geo.RimCenter[CourtGeo.AttackHoop(s.Team)];
+        float yaw = ShotMath.YawOf((rim - s.GlobalPosition) with { Y = 0 });
+        var pos = ShotMath.ReleasePos(s.GlobalPosition, yaw);
+        var flat = (rim - pos) with { Y = 0 };
+        float dist = Mathf.Max(flat.Length(), 0.5f);
+        var dir = flat / dist;
+        var target = make ? rim : rim - dir * (t.RimRadius + t.BallRadius * 0.6f);
+        float d = ((target - pos) with { Y = 0 }).Length();
+        float T = Mathf.Max(t.FreeThrowFlightTime, 0.3f);
+        float vy = (target.Y - pos.Y + 0.5f * t.BallGravity * T * T) / T;
+        var vel = dir * (d / T) + Vector3.Up * vy;
+        s.Yaw = yaw;
+        s.BallLockoutTimer = 0.8f;
+        s.PlayReleaseAnim();
+        Ball.Throw(s, pos, vel, make ? BallState.Shot : BallState.Loose);
+        Ball.FreeThrow = true;
+        LogEvent("FT_THROW", s);
+    }
+
+    void EndFreeThrows()
+    {
+        FtShooter = null;
+        if (Phase == MatchPhase.FreeThrow) Phase = MatchPhase.Playing;
+    }
+
 
     void TryPickup()
     {
@@ -410,6 +610,7 @@ public partial class Match : Node3D
         if (Automated && !Cfg.SmokeE4) GD.Print($"[EVENT] {kind} {a?.PlayerName}{(b != null ? " -> " + b.PlayerName : "")}");
         _scenario?.OnEvent(kind, a, b);
         _dunkScenario?.OnEvent(kind, a, b);
+        _blockScenario?.OnEvent(kind, a, b);
     }
 
     void CheckStuckBall(float dt)
@@ -431,13 +632,24 @@ public partial class Match : Node3D
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
 
         if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3) ScreenshotTick((float)delta);
-        // diagnóstico: --smoke-e3 --e3-shot <png> salva um print do skill check no meio da enterrada
-        if (Cfg.SmokeE3 && Cfg.ScreenshotPath != null && lp != null && lp.Flight == FlightKind.Dunk && lp.FlightT > lp.FlightDur * 0.6f)
+        // diagnóstico: --smoke-e3 --e3-shot <png> salva prints: _ready (setinhas "pode enterrar"), _dunk (skill check da enterrada), _ft (lance livre)
+        if (Cfg.SmokeE3 && Cfg.ScreenshotPath != null && lp != null)
         {
-            GetViewport().GetTexture().GetImage().SavePng(Cfg.ScreenshotPath);
-            GD.Print("[SHOT] salvo " + Cfg.ScreenshotPath);
-            Cfg.ScreenshotPath = null;
+            _readyFrames = lp.CanDunk() ? _readyFrames + 1 : 0;
+            if (!_e3Shots.Contains("ready") && _readyFrames >= 4) E3Shot("ready");
+            if (!_e3Shots.Contains("dunk") && lp.Flight == FlightKind.Dunk && lp.FlightT > lp.FlightDur * 0.6f) E3Shot("dunk");
+            if (!_e3Shots.Contains("ft") && FtChecking && FtShooter == lp && FtT > FtDur * 0.5f) E3Shot("ft");
         }
+    }
+
+    readonly HashSet<string> _e3Shots = new();
+    int _readyFrames;
+    void E3Shot(string tag)
+    {
+        _e3Shots.Add(tag);
+        string path = Cfg.ScreenshotPath.Replace(".png", $"_{tag}.png");
+        GetViewport().GetTexture().GetImage().SavePng(path);
+        GD.Print("[SHOT] salvo " + path);
     }
 
     float _shotT;
@@ -517,10 +729,22 @@ public partial class Match : Node3D
         int total = Score[0] + Score[1];
         bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 6 && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
         GD.Print($"[E4] placar={Score[0]}x{Score[1]} arremessos={C("SCORE_SHOT")}/{C("SHOT")} passes={C("PASS")}+{C("HIGHPASS")} enterradas={C("DUNK_OK")}/{C("DUNK")} (erros {C("DUNK_FAIL")}) " +
-                 $"faltas={C("FOUL")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
+                 $"faltas={C("FOUL")} lances_livres={C("SCORE_FT")}/{C("FT_OK") + C("FT_MISS")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
                  $"trocas_de_posse={_possChanges} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE4 = false;
+    }
+
+    void SmokeBlockTick(float dt)
+    {
+        _smokeTime += dt;
+        if (!_blockScenario.Done && _smokeTime < 150f) return;
+        var s = _blockScenario;
+        // bot Normal tenta contestar ~45% das vezes; precisa bloquear de verdade e quase não pular à toa
+        bool ok = s.Trials >= BlockScenario.TrialCount && s.Blocks >= 3 && s.UselessJumps <= s.Jumps / 2;
+        GD.Print($"[BLOCKTEST] tentativas={s.Trials} tocos={s.Blocks} pulos={s.Jumps} pulos_inuteis={s.UselessJumps} -> {(ok ? "OK" : "FALHOU")}");
+        GetTree().Quit(ok ? 0 : 1);
+        Cfg.SmokeBlock = false;
     }
 
     void SmokeE3Tick(float dt)
@@ -528,9 +752,9 @@ public partial class Match : Node3D
         _smokeTime += dt;
         if (!_dunkScenario.Done && _smokeTime < 120f) return;
         var s = _dunkScenario;
-        bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.SpaceOk && s.FoulOk && s.FoulCarrierOk;
-        GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} espaço_no_skill_check={s.SpaceOk} falta={s.FoulOk} " +
-                 $"bola_com_quem_sofreu={s.FoulCarrierOk} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
+        bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.WalkDunkOk && s.SpaceIgnoredOk && s.FoulOk && s.FtPointOk && s.FtLiveOk;
+        GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} enterrada_andando={s.WalkDunkOk} espaço_ignorado={s.SpaceIgnoredOk} falta={s.FoulOk} " +
+                 $"lance_livre_+1={s.FtPointOk} 2º_errado_bola_viva={s.FtLiveOk} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         GetTree().Quit(ok ? 0 : 1);
         Cfg.SmokeE3 = false;
     }

@@ -57,7 +57,7 @@
     "min": 0.3,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.92
+    "default": 0.87
   },
   {
     "key": "PlayerGravity",
@@ -387,7 +387,7 @@
     "min": 0.5,
     "max": 10,
     "step": 0.1,
-    "default": 4
+    "default": 3
   },
   {
     "key": "ShotPitchBaseDeg",
@@ -847,7 +847,7 @@
     "min": 0.5,
     "max": 10,
     "step": 0.1,
-    "default": 4
+    "default": 3
   },
   {
     "key": "PassChargeMoveMult",
@@ -1033,11 +1033,11 @@
     "key": "DribbleSpeedMult",
     "section": "Drible",
     "label": "Velocidade driblando",
-    "desc": "Multiplicador de velocidade durante o drible.",
+    "desc": "Velocidade durante o drible como fra\u00E7\u00E3o da velocidade ANDANDO (n\u00E3o corre driblando; o multiplicador de quem tem a bola n\u00E3o se aplica).",
     "min": 0.1,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.5
+    "default": 0.7
   },
   {
     "key": "DribbleRecharge",
@@ -1073,7 +1073,7 @@
     "key": "DunkRange",
     "section": "Enterrada",
     "label": "Dist\u00E2ncia para enterrar",
-    "desc": "Com a bola, correndo na dire\u00E7\u00E3o da cesta advers\u00E1ria e a at\u00E9 esta dist\u00E2ncia (m) do aro, o salto vira enterrada.",
+    "desc": "Com a bola, indo (ou virado) na dire\u00E7\u00E3o da cesta advers\u00E1ria e a at\u00E9 esta dist\u00E2ncia (m) do aro, o salto vira enterrada. N\u00E3o precisa correr.",
     "min": 0.5,
     "max": 8,
     "step": 0.1,
@@ -1083,7 +1083,7 @@
     "key": "DunkMaxAngleDeg",
     "section": "Enterrada",
     "label": "\u00C2ngulo da corrida",
-    "desc": "A corrida precisa estar dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta para enterrar.",
+    "desc": "O movimento (ou, parado, a frente do jogador) precisa estar dentro deste \u00E2ngulo (graus) da dire\u00E7\u00E3o da cesta para enterrar.",
     "min": 5,
     "max": 90,
     "step": 1,
@@ -1103,17 +1103,17 @@
     "key": "DunkWindow",
     "section": "Enterrada",
     "label": "Janela do skill check",
-    "desc": "Dura\u00E7\u00E3o (s) da janela certa para apertar o arremesso, centrada no toque na cesta. Menor = mais dif\u00EDcil.",
+    "desc": "Dura\u00E7\u00E3o (s) da janela certa para apertar o arremesso (Espa\u00E7o n\u00E3o vale), centrada no toque na cesta. Vale tamb\u00E9m para os lances livres. Menor = mais dif\u00EDcil.",
     "min": 0.03,
     "max": 0.6,
     "step": 0.01,
-    "default": 0.05
+    "default": 0.06
   },
   {
     "key": "DunkFlightJitter",
     "section": "Enterrada",
     "label": "Varia\u00E7\u00E3o da dura\u00E7\u00E3o do voo",
-    "desc": "Cada enterrada dura a dura\u00E7\u00E3o do voo \u00B1 at\u00E9 este valor (s), sorteado: o ponteiro do skill check muda de velocidade e n\u00E3o d\u00E1 para decorar.",
+    "desc": "Cada enterrada (e cada lance livre) dura a dura\u00E7\u00E3o \u00B1 at\u00E9 este valor (s), sorteado: o ponteiro do skill check muda de velocidade e n\u00E3o d\u00E1 para decorar.",
     "min": 0,
     "max": 0.6,
     "step": 0.01,
@@ -1150,6 +1150,66 @@
     "default": 1.2
   },
   {
+    "key": "FreeThrowPoints",
+    "section": "Lances livres",
+    "label": "Pontos por lance livre",
+    "desc": "Pontos de cada lance livre convertido (a falta d\u00E1 2 lances).",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 1
+  },
+  {
+    "key": "FreeThrowDistance",
+    "section": "Lances livres",
+    "label": "Dist\u00E2ncia da linha",
+    "desc": "Dist\u00E2ncia (m) do aro at\u00E9 onde o jogador cobra os lances livres.",
+    "min": 2,
+    "max": 15,
+    "step": 0.1,
+    "default": 5.5
+  },
+  {
+    "key": "FreeThrowSkillTime",
+    "section": "Lances livres",
+    "label": "Dura\u00E7\u00E3o do skill check",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona certa (\u00B1 a varia\u00E7\u00E3o da enterrada). A janela \u00E9 a mesma da enterrada.",
+    "min": 0.3,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.8
+  },
+  {
+    "key": "FreeThrowPrep",
+    "section": "Lances livres",
+    "label": "Prepara\u00E7\u00E3o",
+    "desc": "Segundos parado antes do ponteiro come\u00E7ar a girar em cada lance livre.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.9
+  },
+  {
+    "key": "FreeThrowGap",
+    "section": "Lances livres",
+    "label": "Pausa entre os lances",
+    "desc": "Segundos entre o 1\u00BA e o 2\u00BA lance livre (depois de errar ou da bola cair na cesta).",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.8
+  },
+  {
+    "key": "FreeThrowFlightTime",
+    "section": "Lances livres",
+    "label": "Tempo de voo da bola",
+    "desc": "Segundos de voo da bola no lance livre convertido (maior = arco mais alto).",
+    "min": 0.5,
+    "max": 2.5,
+    "step": 0.05,
+    "default": 1.15
+  },
+  {
     "key": "BotAimErrorDeg",
     "section": "Bots",
     "label": "Erro de mira (graus)",
@@ -1183,7 +1243,7 @@
     "key": "BotReactionTime",
     "section": "Bots",
     "label": "Tempo de rea\u00E7\u00E3o (s)",
-    "desc": "Atraso do bot para pular contra arremesso/enterrada (Normal).",
+    "desc": "Atraso do bot para pular contra uma enterrada e para come\u00E7ar a se posicionar contra um arremesso (Normal).",
     "min": 0,
     "max": 2,
     "step": 0.01,
@@ -1290,6 +1350,36 @@
     "default": 0.45
   },
   {
+    "key": "BotBlockReaction",
+    "section": "Bots",
+    "label": "Rea\u00E7\u00E3o ao arremesso (s)",
+    "desc": "Atraso do bot (j\u00E1 posicionado na frente da bola) para pular quando o advers\u00E1rio solta o arremesso (Normal). Acima de ~0,1 s quase n\u00E3o bloqueia.",
+    "min": 0,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.03
+  },
+  {
+    "key": "BotBlockPosError",
+    "section": "Bots",
+    "label": "Erro de posi\u00E7\u00E3o no bloqueio (m)",
+    "desc": "Erro lateral m\u00E1ximo do bot ao se colocar na frente do arremesso (Normal).",
+    "min": 0,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.35
+  },
+  {
+    "key": "BotRoamInterval",
+    "section": "Bots",
+    "label": "Troca de posi\u00E7\u00E3o sem a bola (s)",
+    "desc": "A cada quanto tempo (em m\u00E9dia) um bot sem a bola e sem marcar ningu\u00E9m procura outro espa\u00E7o livre.",
+    "min": 0.5,
+    "max": 15,
+    "step": 0.1,
+    "default": 3.5
+  },
+  {
     "key": "BotMarkDistance",
     "section": "Bots",
     "label": "Dist\u00E2ncia da marca\u00E7\u00E3o",
@@ -1348,5 +1438,15 @@
     "max": 20,
     "step": 0.5,
     "default": 7
+  },
+  {
+    "key": "DummyWanderRadius",
+    "section": "Bonecos de treino",
+    "label": "Raio do passeio",
+    "desc": "Bonecos sem a bola e sem marcar andam devagar por pontos at\u00E9 esta dist\u00E2ncia (m) da posi\u00E7\u00E3o inicial, parando de vez em quando. 0 = ficam parados.",
+    "min": 0,
+    "max": 8,
+    "step": 0.1,
+    "default": 2.2
   }
 ]

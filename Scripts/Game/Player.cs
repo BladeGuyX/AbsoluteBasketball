@@ -164,7 +164,7 @@ public partial class Player : CharacterBody3D
         }
 
         // ---------- corrida / estamina ----------
-        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && StealFail <= 0 && !Airborne;
+        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && !IsDribbling && StealFail <= 0 && !Airborne;
         Running = wantRun && Stamina > 0 && (Running || Stamina >= t.StaminaMinToRun);
         if (Running)
         {
@@ -180,7 +180,7 @@ public partial class Player : CharacterBody3D
         if (HasBall) speed *= t.CarrierSpeedMult;
         if (ChargingShot) speed *= t.ShotChargeMoveMult;
         if (ChargingPass) speed *= t.PassChargeMoveMult;
-        if (IsDribbling) speed *= t.DribbleSpeedMult;
+        if (IsDribbling) speed = t.WalkSpeed * t.DribbleSpeedMult; // driblando: fração da velocidade andando
         if (StealFail > 0) speed *= t.StealFailSpeedMult;
         if (IsDummy) speed *= t.DummySpeedMult;
         if (ChargingJump) speed = 0;
@@ -482,10 +482,10 @@ public partial class Player : CharacterBody3D
     }
 
     /// <summary>Reposiciona no início do round e limpa estados de ação.</summary>
-    public void Teleport(Vector3 pos, float yaw)
+    public void Teleport(Vector3 pos, float yaw, bool setHome = true)
     {
         GlobalPosition = pos;
-        HomePos = pos;
+        if (setHome) HomePos = pos;
         Velocity = Vector3.Zero;
         Yaw = yaw;
         ChargingShot = false; ShotCharge = 0;
@@ -504,16 +504,22 @@ public partial class Player : CharacterBody3D
 
     Vector3 FlatToRim(int hoop) { var v = M.Geo.RimCenter[hoop] - GlobalPosition; v.Y = 0; return v; }
 
+    /// <summary>
+    /// Pode enterrar agora? Com a bola, no chão, perto da cesta adversária e indo (ou, parado, virado) para ela.
+    /// Não precisa correr (v0.7). Usado também pelo indicativo da HUD.
+    /// </summary>
     public bool CanDunk()
     {
         var t = Tuning.I;
-        if (!Running || !IsOnFloor()) return false;
+        if (!HasBall || !IsOnFloor() || Airborne || Flight != FlightKind.None || Stun > 0 || LandLock > 0) return false;
+        if (IsDribbling || ChargingShot || ChargingPass || M == null || !M.CanAct) return false;
         int hoop = CourtGeo.AttackHoop(Team);
         var to = FlatToRim(hoop);
         if (to.Length() > t.DunkRange) return false;
+        if (to.Length() < 0.3f) return true;
         var hv = new Vector3(Velocity.X, 0, Velocity.Z);
-        if (hv.Length() < 1f) return false;
-        return hv.AngleTo(to) <= Mathf.DegToRad(t.DunkMaxAngleDeg);
+        var dir = hv.Length() >= 0.6f ? hv : Forward;
+        return dir.AngleTo(to) <= Mathf.DegToRad(t.DunkMaxAngleDeg);
     }
 
     void BeginFlight(FlightKind kind, float dur, Vector3 handTarget, int hoop)
@@ -563,10 +569,10 @@ public partial class Player : CharacterBody3D
         Velocity = Vector3.Zero;
         Yaw = Mathf.LerpAngle(Yaw, ShotMath.YawOf(FlatToRim(FlightHoop)), 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
-        // enterrada: skill check com o botão de arremesso no momento de tocar a cesta
+        // enterrada: skill check SÓ com o botão de arremesso no momento de tocar a cesta (Espaço não vale — v0.7)
         float half = t.DunkWindow * 0.5f;
         if (!HasBall) { EndFlight(); return; }
-        if (!DunkPressed && (inp.WasPressed(Btn.Shoot) || inp.WasPressed(Btn.Jump))) { DunkPressed = true; DunkPressT = FlightT; }
+        if (!DunkPressed && inp.WasPressed(Btn.Shoot)) { DunkPressed = true; DunkPressT = FlightT; }
         if (DunkPressed)
         {
             bool inWindow = Mathf.Abs(DunkPressT - FlightDur) <= half;
@@ -612,6 +618,9 @@ public partial class Player : CharacterBody3D
         _jumpVel = Vector3.Zero;
         Velocity = Vector3.Zero;
     }
+
+    /// <summary>Animação de soltar o arremesso (usada no lance livre automático).</summary>
+    public void PlayReleaseAnim() => _releaseT = ReleaseAnimTime;
 
     public void SetNameVisible(bool v) { if (_nameLabel != null) _nameLabel.Visible = v; }
 }

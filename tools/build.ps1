@@ -27,6 +27,9 @@ try {
         Write-Host "== smoke test etapa 3 ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e3 2>&1 | Select-String "\[E3\] enterrada|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 3 falhou" }
+        Write-Host "== smoke test bloqueio dos bots ==" -ForegroundColor Cyan
+        & $godot --headless --path . -- --smoke-block 2>&1 | Select-String "\[BLOCKTEST\]|ERROR" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "smoke test de bloqueio falhou" }
         Write-Host "== smoke test etapa 4 (partida so de bots) ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e4 2>&1 | Select-String "\[E4\]|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 4 falhou" }

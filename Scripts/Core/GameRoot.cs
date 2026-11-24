@@ -90,6 +90,12 @@ public partial class GameRoot : Node
             StartMatch(new MatchConfig { SmokeE4 = true, Size = CourtSize.Medium, TargetScore = 999, AllyDummies = 2, EnemyDummies = 3, BotDifficulty = 1 });
             return;
         }
+        if (args.Contains("--smoke-block"))
+        {
+            SetTestSpeed(2.0f);
+            StartMatch(new MatchConfig { SmokeBlock = true, Size = CourtSize.Medium, TargetScore = 999, AllyDummies = 0, EnemyDummies = 1, BotDifficulty = 1 });
+            return;
+        }
         if (args.Contains("--smoke-e3"))
         {
             SetTestSpeed(2.0f);
@@ -250,7 +256,7 @@ public partial class GameRoot : Node
         var tex = ImageTexture.CreateFromImage(img);
         foreach (Input.CursorShape shape in System.Enum.GetValues(typeof(Input.CursorShape)))
             Input.SetCustomMouseCursor(tex, shape, Vector2.Zero);
-        if (args.Contains("--screenshot") || args.Contains("--smoke-test") || args.Contains("--smoke-e2") || args.Contains("--smoke-e3")) return;
+        if (args.Contains("--screenshot") || args.Contains("--smoke-test") || args.Contains("--smoke-e2") || args.Contains("--smoke-e3") || args.Contains("--smoke-block")) return;
         var layer = new CanvasLayer { Layer = 128 };
         AddChild(layer);
         layer.AddChild(new SoftCursor { Name = "SoftCursor" });

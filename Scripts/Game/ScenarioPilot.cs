@@ -79,7 +79,7 @@ public sealed class ScenarioPilot
                 int hoop = CourtGeo.AttackHoop(P.Team);
                 var rim = M.Geo.RimCenter[hoop];
                 var dirToRim = (rim - e.GlobalPosition) with { Y = 0 };
-                var spot = e.HomePos - dirToRim.Normalized() * 0.9f;
+                var spot = e.GlobalPosition - dirToRim.Normalized() * 0.9f;
                 var to = spot - P.GlobalPosition; to.Y = 0;
                 inp.AimYaw = ShotMath.YawOf((rim - P.GlobalPosition) with { Y = 0 });
                 inp.AimPitch = ShotMath.PitchForDistance(9f);

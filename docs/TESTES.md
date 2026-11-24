@@ -3,6 +3,34 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.7 — Lances livres, enterrada sem corrida, bloqueio dos bots
+
+**Antes:** apague o `Build\tuning.json` antigo (vários valores padrão mudaram).
+
+**Enterrada**
+1. Com a bola, **andando** (sem Shift) em direção à cesta adversária, a até ~7 m: aparecem **duas setinhas verdes** piscando acima da mira. Longe, de costas ou de lado para a cesta, elas somem.
+2. Com as setinhas, aperte Espaço: enterra (não precisa correr). Parado e virado para a cesta também vale.
+3. No skill check, aperte **Espaço** na hora certa: **não vale** (erra e fica atordoado). Só o botão esquerdo vale.
+4. A zona branca ficou um pouquinho maior (0,06 s).
+
+**Ritmo**
+5. Segure o arremesso: sai sozinho em **3 s**. Segure o passe: sai sozinho em **3 s**.
+6. Com a bola você fica um pouco mais lento que antes. Driblando (E), a velocidade é 70% de andar (e não dá para correr driblando).
+
+**Falta → lances livres** (enterre por cima de um adversário que pula)
+7. Apito, pausa curta, e você vai para a **linha de lance livre**; todos os outros ficam parados nos lados do garrafão.
+8. Aparece o **anel do skill check** (depois de ~1 s). Aperte o botão esquerdo quando o ponteiro chegar na zona branca: a bola sai sozinha e **entra** (+1).
+9. Erre o 1º de propósito (cedo ou sem apertar): zona vermelha e vai **direto para o 2º**.
+10. Erre o 2º: a bola bate no aro e **todos voltam a se mexer** (rebote valendo).
+11. Acertando o 2º: o round recomeça com o outro time.
+12. Quando um bot sofre falta, ele cobra (às vezes erra).
+
+**Bots**
+13. Arremesse com um bot perto de você: ele se coloca **na frente da bola** e pula quando você solta — e quando pula, normalmente bloqueia. Sem bot perto (ou longe da trajetória), ele não pula à toa.
+14. Seus aliados bots sem a bola trocam de lugar procurando espaço, às vezes cortam para a cesta e ficam se mexendo em vez de parados. Defensores sem marcar ficam em zona acompanhando a bola.
+15. Com bonecos de treino: os bonecos passeiam devagar perto do lugar deles; o adversário volta para a posição quando você chega perto da cesta dele.
+
+---
 ## v0.6 — Enterrada revisada + Etapa 4 (bots)
 
 **Antes:** apague o `Build\tuning.json` antigo.
