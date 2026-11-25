@@ -13,6 +13,8 @@ public partial class Player : CharacterBody3D
 {
     public int Id;
     public int Team;
+    /// <summary>v0.23: personagem (ver <see cref="Characters"/>); definido antes de entrar na árvore.</summary>
+    public int CharacterId;
     public string PlayerName = "Jogador";
     public bool IsBot;
     public bool IsDummy;

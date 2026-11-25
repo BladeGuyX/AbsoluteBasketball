@@ -102,11 +102,11 @@ public partial class EmoteWheel : Control
             var p = c + new Vector2(Mathf.Cos(am), Mathf.Sin(am)) * R * 0.64f;
             float big = i == _sel ? 1.18f : 1f;
             DrawFace(p + new Vector2(0, -8 * s), 30f * s * big, i + 1, alpha);
-            Label(p + new Vector2(0, 40 * s * big), Expressions.Label[i + 1], (int)(17 * s * big), alpha);
+            Label(p + new Vector2(0, 40 * s * big), Characters.FaceLabel(M?.LocalPlayer?.CharacterId ?? 0, i + 1), (int)(17 * s * big), alpha);
         }
         DrawArc(c, R, 0, Mathf.Tau, 64, new Color(1, 1, 1, 0.35f * alpha), 3f * s);
         DrawCircle(c, R * 0.26f, new Color(0.06f, 0.07f, 0.11f, 0.8f * alpha));
-        Label(c + new Vector2(0, 6 * s), _sel >= 0 ? Expressions.Label[_sel + 1] : "Expressões", (int)(15 * s), alpha);
+        Label(c + new Vector2(0, 6 * s), _sel >= 0 ? Characters.FaceLabel(M?.LocalPlayer?.CharacterId ?? 0, _sel + 1) : "Expressões", (int)(15 * s), alpha);
     }
 
     void Label(Vector2 center, string text, int size, float alpha)

@@ -87,6 +87,8 @@ public static class PoseShot
     public static void Run(Node host, string path)
     {
         if (OS.GetCmdlineUserArgs() is var ua && System.Array.IndexOf(ua, "--side") >= 0) Yaw = Mathf.DegToRad(-80f);
+        int ci0 = System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--char"); // v0.23: --char N = personagem (0 = Rei, 1 = Ametista)
+        int ch = ci0 >= 0 && ci0 + 1 < OS.GetCmdlineUserArgs().Length && int.TryParse(OS.GetCmdlineUserArgs()[ci0 + 1], out int cv) ? Characters.Clamp(cv) : 0;
         DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
         DisplayServer.WindowSetSize(new Vector2I(1800, 1000));
         var root = new Node3D { Name = "PoseShot" };
@@ -118,7 +120,7 @@ public static class PoseShot
                 var holder = new Node3D { Position = new Vector3((i % cols) * 2.1f, 0, 0) };
                 root.AddChild(holder);
                 labels.Add(holder);
-                var vis = new CharacterVisual(holder, i % 2, null);
+                var vis = new CharacterVisual(holder, i % 2, null, ch);
                 var ball = Mat.MeshNode(new SphereMesh { Radius = Tuning.I.BallRadius, Height = Tuning.I.BallRadius * 2 }, ballMat, Vector3.Zero);
                 holder.AddChild(ball);
                 var pre = c.State(T, holder.GlobalPosition);
@@ -155,9 +157,9 @@ public static class PoseShot
             {
                 var holder = new Node3D { Position = new Vector3((i - 1) * 0.8f, 0, 20) };
                 root.AddChild(holder);
-                var vis = new CharacterVisual(holder, 0, null);
+                var vis = new CharacterVisual(holder, 0, null, ch);
                 for (float s = 0; s <= 0.5f; s += Dt) vis.Animate(new RigState { Yaw = Mathf.Pi, Emote = (byte)i }, Dt);
-                var lbl = new Label3D { Text = Expressions.Label[i], FontSize = 48, OutlineSize = 12, PixelSize = 0.0015f, Position = new Vector3(0, 1.1f, 0.5f), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled };
+                var lbl = new Label3D { Text = Characters.FaceLabel(ch, i), FontSize = 48, OutlineSize = 12, PixelSize = 0.0015f, Position = new Vector3(0, 1.1f, 0.5f), Billboard = BaseMaterial3D.BillboardModeEnum.Enabled };
                 holder.AddChild(lbl);
             }
             float sc = Tuning.I.CharacterScale;

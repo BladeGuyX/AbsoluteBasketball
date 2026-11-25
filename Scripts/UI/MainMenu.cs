@@ -49,6 +49,15 @@ public partial class MainMenu : Control
         _box.AddChild(Centered(play));
         _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 420)));
         _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 420)));
+        // v0.23 (provisório): troca o personagem; vale no local e no online (vai no Hello para o host)
+        Button chr = null;
+        chr = UiKit.Btn(CharText(), () =>
+        {
+            UserSettings.I.Character = (Characters.Clamp(UserSettings.I.Character) + 1) % Characters.Count;
+            UserSettings.Save();
+            chr.Text = CharText();
+        }, 420);
+        _box.AddChild(Centered(chr));
         _update = UiKit.Btn("", () => Updater.I?.Activate(), 420);
         _box.AddChild(Centered(_update));
         _box.AddChild(Centered(UiKit.Btn("Sair", () => GetTree().Quit(), 420)));
@@ -79,6 +88,8 @@ public partial class MainMenu : Control
             _ => "Procurar atualização",
         };
     }
+
+    static string CharText() => "Personagem: " + Characters.Get(UserSettings.I.Character).Name;
 
     static Control Centered(Control c)
     {

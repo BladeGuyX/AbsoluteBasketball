@@ -17,9 +17,9 @@ namespace AB;
 /// </summary>
 public sealed class CharacterVisual : IPlayerVisual
 {
-    public const string ModelPath = "res://assets/models/rei.glb";
-    static bool? _available;
-    public static bool Available => _available ??= ResourceLoader.Exists(ModelPath);
+    /// <summary>v0.23: o .glb vem de <see cref="Characters"/> (Rei, Ametista...). Sem o arquivo, volta para o Rei.</summary>
+    public static bool Available => Characters.Available(0);
+    public readonly int CharacterId;
 
     public Node3D Root { get; }
     readonly Player P;            // null no --pose-shot
@@ -85,15 +85,17 @@ public sealed class CharacterVisual : IPlayerVisual
     float _curMax;
     Vector3 _hl, _hr;
 
-    public CharacterVisual(Player p) : this(p, p.Team, p) { }
+    public CharacterVisual(Player p) : this(p, p.Team, p, p.CharacterId) { }
 
-    public CharacterVisual(Node3D parent, int team, Player p)
+    public CharacterVisual(Node3D parent, int team, Player p, int character = 0)
     {
         P = p;
+        CharacterId = Characters.Available(character) ? Characters.Clamp(character) : 0;
         Root = new Node3D { Name = "Visual" };
         parent.AddChild(Root);
-        _model = GD.Load<PackedScene>(ModelPath).Instantiate<Node3D>();
-        _model.Name = "Rei";
+        var def = Characters.Get(CharacterId);
+        _model = GD.Load<PackedScene>(def.Model).Instantiate<Node3D>();
+        _model.Name = def.Name;
         _model.Rotation = new Vector3(0, Mathf.Pi, 0); // o modelo olha para +Z; o jogo usa frente = −Z
         Root.AddChild(_model);
         Root.Scale = Vector3.One * Tuning.I.CharacterScale;
@@ -149,8 +151,10 @@ public sealed class CharacterVisual : IPlayerVisual
                 Material m = n switch
                 {
                     "CoroaBrilho" or "Gema" or "Olhos" or "Pupila" or "Brilho" or "Tinta" or "Boca" or "Dentes" => Mat.Unshaded(c),
-                    "Pele" or "Cabelo" or "Calca" or "Botas" => Mat.ToonOutlined(c, 0.012f),
+                    "Pele" or "Cabelo" or "Calca" or "Botas" or "CabeloEscuro" or "CabeloBrilho" => Mat.ToonOutlined(c, 0.012f),
                     "Casaco" => Mat.ToonOutlined(c, 0.014f),
+                    "Camiseta" or "Tenis" or "TenisVerde" or "Barra" => Mat.ToonOutlined(c, 0.01f),
+                    "Lapela" => Mat.ToonOutlined(c, 0.006f),
                     "Coroa" or "Sola" => Mat.ToonOutlined(c, 0.008f),
                     _ => Mat.Toon(c),
                 };
@@ -161,7 +165,7 @@ public sealed class CharacterVisual : IPlayerVisual
 
     void SetupBones()
     {
-        if (_sk == null) { GD.PushWarning("[ART] rei.glb sem Skeleton3D"); return; }
+        if (_sk == null) { GD.PushWarning("[ART] " + Characters.Get(CharacterId).Model + " sem Skeleton3D"); return; }
         var s = (Root.GlobalTransform.AffineInverse() * _sk.GlobalTransform).Basis;
         var sRot = s.Orthonormalized().GetRotationQuaternion();
         for (int i = 0; i < NB; i++)

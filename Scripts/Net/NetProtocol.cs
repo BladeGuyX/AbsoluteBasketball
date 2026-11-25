@@ -49,6 +49,7 @@ public sealed class LobbyMember
     public int NetId;       // host = 0
     public string Name;
     public int Team;
+    public int Character;   // v0.23
 }
 
 /// <summary>Uma vaga na partida (mesma ordem no host e nos clientes → mesmos Player.Id).</summary>
@@ -57,13 +58,14 @@ public sealed class RosterEntry
     public string Name;
     public int Team;
     public int NetId = -1;  // −1 = bot
+    public int Character;   // v0.23: personagem (Characters.All)
     public bool IsBot => NetId < 0;
 }
 
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 4; // v0.21: expressão no input e no estado do jogador; pendurado no aro
+    public const int Version = 5; // v0.23: personagem no Hello, no lobby e na escalação
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>

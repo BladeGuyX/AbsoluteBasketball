@@ -160,7 +160,7 @@ public partial class NetSession : Node
         MyName = name;
         _nextNetId = 1;
         Members.Clear();
-        Members.Add(new LobbyMember { NetId = 0, Name = name, Team = 0 });
+        Members.Add(new LobbyMember { NetId = 0, Name = name, Team = 0, Character = Characters.Clamp(UserSettings.I.Character) });
         GD.Print($"[NET] hospedando ({(viaSteam ? "Steam" : "IP " + DirectAddress)})");
         GameRoot.I.ShowLobby();
         LobbyChanged?.Invoke();
@@ -227,7 +227,7 @@ public partial class NetSession : Node
                 if (IsHost) _pendingHello.Add(e.Peer);
                 else
                 {
-                    _w.Begin(Msg.Hello); _w.I32(NetProtocol.Version); _w.Str(MyName);
+                    _w.Begin(Msg.Hello); _w.I32(NetProtocol.Version); _w.Str(MyName); _w.U8((byte)Characters.Clamp(UserSettings.I.Character));
                     SendToHost(true);
                 }
                 break;
@@ -257,12 +257,13 @@ public partial class NetSession : Node
                 int ver = r.I32();
                 string name = Clean(r.Str());
                 if (ver != NetProtocol.Version) { Reject(peer, "Versão do jogo diferente da do host. Atualizem os dois para a mesma build."); return; }
+                int chr = Characters.Clamp(r.U8());
                 if (InMatch) { Reject(peer, "A partida já começou. Espere voltar para o lobby."); return; }
                 if (Members.Count >= MaxPlayers) { Reject(peer, "O lobby está cheio."); return; }
                 _pendingHello.Remove(peer);
                 if (peer <= 0) { Reject(peer, "Erro de conexão (id inválido)."); return; }
                 int t0 = Members.Count(x => x.Team == 0), t1 = Members.Count(x => x.Team == 1);
-                var mem = new LobbyMember { NetId = peer, Name = UniqueName(name), Team = t0 <= t1 ? 0 : 1 };
+                var mem = new LobbyMember { NetId = peer, Name = UniqueName(name), Team = t0 <= t1 ? 0 : 1, Character = chr };
                 Members.Add(mem);
                 _w.Begin(Msg.Welcome); _w.I32(peer);
                 Send(peer, true);
@@ -347,7 +348,7 @@ public partial class NetSession : Node
         _w.Begin(Msg.Lobby);
         Settings.Write(_w);
         _w.U8((byte)Members.Count);
-        foreach (var mem in Members) { _w.I32(mem.NetId); _w.Str(mem.Name); _w.U8((byte)mem.Team); }
+        foreach (var mem in Members) { _w.I32(mem.NetId); _w.Str(mem.Name); _w.U8((byte)mem.Team); _w.U8((byte)mem.Character); }
         SendToAll(true);
         LobbyChanged?.Invoke();
     }
@@ -383,8 +384,8 @@ public partial class NetSession : Node
         {
             var humans = Members.Where(x => x.Team == team).ToList();
             int size = Mathf.Clamp(Mathf.Max(Settings.TeamSize, humans.Count), 1, Mathf.Max(perTeamMax, humans.Count));
-            foreach (var h in humans) list.Add(new RosterEntry { Name = h.Name, Team = team, NetId = h.NetId });
-            for (int i = humans.Count, b = 1; i < size; i++, b++) list.Add(new RosterEntry { Name = $"Bot {(team == 0 ? "Azul" : "Laranja")} {b}", Team = team });
+            foreach (var h in humans) list.Add(new RosterEntry { Name = h.Name, Team = team, NetId = h.NetId, Character = h.Character });
+            for (int i = humans.Count, b = 1; i < size; i++, b++) list.Add(new RosterEntry { Name = $"Bot {(team == 0 ? "Azul" : "Laranja")} {b}", Team = team, Character = Characters.ForSlot(list.Count) });
         }
         return list;
     }
@@ -400,7 +401,7 @@ public partial class NetSession : Node
         _w.Begin(Msg.Start);
         Settings.Write(_w);
         _w.U8((byte)_roster.Count);
-        foreach (var e in _roster) { _w.Str(e.Name); _w.U8((byte)e.Team); _w.I32(e.NetId); }
+        foreach (var e in _roster) { _w.Str(e.Name); _w.U8((byte)e.Team); _w.I32(e.NetId); _w.U8((byte)e.Character); }
         _w.Str(tuning);
         SendToAll(true);
         foreach (var ri in _inputs.Values) ri.LastSeq = -1;
@@ -495,7 +496,7 @@ public partial class NetSession : Node
                 Settings = OnlineSettings.Read(r);
                 Members.Clear();
                 int n = r.U8();
-                for (int i = 0; i < n; i++) Members.Add(new LobbyMember { NetId = r.I32(), Name = r.Str(), Team = r.U8() });
+                for (int i = 0; i < n; i++) Members.Add(new LobbyMember { NetId = r.I32(), Name = r.Str(), Team = r.U8(), Character = Characters.Clamp(r.U8()) });
                 LobbyChanged?.Invoke();
                 break;
             }
@@ -504,7 +505,7 @@ public partial class NetSession : Node
                 Settings = OnlineSettings.Read(r);
                 int n = r.U8();
                 _roster = new List<RosterEntry>();
-                for (int i = 0; i < n; i++) _roster.Add(new RosterEntry { Name = r.Str(), Team = r.U8(), NetId = r.I32() });
+                for (int i = 0; i < n; i++) _roster.Add(new RosterEntry { Name = r.Str(), Team = r.U8(), NetId = r.I32(), Character = Characters.Clamp(r.U8()) });
                 string tuning = r.Str();
                 _savedTuning ??= "local";
                 Tuning.ApplyJson(tuning); // valores do host (não salva no arquivo)

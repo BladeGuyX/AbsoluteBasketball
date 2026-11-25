@@ -115,7 +115,7 @@ public partial class Match : Node3D
         if (Cfg.Roster != null) SpawnRoster();
         else
         {
-            LocalPlayer = SpawnPlayer(0, "Você", isLocal: true);
+            LocalPlayer = SpawnPlayer(0, "Você", isLocal: true, character: Automated ? 0 : UserSettings.I.Character);
             int max = CourtGeo.MaxPlayers(Cfg.Size);
             int allies = Mathf.Clamp(Cfg.AllyDummies, 0, max - 1);
             int enemies = Mathf.Clamp(Cfg.EnemyDummies, 0, max - 1 - allies);
@@ -164,7 +164,7 @@ public partial class Match : Node3D
         foreach (var e in Cfg.Roster)
         {
             bool mine = !e.IsBot && e.NetId == Cfg.MyNetId;
-            var p = SpawnPlayer(e.Team, e.Name, isLocal: mine);
+            var p = SpawnPlayer(e.Team, e.Name, isLocal: mine, character: e.Character);
             p.IsBot = e.IsBot;
             if (mine) LocalPlayer = p;
             if (!IsHost) continue;
@@ -187,11 +187,12 @@ public partial class Match : Node3D
         GameRoot.I.Toast($"{name} saiu — um bot assumiu o lugar.");
     }
 
-    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false)
+    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false, int character = -1)
     {
         var p = new Player
         {
-            Id = Players.Count + 1, Team = team, PlayerName = name, IsLocalHuman = isLocal, IsDummy = isDummy, M = this,
+            Id = Players.Count + 1, Team = team,
+            CharacterId = Characters.Clamp(character >= 0 ? character : Characters.ForSlot(Players.Count)), PlayerName = name, IsLocalHuman = isLocal, IsDummy = isDummy, M = this,
             Name = "Player" + (Players.Count + 1),
         };
         AddChild(p);

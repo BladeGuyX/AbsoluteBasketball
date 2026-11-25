@@ -201,7 +201,7 @@ public partial class LobbyMenu : Control
             foreach (var m in humans)
             {
                 string tag = (m.NetId == 0 ? "  (host)" : "") + (m.NetId == ns.MyNetId ? "  (você)" : "");
-                list.AddChild(UiKit.Lbl(m.Name + tag, 24, m.NetId == ns.MyNetId ? Palette.Team[team] : null));
+                list.AddChild(UiKit.Lbl(m.Name + "  · " + Characters.Get(m.Character).Name + tag, 24, m.NetId == ns.MyNetId ? Palette.Team[team] : null));
             }
             int bots = Mathf.Clamp(s.TeamSize, 1, perTeam) - humans.Count;
             for (int i = 0; i < bots; i++) list.AddChild(UiKit.Lbl("Bot", 22, new Color("8a94a6")));
