@@ -373,11 +373,11 @@
     "key": "HeldBallSpin",
     "section": "Bola",
     "label": "Giro da bola na m\u00E3o",
-    "desc": "Quanto a bola gira enquanto est\u00E1 com o jogador (quicando/carregando), em fra\u00E7\u00E3o do giro de rolar no ch\u00E3o. 1 = rola como no ch\u00E3o (r\u00E1pido demais); 0 = n\u00E3o gira.",
+    "desc": "Quanto a bola gira enquanto est\u00E1 com o jogador (quicando/carregando), em fra\u00E7\u00E3o do giro de rolar no ch\u00E3o. 0 = n\u00E3o gira (s\u00F3 gira arremessada, passada ou rolando/quicando solta); 1 = rola como no ch\u00E3o.",
     "min": 0,
     "max": 1,
     "step": 0.05,
-    "default": 0.15
+    "default": 0
   },
   {
     "key": "DribbleSoundDb",

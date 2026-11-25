@@ -3,6 +3,18 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.16 — Bola na mão não gira
+
+**Atualizar:** menu principal → "Atualizar para v0.16".
+
+1. Parado, andando, correndo, driblando, virando no lugar ou trocando de mão: a bola na mão **não gira**, só sobe e desce.
+2. Arremesse: a bola gira no voo.
+3. Faça um passe: a bola gira no voo.
+4. Deixe a bola solta rolar ou quicar no chão: ela gira conforme anda.
+5. Ao pegar a bola, ela para de girar na hora, sem dar um tranco.
+6. No artifact, "Giro da bola na mão" agora tem padrão 0. Se quiser um pouco de giro, suba o valor e aperte F5.
+
+---
 ## v0.15 — Giro da bola no quique mais natural
 
 **Atualizar:** menu principal → "Atualizar para v0.15".
