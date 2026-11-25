@@ -99,7 +99,7 @@ public partial class Ball : Node3D
             if (Holder != null)
             {
                 var np = Holder.HeldBallPosition();
-                Spin(np - GlobalPosition);
+                Spin(np - GlobalPosition, Tuning.I.HeldBallSpin);
                 GlobalPosition = np;
             }
             return new BallHit { ScoredHoop = -1 };
@@ -145,18 +145,20 @@ public partial class Ball : Node3D
         FlightTime = flightTime;
         var np = Holder != null ? Holder.HeldBallPosition() : pos;
         bool jump = np.DistanceTo(GlobalPosition) > 4f;
-        Spin(np - GlobalPosition);
+        Spin(np - GlobalPosition, Holder != null ? Tuning.I.HeldBallSpin : 1f);
         GlobalPosition = np;
         if (jump) ResetPhysicsInterpolation();
     }
 
-    void Spin(Vector3 delta)
+    /// <summary>Gira o visual como se rolasse pelo deslocamento horizontal. factor &lt; 1 = gira menos (bola na mão).</summary>
+    void Spin(Vector3 delta, float factor = 1f)
     {
+        if (factor <= 0f) return;
         var h = new Vector3(delta.X, 0, delta.Z);
         float d = h.Length();
         if (d < 1e-5f) return;
         var axis = Vector3.Up.Cross(h / d).Normalized();
-        _mesh.RotateObjectLocal(_mesh.Basis.Inverse() * axis, d / Tuning.I.BallRadius);
+        _mesh.RotateObjectLocal(_mesh.Basis.Inverse() * axis, d * factor / Tuning.I.BallRadius);
         _mesh.Orthonormalize();
     }
 

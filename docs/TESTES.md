@@ -3,6 +3,18 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.15 — Giro da bola no quique mais natural
+
+**Atualizar:** menu principal → "Atualizar para v0.15".
+
+1. Parado quicando a bola: ela quase não gira, só acompanha a mão (antes girava muito rápido).
+2. Andando e correndo com a bola: ela gira devagar no sentido do movimento, sem "rodopiar".
+3. Gire a câmera ou o boneco no lugar com a bola: ela não dá voltas rápidas.
+4. Arremesse, passe e deixe a bola rolar solta no chão: aí ela continua girando normal (como rolando).
+5. No artifact, seção Bola, ajuste **"Giro da bola na mão"** (padrão 0,15). 0 = não gira; 1 = como era antes. Aperte F5 no jogo para aplicar.
+6. Online, o amigo também vê a bola girando devagar na mão.
+
+---
 ## v0.14 — Bola nova (primeiro modelo do Blender)
 
 **Atualizar:** menu principal → "Atualizar para v0.14" (ou baixe o .zip da release).

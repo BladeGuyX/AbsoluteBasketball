@@ -137,6 +137,8 @@ public sealed class Tuning
     public float DribblePeriod = 0.5f;
     [Param(SBall, "Altura da mão no quique", "Altura em que a mão encontra a bola no quique (m).", 0.4f, 1.6f, 0.05f)]
     public float DribbleHandHeight = 0.6f;
+    [Param(SBall, "Giro da bola na mão", "Quanto a bola gira enquanto está com o jogador (quicando/carregando), em fração do giro de rolar no chão. 1 = rola como no chão (rápido demais); 0 = não gira.", 0f, 1f, 0.05f)]
+    public float HeldBallSpin = 0.15f;
     [Param(SBall, "Volume do quique (dB)", "Volume do som do drible automático. Mais negativo = mais baixo.", -40, 0, 1)]
     public float DribbleSoundDb = -18f;
 
