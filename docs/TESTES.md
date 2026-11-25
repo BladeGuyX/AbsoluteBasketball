@@ -3,6 +3,16 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.20 — Skill check mais simples
+
+**Atualizar:** menu principal → "Atualizar para v0.20".
+
+1. Faça uma enterrada: o anel agora é só uma faixa escura com um traço no ponto de partida, a **zona dourada** e uma **agulha vermelha**. **Não tem mais rastro** atrás da agulha, nem marquinhas, nem brilho em volta da zona.
+2. Acerte: zona e agulha ficam verdes com ✓ por 0,75 s, agulha parada onde você apertou (sem o anel que se expandia).
+3. Erre (cedo, tarde ou sem apertar): fica vermelho com ✗ por 0,75 s, agulha parada.
+4. Lances livres: mesmo visual; na preparação a zona aparece sem agulha.
+
+---
 ## v0.19 — Skill check mais bonito e resultado que fica na tela
 
 **Atualizar:** menu principal → "Atualizar para v0.19".

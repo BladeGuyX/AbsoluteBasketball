@@ -129,7 +129,7 @@ public partial class AimIndicator : Control
     /// <summary>
     /// Anel do skill check (enterrada e lances livres): o ponteiro gira 270° e chega na zona certa em time = dur.
     /// Resultado (flash &gt; 0 e não ativo): fica na tela por <c>SkillResultHold</c> com o ponteiro PARADO onde foi apertado
-    /// (ou onde passou do tempo), zona e ponteiro verdes (certo) ou vermelhos (errado), um anel que se expande e um ✓/✗.
+    /// (ou onde passou do tempo), zona e ponteiro verdes (certo) ou vermelhos (errado) e um ✓/✗. Design simples (v0.20): sem rastro.
     /// <paramref name="introT"/> = segundos desde que o anel apareceu (animação de entrada).
     /// </summary>
     void DrawSkillCheck(Vector2 c, Tuning t, float time, float durRaw, bool active, bool pressed, float pressT, float flash, bool flashOk,
@@ -154,51 +154,28 @@ public partial class AimIndicator : Control
         DrawSetTransform(c, 0, new Vector2(s, s));
         var o = Vector2.Zero;
 
-        // ---- faixa de fundo, bordas finas e marquinhas ao longo do percurso ----
-        DrawArc(o, R, 0, Mathf.Tau, 80, Fa(Band), 17, true);
-        DrawArc(o, R - 8.5f, 0, Mathf.Tau, 80, Fa(new Color(1, 1, 1, 0.16f)), 1.5f, true);
-        DrawArc(o, R + 8.5f, 0, Mathf.Tau, 80, Fa(new Color(1, 1, 1, 0.16f)), 1.5f, true);
-        for (int i = 0; i <= 9; i++)
-        {
-            var d = Dir(a0 + Sweep * i / 9f);
-            DrawLine(d * (R - 4), d * (R + 4), Fa(new Color(1, 1, 1, i == 0 ? 0.45f : 0.2f)), 2, true);
-        }
+        // ---- faixa de fundo + traço fino no ponto de partida ----
+        DrawArc(o, R, 0, Mathf.Tau, 80, Fa(Band), 14, true);
+        DrawArc(o, R, 0, Mathf.Tau, 80, Fa(new Color(1, 1, 1, 0.22f)), 2, true);
+        var d0 = Dir(a0);
+        DrawLine(d0 * (R - 5), d0 * (R + 5), Fa(new Color(1, 1, 1, 0.5f)), 2, true);
 
         // ---- ângulo do ponteiro (no resultado: parado onde apertou / onde acabou o tempo) ----
         float stopT = result && pressed ? pressT : time;
         float a = a0 + Mathf.Clamp(stopT, 0, dur + t.DunkWindow) * perSec;
 
-        // ---- rastro do ponteiro (fica mais forte perto dele) ----
-        if (pointer && a > a0 + 0.02f)
-        {
-            const int N = 28;
-            var trail = result ? resCol : new Color("fff1c2");
-            for (int i = 0; i < N; i++)
-            {
-                float u0 = (float)i / N, u1 = (float)(i + 1) / N;
-                float b0 = Mathf.Lerp(a0, a, u0), b1 = Mathf.Lerp(a0, a, u1) + 0.004f;
-                DrawArc(o, R, b0, b1, 3, Fa(trail with { A = 0.05f + 0.6f * u1 * u1 }), 7, true);
-            }
-        }
-
-        // ---- zona certa (centrada no toque na cesta), com brilho que cresce quando o ponteiro chega perto ----
+        // ---- zona certa (centrada no toque na cesta) ----
         float zc = a0 + Sweep;
         float zh = Mathf.Max(t.DunkWindow * 0.5f * perSec, 0.035f);
         var zoneCol = result ? resCol : Gold;
-        float near = active && pointer ? Mathf.Clamp(1f - Mathf.Abs(time - dur) / (dur * 0.35f), 0, 1) : 0;
-        float glow = result ? 0.35f * (1f - rk) + 0.15f : 0.14f + 0.36f * near;
-        DrawArc(o, R, zc - zh - 0.05f, zc + zh + 0.05f, 12, Fa(zoneCol with { A = glow }), 20, true);
-        DrawArc(o, R, zc - zh, zc + zh, 12, Fa(Ink), 13, true);
-        DrawArc(o, R, zc - zh, zc + zh, 12, Fa(zoneCol with { A = pointer || result ? 1f : 0.6f }), 10, true);
-        DrawArc(o, R, zc - zh * 0.6f, zc + zh * 0.6f, 8, Fa(new Color(1, 1, 1, result ? 0.25f : 0.55f)), 2, true);
+        DrawArc(o, R, zc - zh, zc + zh, 12, Fa(Ink), 12, true);
+        DrawArc(o, R, zc - zh, zc + zh, 12, Fa(zoneCol with { A = pointer || result ? 1f : 0.6f }), 9, true);
 
-        // ---- resultado: anel que se expande e ✓ / ✗ do lado da zona ----
+        // ---- resultado: ✓ / ✗ do lado da zona ----
         if (result)
         {
-            float er = R + 10 + rk * 16;
-            DrawArc(o, er, 0, Mathf.Tau, 80, Fa(resCol with { A = 0.75f * (1f - rk) }), 1.5f + 3.5f * (1f - rk), true);
-            var ic = Dir(zc) * (R + 30);
-            float isz = 8f * (1f + 0.25f * Mathf.Sin(Mathf.Min(rk * 4f, 1f) * Mathf.Pi));
+            var ic = Dir(zc) * (R + 26);
+            const float isz = 8f;
             if (flashOk)
             {
                 var pts = new[] { ic + new Vector2(-1f, 0.1f) * isz, ic + new Vector2(-0.3f, 0.8f) * isz, ic + new Vector2(1f, -0.8f) * isz };
@@ -215,24 +192,18 @@ public partial class AimIndicator : Control
             }
         }
 
-        // ---- ponteiro: agulha com contorno e ponta redonda ----
+        // ---- ponteiro: agulha simples com contorno ----
         if (pointer)
         {
             var dir = Dir(a);
-            var needle = result ? resCol : Colors.White;
-            DrawLine(dir * (R - 15), dir * (R + 13), Fa(Ink), 8, true);
-            DrawLine(dir * (R - 14), dir * (R + 12), Fa(needle), 4, true);
-            DrawCircle(dir * (R + 13), 4.5f, Fa(Ink));
-            DrawCircle(dir * (R + 13), 3f, Fa(needle));
-            if (!result)
+            var needle = result ? resCol : Red;
+            DrawLine(dir * (R - 13), dir * (R + 13), Fa(Ink), 8, true);
+            DrawLine(dir * (R - 12), dir * (R + 12), Fa(needle), 4, true);
+            if (!result && pressed)
             {
-                DrawCircle(dir * R, 3.5f, Fa(Red));   // miolo vermelho no meio da faixa (fácil de achar)
-                if (pressed)
-                {
-                    var pd = Dir(a0 + pressT * perSec) * R;
-                    DrawCircle(pd, 6, Fa(Ink));
-                    DrawCircle(pd, 4.5f, Fa(Yellow));
-                }
+                var pd = Dir(a0 + pressT * perSec) * R;
+                DrawCircle(pd, 6, Fa(Ink));
+                DrawCircle(pd, 4.5f, Fa(Yellow));
             }
         }
 
