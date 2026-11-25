@@ -2,20 +2,33 @@ using Godot;
 
 namespace AB;
 
-/// <summary>Constrói quadra, cestas, colisores, ambiente e decoração (placeholders estilizados).</summary>
+/// <summary>
+/// Monta o cenário da partida: ambiente (céu, sol, chão de areia), a cena da quadra (Court.tscn: piso com linhas por
+/// shader, cestas, paredes) e a decoração. BuildHoop/BuildWalls são chamados pelo Court.
+/// </summary>
 public static class CourtBuilder
 {
-    const float LineW = 0.07f;
-    static StandardMaterial3D _lineNoCull;
-
-    public static void Build(Node3D root, CourtGeo g)
+    /// <summary>Partida: quadra com as medidas do Tuning (g).</summary>
+    public static Court Build(Node3D root, CourtGeo g)
     {
         BuildEnvironment(root);
-        BuildGround(root, g);
-        BuildLines(root, g);
-        for (int h = 0; h < 2; h++) BuildHoop(root, g, h);
-        BuildWalls(root, g);
+        var court = Court.Instantiate();
+        court.Name = "Court";
+        court.Configure(g);
+        root.AddChild(court);
         BuildDecor(root, g);
+        return court;
+    }
+
+    /// <summary>Quadra só com os valores da cena Court.tscn (FIBA 28 × 15) — usado pelo --court-shot --fiba.</summary>
+    public static Court BuildSceneDefaults(Node3D root)
+    {
+        BuildEnvironment(root);
+        var court = Court.Instantiate();
+        court.Name = "Court";
+        root.AddChild(court);
+        BuildDecor(root, court.Geo);
+        return court;
     }
 
     static void BuildEnvironment(Node3D root)
@@ -54,97 +67,13 @@ public static class CourtBuilder
             RotationDegrees = new Vector3(-58, -32, 0),
         };
         root.AddChild(sun);
+
+        // chão de areia em volta (abaixo da laje da quadra)
+        root.AddChild(Mat.MeshNode(new PlaneMesh { Size = new Vector2(160, 160) }, Mat.Toon(Palette.Sand, 0),
+            new Vector3(0, -Court.SlabDepth - 0.005f, 0), false));
     }
 
-    static void BuildGround(Node3D root, CourtGeo g)
-    {
-        // colisor do chão
-        var floor = new StaticBody3D { Name = "Floor", CollisionLayer = 1, CollisionMask = 0 };
-        floor.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(200, 1, 200) }, Position = new Vector3(0, -0.5f, 0) });
-        root.AddChild(floor);
-
-        root.AddChild(Mat.MeshNode(new PlaneMesh { Size = new Vector2(160, 160) }, Mat.Toon(Palette.Sand, 0), Vector3.Zero, false));
-        // área jogável (margem) e quadra
-        root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(g.MaxX - g.MinX, 0.06f, g.MaxZ - g.MinZ) }, Mat.Toon(Palette.CourtApron, 0), new Vector3(0, -0.02f, 0), false));
-        root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(g.Length, 0.06f, g.Width) }, Mat.Toon(Palette.Court, 0), new Vector3(0, -0.015f, 0), false));
-
-        // garrafão
-        float keyW = Mathf.Min(6f, g.Width * 0.3f), keyL = g.ThreePt * 0.72f;
-        for (int h = 0; h < 2; h++)
-        {
-            float s = CourtGeo.HoopSign(h);
-            root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(keyL, 0.06f, keyW) }, Mat.Toon(Palette.Paint, 0),
-                new Vector3(s * (g.HalfL - keyL / 2f), -0.01f, 0), false));
-            AddRing(root, new Vector3(s * (g.HalfL - keyL), 0, 0), keyW / 2f, -90, 90, h == 1);
-        }
-        // círculo central
-        root.AddChild(Mat.MeshNode(new CylinderMesh { TopRadius = 2.6f, BottomRadius = 2.6f, Height = 0.06f, RadialSegments = 48 },
-            Mat.Toon(Palette.Paint, 0), new Vector3(0, -0.008f, 0), false));
-    }
-
-    static void BuildLines(Node3D root, CourtGeo g)
-    {
-        var m = Mat.Toon(Palette.Lines, 0);
-        float y = 0.02f;
-        void Box(Vector3 c, Vector3 size) => root.AddChild(Mat.MeshNode(new BoxMesh { Size = size }, m, c, false));
-        Box(new Vector3(0, y, -g.HalfW), new Vector3(g.Length + LineW, 0.02f, LineW));
-        Box(new Vector3(0, y, g.HalfW), new Vector3(g.Length + LineW, 0.02f, LineW));
-        Box(new Vector3(-g.HalfL, y, 0), new Vector3(LineW, 0.02f, g.Width));
-        Box(new Vector3(g.HalfL, y, 0), new Vector3(LineW, 0.02f, g.Width));
-        Box(new Vector3(0, y, 0), new Vector3(LineW, 0.02f, g.Width));
-        AddRing(root, Vector3.Zero, 2.6f, 0, 360, false);
-
-        for (int h = 0; h < 2; h++)
-        {
-            float s = CourtGeo.HoopSign(h);
-            var c = g.RimCenter[h]; c.Y = 0;
-            float r = g.ThreePt;
-            float maxZ = g.HalfW - 0.25f;
-            if (r <= maxZ)
-            {
-                AddRing(root, c, r, -90, 90, h == 1);
-                float len = Mathf.Abs(s * g.HalfL - c.X);
-                Box(new Vector3(c.X + s * len / 2f, y, r), new Vector3(len, 0.02f, LineW));
-                Box(new Vector3(c.X + s * len / 2f, y, -r), new Vector3(len, 0.02f, LineW));
-            }
-            else
-            {
-                float a = Mathf.RadToDeg(Mathf.Asin(maxZ / r));
-                AddRing(root, c, r, -a, a, h == 1);
-            }
-        }
-    }
-
-    /// <summary>Arco plano no chão. Ângulos em graus; 0° aponta para +X, a menos que 'facingNegX'.</summary>
-    static void AddRing(Node3D root, Vector3 center, float radius, float a0, float a1, bool facingNegX)
-    {
-        var st = new SurfaceTool();
-        st.Begin(Mesh.PrimitiveType.Triangles);
-        int seg = Mathf.Max(8, (int)(Mathf.Abs(a1 - a0) / 4f));
-        float rin = radius - LineW / 2f, rout = radius + LineW / 2f;
-        float flip = facingNegX ? -1f : 1f;
-        for (int i = 0; i < seg; i++)
-        {
-            float t0 = Mathf.DegToRad(Mathf.Lerp(a0, a1, i / (float)seg));
-            float t1 = Mathf.DegToRad(Mathf.Lerp(a0, a1, (i + 1) / (float)seg));
-            Vector3 P(float a, float rr) => new(flip * Mathf.Cos(a) * rr, 0, Mathf.Sin(a) * rr);
-            var p0 = P(t0, rin); var p1 = P(t0, rout); var p2 = P(t1, rout); var p3 = P(t1, rin);
-            st.SetNormal(Vector3.Up);
-            // ordem que gera face para cima independente do flip
-            if (flip > 0) { st.AddVertex(p0); st.AddVertex(p2); st.AddVertex(p1); st.AddVertex(p0); st.AddVertex(p3); st.AddVertex(p2); }
-            else { st.AddVertex(p0); st.AddVertex(p1); st.AddVertex(p2); st.AddVertex(p0); st.AddVertex(p2); st.AddVertex(p3); }
-        }
-        _lineNoCull ??= new StandardMaterial3D
-        {
-            AlbedoColor = Palette.Lines,
-            DiffuseMode = BaseMaterial3D.DiffuseModeEnum.Toon,
-            CullMode = BaseMaterial3D.CullModeEnum.Disabled,
-        };
-        var mi = Mat.MeshNode(st.Commit(), _lineNoCull, center + new Vector3(0, 0.021f, 0), false);
-        root.AddChild(mi);
-    }
-
-    static void BuildHoop(Node3D root, CourtGeo g, int h)
+    public static void BuildHoop(Node3D root, CourtGeo g, int h)
     {
         var t = Tuning.I;
         float s = CourtGeo.HoopSign(h);
@@ -200,7 +129,7 @@ public static class CourtBuilder
             net, rim + Vector3.Down * (t.RimRadius * 0.85f), false));
     }
 
-    static void BuildWalls(Node3D root, CourtGeo g)
+    public static void BuildWalls(Node3D root, CourtGeo g)
     {
         var body = new StaticBody3D { Name = "Walls", CollisionLayer = 1, CollisionMask = 0 };
         float hgt = 6f, th = 1f;

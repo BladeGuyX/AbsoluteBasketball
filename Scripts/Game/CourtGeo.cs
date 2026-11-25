@@ -11,7 +11,7 @@ public enum CourtSize { Small, Medium, Large }
 public sealed class CourtGeo
 {
     public CourtSize Size;
-    public float Length, Width, ThreePt, HalfL, HalfW;
+    public float Length, Width, ThreePt, HalfL, HalfW, HoopInset, Margin;
     public float MinX, MaxX, MinZ, MaxZ; // limites de jogo (paredes invisíveis)
     public readonly Vector3[] RimCenter = new Vector3[2];
     public readonly Aabb[] Board = new Aabb[2];
@@ -26,17 +26,26 @@ public sealed class CourtGeo
     public static CourtGeo Build(CourtSize size)
     {
         var t = Tuning.I;
-        var g = new CourtGeo { Size = size };
-        (g.Length, g.Width, g.ThreePt) = size switch
+        var (len, wid, three) = size switch
         {
             CourtSize.Small => (t.CourtSmallLength, t.CourtSmallWidth, t.ThreePtSmall),
             CourtSize.Medium => (t.CourtMediumLength, t.CourtMediumWidth, t.ThreePtMedium),
             _ => (t.CourtLargeLength, t.CourtLargeWidth, t.ThreePtLarge),
         };
+        var g = Create(len, wid, three, t.HoopInset, t.BoundsMargin);
+        g.Size = size;
+        return g;
+    }
+
+    /// <summary>Geometria a partir de medidas livres (cena Court.tscn no editor usa os [Export] dela).</summary>
+    public static CourtGeo Create(float length, float width, float threePt, float hoopInset, float margin)
+    {
+        var t = Tuning.I;
+        var g = new CourtGeo { Length = length, Width = width, ThreePt = threePt, HoopInset = hoopInset, Margin = margin };
         g.HalfL = g.Length / 2f;
         g.HalfW = g.Width / 2f;
-        g.MinX = -g.HalfL - t.BoundsMargin; g.MaxX = g.HalfL + t.BoundsMargin;
-        g.MinZ = -g.HalfW - t.BoundsMargin; g.MaxZ = g.HalfW + t.BoundsMargin;
+        g.MinX = -g.HalfL - margin; g.MaxX = g.HalfL + margin;
+        g.MinZ = -g.HalfW - margin; g.MaxZ = g.HalfW + margin;
 
         float boardThick = 0.08f, boardW = t.BoardWidth, boardH = t.BoardHeight;
         float boardBottom = t.HoopHeight - t.RimRadius * 0.5f;
@@ -47,8 +56,8 @@ public sealed class CourtGeo
         for (int h = 0; h < 2; h++)
         {
             float s = HoopSign(h);
-            g.RimCenter[h] = new Vector3(s * (g.HalfL - t.HoopInset), t.HoopHeight, 0);
-            float bx = s * (g.HalfL - t.HoopInset + t.RimRadius + 0.25f + boardThick / 2f);
+            g.RimCenter[h] = new Vector3(s * (g.HalfL - hoopInset), t.HoopHeight, 0);
+            float bx = s * (g.HalfL - hoopInset + t.RimRadius + 0.25f + boardThick / 2f);
             var bc = new Vector3(bx, boardBottom + boardH / 2f, 0);
             var he = new Vector3(boardThick / 2f, boardH / 2f, boardW / 2f);
             g.Board[h] = new Aabb(bc - he, he * 2f);

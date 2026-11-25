@@ -197,8 +197,8 @@ public sealed class Tuning
     public float RimHitShake = 1f;
     [Param(SCourt, "Tolerância da cesta", "Quanto (fração do raio da bola) ela pode encostar no aro e ainda contar ao passar.", 0, 1, 0.05f)]
     public float ScoreTolerance = 0.5f;
-    [Param(SCourt, "Distância do aro à linha de fundo", "Distância do centro do aro até a linha de fundo (m).", 0.5f, 5, 0.05f)]
-    public float HoopInset = 1.8f;
+    [Param(SCourt, "Distância do aro à linha de fundo", "Distância do centro do aro até a linha de fundo (m). FIBA: 1,575.", 0.5f, 5, 0.025f)]
+    public float HoopInset = 1.575f;
     [Param(SCourt, "Pequena: comprimento", "Comprimento da quadra pequena (m).", 10, 150, 0.5f)]
     public float CourtSmallLength = 44f;
     [Param(SCourt, "Pequena: largura", "Largura da quadra pequena (m).", 6, 100, 0.5f)]

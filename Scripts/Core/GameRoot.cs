@@ -46,7 +46,7 @@ public partial class GameRoot : Node
         if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GetTree().Quit(); return; }
 
         // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
-        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
+        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--court-shot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
         if (!automated)
         {
             if (SteamService.RelaunchForOverlay(args)) { GetTree().Quit(); return; }
@@ -82,6 +82,8 @@ public partial class GameRoot : Node
             return;
         }
         if (args.Contains("--pad")) InputDevice.Set(true); // prints com os ícones do controle
+        int ci = Array.IndexOf(args, "--court-shot");
+        if (ci >= 0 && ci + 1 < args.Length) { CourtShot(args[ci + 1], args.Contains("--fiba")); return; }
         int si = Array.IndexOf(args, "--screenshot");
         if (si >= 0 && si + 1 < args.Length)
         {
@@ -176,6 +178,46 @@ public partial class GameRoot : Node
         }
         ShowMainMenu();
         Toast(tuningMsg);
+    }
+
+    /// <summary>
+    /// --court-shot &lt;png&gt; [--fiba]: prints da quadra sem jogadores — &lt;png&gt;_top (de cima, ortográfica) e &lt;png&gt;_34
+    /// (perspectiva 3/4). Sem --fiba usa a quadra média do Tuning; com --fiba, os valores da cena Court.tscn.
+    /// </summary>
+    void CourtShot(string path, bool fiba)
+    {
+        DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+        DisplayServer.WindowSetSize(new Vector2I(1600, 900));
+        var root = new Node3D { Name = "CourtShot" };
+        AddChild(root);
+        var court = fiba ? CourtBuilder.BuildSceneDefaults(root) : CourtBuilder.Build(root, CourtGeo.Build(CourtSize.Medium));
+        var g = court.Geo;
+        float lx = g.MaxX - g.MinX + 3f, lz = g.MaxZ - g.MinZ + 3f;
+        var cam = new Camera3D
+        {
+            Projection = Camera3D.ProjectionType.Orthogonal,
+            Size = Mathf.Max(lz, lx * 900f / 1600f),
+            Position = new Vector3(0, 60, 0),
+            RotationDegrees = new Vector3(-90, 0, 0),
+            Far = 200,
+            Current = true,
+        };
+        root.AddChild(cam);
+        string Out(string suffix) => System.IO.Path.ChangeExtension(path, null) + suffix + ".png";
+        var tree = GetTree();
+        tree.CreateTimer(1.0).Timeout += () =>
+        {
+            GetViewport().GetTexture().GetImage().SavePng(Out("_top"));
+            cam.Projection = Camera3D.ProjectionType.Perspective;
+            cam.Fov = 50;
+            cam.Position = new Vector3(-g.HalfL * 0.55f, g.Length * 0.42f, g.Width * 1.05f);
+            cam.LookAt(new Vector3(g.HalfL * 0.1f, 0, 0), Vector3.Up);
+            tree.CreateTimer(0.5).Timeout += () =>
+            {
+                GetViewport().GetTexture().GetImage().SavePng(Out("_34"));
+                tree.Quit();
+            };
+        };
     }
 
     /// <summary>Estatística de arremessos com erro humano simulado (diagnóstico de tuning).</summary>

@@ -3,6 +3,22 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.18 — Quadra nova (cena Court, linhas por shader, piso de madeira)
+
+**Atualizar:** menu principal → "Atualizar para v0.18".
+
+1. Comece uma partida (qualquer tamanho): o piso é de **tábuas de madeira** (clarinhas e algumas mais escuras), com uma **faixa azul-marinho** em volta das linhas até a mureta, e uma borda chanfrada escura descendo até a areia.
+2. Linhas brancas: laterais, fundo, meio, círculo central, **garrafão retangular**, **semicírculo do lance livre** (metade de fora contínua, metade de dentro tracejada) e **linha de 3** (arco na frente, retas nos cantos).
+3. No círculo central há um **anel azul com uma estrela**.
+4. Troque entre quadra pequena, média e grande: as linhas laterais/de fundo e o piso acompanham o tamanho, mas **garrafão, círculos e o desenho do logo têm sempre o mesmo tamanho** (ficam ancorados no fundo e no centro). A madeira **não estica**: as tábuas têm o mesmo tamanho em todas as quadras.
+5. Ande perto das linhas e longe delas: as linhas ficam nítidas, sem serrilhado forte nem "piscar" à distância.
+6. Arremesse com os pés **logo atrás da linha de 3** (no arco e no canto): vale 3. Logo à frente: vale 2. A linha desenhada é exatamente a da regra.
+7. Lance livre: o arremessador fica em cima da linha de lance livre do garrafão.
+8. As cestas ficam um pouco mais perto da linha de fundo (1,575 m, medida FIBA; antes 1,8 m). No artifact, seção Quadra: **"Distância do aro à linha de fundo"** agora tem padrão 1,575.
+9. As paredes invisíveis continuam na mureta branca, e a bola continua batendo no aro/tabela/poste normalmente.
+10. Online: o amigo vê a mesma quadra.
+
+---
 ## v0.17 — Cesta nova (modelo do Blender), rede que balança e aro que treme
 
 **Atualizar:** menu principal → "Atualizar para v0.17".

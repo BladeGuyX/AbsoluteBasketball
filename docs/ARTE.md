@@ -50,7 +50,7 @@ O jogo é estilizado: aro e bola são maiores que os reais. A física usa os val
 | Tabela | **3,3 × 1,85 × 0,08 m**, base a 4,025 m do chão | face da frente a **0,80 m** atrás do centro do aro; quadrado de mira centrado no aro |
 | Poste | raio ~0,16 m, altura ~5,7 m, a **2,6 m** atrás do centro do aro | braço horizontal até a tabela, na altura do centro dela |
 | Base do poste | ~0,7 × 1,4 × 0,7 m (acolchoada) | a colisão é uma caixa de 0,7 × 4 × 0,7 m |
-| Quadra | pequena 44 × 24 m (3 pts 8,5 m) · média 58 × 32 (9,5) · grande 80 × 44 (10,5) | piso e linhas continuam gerados por código (mudam com o tamanho). Modelar só o que fica em volta: arquibancada, mureta, árvores, etc. |
+| Quadra | pequena 44 × 24 m (3 pts 8,5 m) · média 58 × 32 (9,5) · grande 80 × 44 (10,5) | **v0.18:** cena `Scenes/Court.tscn` (`Court.cs`, [Export] de medidas/cores). Linhas pelo shader `Shaders/court_floor.gdshader` (SDF em metros; garrafão/círculos/arco fixos, retas esticam); madeira = `assets/textures/wood_floor.png` (gerada por `art_source/scripts/make_wood_floor.py`, sem Blender) com UV de mundo (`WoodTileSize` m por repetição). Conferir com `--court-shot <png> [--fiba]`. Modelar só o que fica em volta: arquibancada, mureta, árvores, etc. |
 
 **A cesta é um modelo só (`hoop.glb`) com objetos separados por nome:** `Aro`, `Rede`, `Tabela`, `Quadrado` (marcação), `Braco`, `Poste`, `Base`.
 - Origem no chão, logo abaixo do centro do aro. O aro fica à frente (−Y) e a tabela atrás (+Y).
