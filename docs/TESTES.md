@@ -3,6 +3,21 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.13 — Seus valores do artifact viram padrão + passe rápido consertado
+
+**Atualizar:** menu principal → "Atualizar para v0.13" (ou baixe o .zip da release).
+
+**Valores do artifact**
+1. Depois de atualizar, os valores que você tinha no `tuning.json` agora são os padrões do jogo (aro a 4,3 m, tabela menor, pulo e drible ajustados etc.). Os seus amigos recebem os mesmos valores.
+2. Abra o artifact de tuning: os padrões dele batem com o que você salvou.
+
+**Passe rápido**
+3. Toque o passe com um aliado **andando/correndo** perto de você: a bola sai sempre e chega nele (antes falhava com o aliado em movimento).
+4. Aperte o passe **um instante antes** de a bola chegar na sua mão (ou ainda no ar, logo antes de pousar): o passe sai assim que der, sem precisar apertar de novo. No artifact: "Memória do aperto do passe" (0,25 s).
+5. Com um adversário bem no caminho, entre você e o aliado, o passe rápido continua não saindo (regra do corredor livre). Com o adversário ao lado do aliado, mas mais longe da bola que ele, agora sai.
+6. Os bots continuam passando normalmente (eles usam a mesma checagem).
+
+---
 ## v0.12 — Publicado no GitHub + botão Atualizar
 
 **Primeira instalação (você e seus amigos)**
@@ -26,7 +41,7 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 ---
 ## v0.10 — Arremesso no pulo, pulo mais rápido, rodapé menor, controle
 
-**Antes:** apague o `Build	uning.json` antigo (o tempo de carga do salto mudou).
+**Antes:** apague o `Build\tuning.json` antigo (o tempo de carga do salto mudou).
 
 **Arremesso no pulo**
 1. Com a bola, segure o arremesso e aperte o pulo andando para qualquer lado: o jogador pula naquela direção, ainda mirando pela câmera.

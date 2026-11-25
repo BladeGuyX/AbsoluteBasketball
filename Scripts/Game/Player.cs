@@ -71,6 +71,7 @@ public partial class Player : CharacterBody3D
     Node3D _stars;                    // estrelinhas girando = atordoado
     const float ReleaseAnimTime = 0.45f;
     float _releaseT, _passReleaseT;
+    float _passBuffer; // aperto de passe guardado (Tuning.PassBufferTime)
 
     public bool HasBall => M?.Ball?.Holder == this;
     public bool IsDribbling => DribbleActive > 0;
@@ -120,6 +121,9 @@ public partial class Player : CharacterBody3D
         LastInput = inp;
         TickTimers(dt);
         if (SkillFlash > 0) SkillFlash -= dt;
+        // guarda o aperto do passe por um instante (sai assim que der: pegando a bola, pousando, fim do drible...)
+        if (inp.WasPressed(Btn.Pass)) _passBuffer = Tuning.I.PassBufferTime;
+        else if (_passBuffer > 0) _passBuffer -= dt;
 
         if (Flight != FlightKind.None)
         {
@@ -370,8 +374,9 @@ public partial class Player : CharacterBody3D
     void HandlePass(PlayerInput inp, float dt)
     {
         var t = Tuning.I;
-        if (!ChargingPass && inp.WasPressed(Btn.Pass))
+        if (!ChargingPass && (inp.WasPressed(Btn.Pass) || _passBuffer > 0))
         {
+            _passBuffer = 0;
             ChargingPass = true;
             PassCharge = 0;
             PassHigh = false;
@@ -568,7 +573,7 @@ public partial class Player : CharacterBody3D
         StealDash = 0; StealFail = 0; DribbleActive = 0;
         Flight = FlightKind.None; Stun = 0; _stunOnLand = false; SkillFlash = 0; _shotPlanValid = false;
         Running = false;
-        _releaseT = 0; _passReleaseT = 0;
+        _releaseT = 0; _passReleaseT = 0; _passBuffer = 0;
         _visual.Rotation = new Vector3(0, Yaw, 0);
         ResetPhysicsInterpolation();
     }

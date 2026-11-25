@@ -16,7 +16,7 @@ public sealed class ScenarioPilot
     int _tick;
     int _stealTries;
     float _afterShot;
-    public bool PassOk, ReturnOk, AimPassOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk, JumpShotLandOk, JumpShotAirOk;
+    public bool PassOk, ReturnOk, AimPassOk, DribbleOk, JumpOk, BlockOk, StealFailOk, StealOk, JumpShotLandOk, JumpShotAirOk, PassBufferOk, MovingLaneOk;
     bool _jumped, _sawAir;
     public bool Done;
 
@@ -36,6 +36,8 @@ public sealed class ScenarioPilot
         if (kind == "STEAL_FAIL" && a == P) StealFailOk = true;
         if (kind == "STEAL" && a == P) StealOk = true;
         if (kind == "SHOT" && a == P && _step == 5 && _jumped && _sawAir && !P.Airborne) JumpShotLandOk = true; // arremessou sozinho ao pousar
+        if (kind == "PASS" && a == P && _step == 7) GD.Print($"[E2] passe no tick {_tick}");
+        if (kind == "PASS" && a == P && _step == 7 && _tick >= 33 && _tick <= 50) PassBufferOk = true; // aperto guardado virou passe
         if (kind == "SHOT" && a == P && _step == 6 && _jumped && P.Airborne) JumpShotAirOk = true;               // soltou no ar
     }
 
@@ -123,6 +125,29 @@ public sealed class ScenarioPilot
                 inp.Move = new Vector2(side.X, side.Z);
                 if (!_jumped && P.ShotCharge > 0.2f) { inp.Pressed |= Btn.Jump; inp.Held |= Btn.Jump; _jumped = true; }
                 if (_step == 6 && P.Airborne && P.Velocity.Y < 0) inp.Held &= ~Btn.Shoot;
+                break;
+            }
+            case 7: // passe rápido apertado ANTES de pegar a bola (memória do aperto) + corredor com o aliado andando
+            {
+                var al = Ally;
+                if (al == null) { Next(); break; }
+                if (_tick == 30) M.Ball.GiveTo(al); // espera a trava do pouso do passo anterior
+                if (_tick == 32) { inp.Pressed |= Btn.Pass; inp.Held |= Btn.Pass; } // ainda sem a bola
+                if (_tick == 33) M.Ball.GiveTo(P);
+                if (_tick == 70)
+                {
+                    // aliado a 4 m, longe do adversário, correndo de lado a 6 m/s: o passe rápido tem que achar ele
+                    var e = Enemy;
+                    var away = e != null ? (P.GlobalPosition - e.GlobalPosition) with { Y = 0 } : Vector3.Forward;
+                    away = away.LengthSquared() > 0.01f ? away.Normalized() : Vector3.Forward;
+                    al.GlobalPosition = P.GlobalPosition + away * 4f;
+                    al.ResetPhysicsInterpolation();
+                    var side = new Vector3(-away.Z, 0, away.X);
+                    al.Velocity = side * 6f;
+                    MovingLaneOk = Passing.LaneClear(P, al, false);
+                    GD.Print($"[E2] corredor com aliado andando: {MovingLaneOk}");
+                }
+                if (_tick > 70) Next();
                 break;
             }
             default:

@@ -127,6 +127,14 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Pulo só sai ao soltar o botão** (segurando, fica carregado até soltar — desfeito o pulo automático da v0.10). Carga continua 0,18 s.
 - Etapa 7 (arte) começa: guia em `docs/ARTE.md`.
 
+
+## Revisões do usuário (v0.13) — prevalecem sobre as anteriores
+- Os valores que o usuário ajustou no artifact (`Build/tuning.json`) viraram os padrões do `Tuning.cs` (29 valores, entre eles aro a 4,3 m e tabela 3,3 × 1,85).
+  **Sempre que o usuário pedir para "aplicar o artifact", aplicar no código E publicar a release** (os amigos só apertam Atualizar).
+- Passe rápido: a checagem de corredor livre (`Passing.LaneClear`) agora simula igual à recepção real: o recebedor anda até o ponto
+  previsto, aliados no caminho não bloqueiam, adversário só bloqueia se estiver a menos de `PassLaneRadius` da bola E mais perto dela
+  que o recebedor. Aperto do passe guardado por `PassBufferTime` (sai assim que der: pegando a bola, pousando...).
+
 ## Decisões de implementação (Claude)
 - **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
   `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.

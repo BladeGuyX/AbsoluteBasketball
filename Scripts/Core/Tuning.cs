@@ -68,17 +68,17 @@ public sealed class Tuning
     [Param(SMove, "Rapidez para virar", "Suavização da rotação do personagem (maior = vira mais rápido).", 1, 40, 0.5f)]
     public float TurnSpeed = 14f;
     [Param(SMove, "Multiplicador com a bola", "Velocidade de quem está com a bola (1 = igual).", 0.3f, 1.5f, 0.01f)]
-    public float CarrierSpeedMult = 0.87f;
+    public float CarrierSpeedMult = 0.85f;
     [Param(SMove, "Gravidade dos jogadores", "Gravidade aplicada aos jogadores (m/s²).", 5, 60, 0.5f)]
     public float PlayerGravity = 22f;
 
     // ---------------- Estamina ----------------
     [Param(SStam, "Estamina máxima", "Quantidade total de estamina.", 10, 500, 1)]
-    public float StaminaMax = 140f;
+    public float StaminaMax = 150f;
     [Param(SStam, "Gasto por segundo correndo", "Estamina gasta por segundo enquanto corre.", 1, 200, 1)]
     public float StaminaDrainPerSec = 28f;
     [Param(SStam, "Recarga por segundo", "Estamina recuperada por segundo sem correr.", 1, 300, 1)]
-    public float StaminaRegenPerSec = 36f;
+    public float StaminaRegenPerSec = 35f;
     [Param(SStam, "Atraso da recarga", "Segundos após parar de correr até começar a recarregar.", 0, 3, 0.05f)]
     public float StaminaRegenDelay = 0.35f;
     [Param(SStam, "Mínimo para começar a correr", "Estamina mínima para iniciar uma corrida.", 0, 100, 1)]
@@ -86,13 +86,13 @@ public sealed class Tuning
 
     // ---------------- Câmera ----------------
     [Param(SCam, "Distância", "Distância da câmera atrás do jogador (m).", 1.5f, 15, 0.1f)]
-    public float CameraDistance = 5.5f;
+    public float CameraDistance = 5.2f;
     [Param(SCam, "Altura do pivô", "Altura do ponto que a câmera orbita (m acima dos pés).", 0.5f, 4, 0.05f)]
     public float CameraHeight = 2.1f;
     [Param(SCam, "Deslocamento lateral", "Câmera sobre o ombro (m, negativo = esquerda).", -2, 2, 0.05f)]
     public float CameraShoulderOffset = 0.8f;
     [Param(SCam, "Campo de visão (FOV)", "FOV vertical em graus.", 40, 110, 1)]
-    public float CameraFov = 72f;
+    public float CameraFov = 70f;
     [Param(SCam, "Inclinação mínima", "Quanto a câmera pode olhar para baixo (graus, negativo).", -89, 0, 1)]
     public float CameraPitchMinDeg = -55f;
     [Param(SCam, "Inclinação máxima", "Quanto a câmera pode olhar para cima (graus).", 0, 89, 1)]
@@ -120,11 +120,11 @@ public sealed class Tuning
     [Param(SBall, "Aro amigável", "Quando a bola bate no aro por dentro, quanto ela perde a velocidade para fora (0 = física pura, 1 = quase sempre cai dentro).", 0, 1, 0.01f)]
     public float RimFriendliness = 0.6f;
     [Param(SBall, "Tabelinha: ajuda", "Arremesso que bate no quadrado da tabela é desviado um pouco em direção à cesta (0 = física pura, 1 = sempre entra). Só em arremessos na cesta adversária.", 0, 1, 0.01f)]
-    public float BankAssist = 0.35f;
+    public float BankAssist = 0.3f;
     [Param(SBall, "Quique na tabela", "Elasticidade da tabela.", 0, 1, 0.01f)]
     public float BoardBounce = 0.55f;
     [Param(SBall, "Quique nas paredes invisíveis", "Elasticidade dos limites da área de jogo.", 0, 1, 0.01f)]
-    public float WallBounce = 0.6f;
+    public float WallBounce = 0.55f;
     [Param(SBall, "Atrito no quique", "Fração da velocidade horizontal mantida a cada quique no chão.", 0, 1, 0.01f)]
     public float BounceFriction = 0.85f;
     [Param(SBall, "Atrito rolando", "Desaceleração da bola rolando no chão (m/s²).", 0, 20, 0.1f)]
@@ -146,7 +146,7 @@ public sealed class Tuning
     [Param(SShot, "Alcance máximo", "Distância máxima (m) do arremesso, disponível desde o início (não depende de segurar). Para usar, suba a câmera.", 2, 40, 0.1f)]
     public float ShotRangeMax = 14f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
-    public float ShotAutoReleaseTime = 3f;
+    public float ShotAutoReleaseTime = 2.5f;
     [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
@@ -164,7 +164,7 @@ public sealed class Tuning
     [Param(SShot, "Altura de soltura", "Altura de onde a bola sai no arremesso (m).", 1, 4, 0.05f)]
     public float ShotReleaseHeight = 2.35f;
     [Param(SShot, "Velocidade carregando", "Multiplicador de velocidade enquanto carrega o arremesso.", 0, 1, 0.01f)]
-    public float ShotChargeMoveMult = 0.35f;
+    public float ShotChargeMoveMult = 0.22f;
     [Param(SShot, "Assistência de direção", "Correção da direção quando a mira já está perto da cesta adversária (diminui suavemente até zero na borda do ângulo). Nunca na própria cesta.", 0, 1, 0.01f)]
     public float ShotAimAssist = 0.85f;
     [Param(SShot, "Ângulo da assistência", "A assistência de direção só age mirando dentro deste ângulo da cesta adversária (graus).", 0, 45, 0.5f)]
@@ -180,13 +180,13 @@ public sealed class Tuning
 
     // ---------------- Quadra ----------------
     [Param(SCourt, "Altura do aro", "Altura do aro (m). Real = 3.05.", 1.5f, 7, 0.05f)]
-    public float HoopHeight = 4.0f;
+    public float HoopHeight = 4.3f;
     [Param(SCourt, "Raio do aro", "Raio interno do aro (m). Real ≈ 0.23.", 0.15f, 1.2f, 0.01f)]
     public float RimRadius = 0.55f;
     [Param(SCourt, "Largura da tabela", "Largura da tabela (m).", 0.5f, 8, 0.05f)]
-    public float BoardWidth = 3.4f;
+    public float BoardWidth = 3.3f;
     [Param(SCourt, "Altura da tabela", "Altura da tabela (m).", 0.5f, 5, 0.05f)]
-    public float BoardHeight = 2.0f;
+    public float BoardHeight = 1.85f;
     [Param(SCourt, "Tolerância da cesta", "Quanto (fração do raio da bola) ela pode encostar no aro e ainda contar ao passar.", 0, 1, 0.05f)]
     public float ScoreTolerance = 0.5f;
     [Param(SCourt, "Distância do aro à linha de fundo", "Distância do centro do aro até a linha de fundo (m).", 0.5f, 5, 0.05f)]
@@ -228,6 +228,9 @@ public sealed class Tuning
     public float PassRange = 22f;
     [Param(SPass, "Tempo do toque rápido", "Soltando antes disso (s) = passe rápido para o aliado livre mais próximo; segurando mais = passe carregado na direção da câmera.", 0.05f, 1, 0.01f)]
     public float PassTapTime = 0.2f;
+
+    [Param(SPass, "Memória do aperto do passe", "Apertou passe num instante em que não dava (pegando a bola, pousando, fim do drible): o aperto fica guardado por este tempo (s) e o passe sai assim que der.", 0, 1, 0.01f)]
+    public float PassBufferTime = 0.25f;
     [Param(SPass, "Velocidade do passe rápido", "Velocidade horizontal (m/s) do passe rápido normal. Maior = mais rápido e mais reto.", 4, 50, 0.5f)]
     public float PassSpeed = 21f;
     [Param(SPass, "Altura de recepção", "Altura (m) do peito do recebedor, mirada pelo passe rápido.", 0.5f, 2.5f, 0.05f)]
@@ -235,9 +238,9 @@ public sealed class Tuning
     [Param(SPass, "Largura do corredor", "Um jogador a menos disso (m) da linha do passe rápido bloqueia o alvo.", 0.1f, 2, 0.05f)]
     public float PassLaneRadius = 0.9f;
     [Param(SPass, "Altura do passe alto", "Altura máxima (m) que o passe rápido alto atinge.", 3, 12, 0.1f)]
-    public float HighPassApex = 5.0f;
+    public float HighPassApex = 5.5f;
     [Param(SPass, "Passe carregado: velocidade", "Velocidade (m/s) da bola no passe carregado normal (lançado na direção da câmera).", 4, 50, 0.5f)]
-    public float AimPassSpeed = 19f;
+    public float AimPassSpeed = 18f;
     [Param(SPass, "Passe carregado: elevação", "Graus somados à inclinação da câmera no passe carregado normal (compensa a gravidade).", -20, 45, 0.5f)]
     public float AimPassLiftDeg = 6f;
     [Param(SPass, "Passe carregado alto: velocidade", "Velocidade (m/s) da bola no passe carregado alto.", 4, 50, 0.5f)]
@@ -245,23 +248,23 @@ public sealed class Tuning
     [Param(SPass, "Passe carregado alto: elevação", "Graus somados à inclinação da câmera no passe carregado alto.", 0, 80, 0.5f)]
     public float AimHighPassLiftDeg = 32f;
     [Param(SPass, "Passe automático", "Segurando o passe por esse tempo (s), o jogador passa sozinho na direção da câmera.", 0.5f, 10, 0.1f)]
-    public float PassAutoReleaseTime = 3f;
+    public float PassAutoReleaseTime = 2.5f;
     [Param(SPass, "Velocidade carregando o passe", "Multiplicador de velocidade enquanto carrega o passe (não pode ter a bola roubada).", 0, 1, 0.01f)]
-    public float PassChargeMoveMult = 0.25f;
+    public float PassChargeMoveMult = 0.22f;
     [Param(SPass, "Bloqueio de repegar", "Segundos em que quem passou não pode pegar a própria bola.", 0, 2, 0.05f)]
     public float PassLockout = 0.3f;
 
     // ---------------- Salto e bloqueio ----------------
     [Param(SJump, "Impulso do salto rápido", "Velocidade vertical (m/s) de um toque no salto. Altura ≈ v²/(2·gravidade).", 1, 20, 0.1f)]
-    public float JumpVelMin = 6.2f;
+    public float JumpVelMin = 6.5f;
     [Param(SJump, "Impulso do salto carregado", "Velocidade vertical (m/s) segurando o salto até o fim da carga.", 1, 20, 0.1f)]
-    public float JumpVelMax = 7.6f;
+    public float JumpVelMax = 7.8f;
     [Param(SJump, "Tempo de carga do salto", "Segundos segurando para o salto mais alto (parado enquanto carrega). O salto sai ao soltar o botão.", 0.05f, 2, 0.01f)]
-    public float JumpChargeTime = 0.18f;
+    public float JumpChargeTime = 0.3f;
     [Param(SJump, "Controle de direção do salto", "Fração da velocidade de movimento levada para o salto (direção escolhida antes de pular).", 0, 1.5f, 0.01f)]
-    public float JumpCarry = 0.7f;
+    public float JumpCarry = 0.82f;
     [Param(SJump, "Travamento ao pousar", "Segundos sem mover nem agir depois de pousar.", 0, 2, 0.05f)]
-    public float LandLockTime = 0.5f;
+    public float LandLockTime = 0.4f;
     [Param(SJump, "Raio do bloqueio", "Alcance horizontal (m) do corpo/braços para bloquear no ar.", 0.2f, 2, 0.05f)]
     public float BlockRadius = 0.6f;
     [Param(SJump, "Altura do bloqueio", "Até que altura (m acima dos pés) os braços bloqueiam.", 1, 4, 0.05f)]
@@ -271,7 +274,7 @@ public sealed class Tuning
 
     // ---------------- Roubo ----------------
     [Param(SSteal, "Velocidade do bote", "Velocidade (m/s) do impulso para frente ao tentar roubar.", 1, 30, 0.5f)]
-    public float StealDashSpeed = 9f;
+    public float StealDashSpeed = 10f;
     [Param(SSteal, "Duração do bote", "Duração (s) do impulso do roubo.", 0.05f, 1, 0.01f)]
     public float StealDashTime = 0.25f;
     [Param(SSteal, "Alcance do roubo", "Distância (m) até quem está com a bola para acertar o roubo.", 0.3f, 3, 0.05f)]
@@ -279,19 +282,19 @@ public sealed class Tuning
     [Param(SSteal, "Ângulo do roubo", "O alvo precisa estar dentro deste ângulo (graus) à frente.", 10, 180, 1)]
     public float StealAngleDeg = 70f;
     [Param(SSteal, "Penalidade por errar", "Segundos lento (sem correr, pular ou roubar) após errar o roubo.", 0, 6, 0.1f)]
-    public float StealFailTime = 2f;
+    public float StealFailTime = 1.8f;
     [Param(SSteal, "Velocidade na penalidade", "Multiplicador de velocidade durante a penalidade.", 0, 1, 0.01f)]
-    public float StealFailSpeedMult = 0.2f;
+    public float StealFailSpeedMult = 0.25f;
 
     // ---------------- Drible ----------------
     [Param(SDrib, "Cargas de drible", "Quantas cargas de drible o jogador tem.", 1, 6, 1)]
     public float DribbleCharges = 2f;
     [Param(SDrib, "Duração do drible", "Segundos de drible (imune a roubo).", 0.2f, 4, 0.05f)]
-    public float DribbleDuration = 1f;
+    public float DribbleDuration = 0.9f;
     [Param(SDrib, "Velocidade driblando", "Velocidade durante o drible como fração da velocidade ANDANDO (não corre driblando; o multiplicador de quem tem a bola não se aplica).", 0.1f, 1.5f, 0.01f)]
-    public float DribbleSpeedMult = 0.7f;
+    public float DribbleSpeedMult = 0.82f;
     [Param(SDrib, "Recarga por carga", "Segundos para recuperar 1 carga (conta sempre que falta alguma).", 1, 60, 0.5f)]
-    public float DribbleRecharge = 10f;
+    public float DribbleRecharge = 8f;
     [Param(SDrib, "Quique driblando", "Multiplicador da velocidade do quique durante o drible (maior = quica mais rápido).", 1, 5, 0.1f)]
     public float DribbleBounceMult = 2.6f;
     [Param(SDrib, "Agachamento driblando", "Quanto o boneco agacha durante o drible (0 = nada, 1 = como carregando o salto).", 0, 1.3f, 0.05f)]
@@ -305,7 +308,7 @@ public sealed class Tuning
     [Param(SDunk, "Duração do voo", "Segundos do salto da enterrada até tocar a cesta (momento do skill check).", 0.3f, 2, 0.05f)]
     public float DunkFlightTime = 0.8f;
     [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso (Espaço não vale), centrada no toque na cesta. Vale também para os lances livres. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
-    public float DunkWindow = 0.06f;
+    public float DunkWindow = 0.05f;
     [Param(SDunk, "Variação da duração do voo", "Cada enterrada (e cada lance livre) dura a duração ± até este valor (s), sorteado: o ponteiro do skill check muda de velocidade e não dá para decorar.", 0, 0.6f, 0.01f)]
     public float DunkFlightJitter = 0.2f;
     [Param(SDunk, "Alcance da mão", "Altura (m) da bola acima dos pés com os braços esticados na enterrada.", 1.5f, 3.5f, 0.05f)]
@@ -313,7 +316,7 @@ public sealed class Tuning
     [Param(SDunk, "Atordoamento ao errar", "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.", 0, 6, 0.1f)]
     public float DunkStunTime = 2f;
     [Param(SDunk, "Pausa da falta", "Segundos entre a falta (enterrada bloqueada) e o reinício do round.", 0, 4, 0.1f)]
-    public float FoulDelay = 1.2f;
+    public float FoulDelay = 1.5f;
 
     // ---------------- Lances livres ----------------
     [Param(SFree, "Pontos por lance livre", "Pontos de cada lance livre convertido (a falta dá 2 lances).", 1, 5, 1)]

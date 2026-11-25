@@ -45,9 +45,9 @@ O jogo é estilizado: aro e bola são maiores que os reais. A física usa os val
 |---|---|---|
 | Personagem | altura total ~1,90 m (topo da cabeça), ombros ~1,48 m, quadril ~0,98 m | colisão: cápsula de raio 0,35 m e altura 1,8 m. O corpo (sem braços) cabe em ~0,7 m de largura |
 | Bola | raio **0,22 m** (diâmetro 0,44) | origem no centro; gira pelo centro ao rolar |
-| Aro | raio interno **0,55 m**, tubo ~0,035 m, centro a **4,0 m** do chão | conector curto até a tabela |
+| Aro | raio interno **0,55 m**, tubo ~0,035 m, centro a **4,3 m** do chão (`HoopHeight`, v0.13) | conector curto até a tabela |
 | Rede | topo = raio do aro; fundo ~0,34 m de raio; comprimento ~0,94 m | será animada (balanço) na Godot |
-| Tabela | **3,4 × 2,0 × 0,08 m**, base a 3,725 m do chão | face da frente a **0,80 m** atrás do centro do aro; quadrado de mira centrado no aro |
+| Tabela | **3,3 × 1,85 × 0,08 m**, base a 4,025 m do chão | face da frente a **0,80 m** atrás do centro do aro; quadrado de mira centrado no aro |
 | Poste | raio ~0,16 m, altura ~5,7 m, a **2,6 m** atrás do centro do aro | braço horizontal até a tabela, na altura do centro dela |
 | Base do poste | ~0,7 × 1,4 × 0,7 m (acolchoada) | a colisão é uma caixa de 0,7 × 4 × 0,7 m |
 | Quadra | pequena 44 × 24 m (3 pts 8,5 m) · média 58 × 32 (9,5) · grande 80 × 44 (10,5) | piso e linhas continuam gerados por código (mudam com o tamanho). Modelar só o que fica em volta: arquibancada, mureta, árvores, etc. |
