@@ -101,6 +101,7 @@ public partial class Match : Node3D
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Pausable;
+        if (Cfg.SmokeE4) GD.Seed(20261125); // v0.21: partida só de bots reproduzível (os bots já têm semente própria)
         Geo = CourtGeo.Build(Cfg.Size);
         CourtBuilder.Build(this, Geo);
 
@@ -835,10 +836,7 @@ public partial class Match : Node3D
         if (_smokeTime < 150f) return;
         int C(string k) => EventCount.GetValueOrDefault(k);
         int total = Score[0] + Score[1];
-        // v0.21: critério de arremessos era ≥ 6 e ficava no limite (os bots às vezes trocam arremesso por enterrada):
-        // agora ≥ 4 arremessos e ≥ 8 tentativas de pontuar (arremessos + enterradas)
-        bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 4 && C("SHOT") + C("DUNK") >= 8
-                  && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
+        bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 6 && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
         GD.Print($"[E4] placar={Score[0]}x{Score[1]} arremessos={C("SCORE_SHOT")}/{C("SHOT")} passes={C("PASS")}+{C("HIGHPASS")} enterradas={C("DUNK_OK")}/{C("DUNK")} (erros {C("DUNK_FAIL")}) " +
                  $"faltas={C("FOUL")} lances_livres={C("SCORE_FT")}/{C("FT_OK") + C("FT_MISS")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
                  $"trocas_de_posse={_possChanges} -> {(ok ? "OK" : "FALHOU")}");
