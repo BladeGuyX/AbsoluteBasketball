@@ -14,6 +14,7 @@ public partial class ImpactFx : Node3D
 {
     public Match M;
     static Shader _shader;
+    static readonly RandomNumberGenerator Rng = new();
     static Shader FxShader => _shader ??= GD.Load<Shader>("res://Shaders/impact_fx.gdshader");
 
     public override void _EnterTree() => Sfx.Played += OnSound;
@@ -46,7 +47,7 @@ public partial class ImpactFx : Node3D
         mat.SetShaderParameter("width", width);
         mat.SetShaderParameter("trail", trail);
         mat.SetShaderParameter("breakup", breakup);
-        mat.SetShaderParameter("seed", (float)GD.RandRange(0.0, 50.0));
+        mat.SetShaderParameter("seed", Rng.RandfRange(0f, 50f)); // gerador próprio: efeito visual não mexe no sorteio do jogo
         Mesh mesh = billboard ? new QuadMesh { Size = Vector2.One * radius * 2f } : new PlaneMesh { Size = Vector2.One * radius * 2f };
         var mi = new MeshInstance3D { Mesh = mesh, MaterialOverride = mat, Position = local, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
         root.AddChild(mi);

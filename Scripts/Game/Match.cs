@@ -96,12 +96,16 @@ public partial class Match : Node3D
     public bool IsOnline => Cfg.Net != NetRole.None;
     public bool IsHost => Cfg.Net == NetRole.Host;
     public bool IsClient => Cfg.Net == NetRole.Client;
+    /// <summary>v0.22: sorteios da JOGABILIDADE (duração do voo/lance livre). Efeitos visuais e sons usam o sorteio global
+    /// da Godot (partículas também), então mudar um efeito não muda mais o resultado do --smoke-e4.</summary>
+    public readonly RandomNumberGenerator Rng = new();
     readonly Dictionary<Player, int> _remote = new();   // host: jogador → NetId do cliente que o controla
 
     public override void _Ready()
     {
         ProcessMode = ProcessModeEnum.Pausable;
-        if (Cfg.SmokeE4) GD.Seed(20261125); // v0.21: partida só de bots reproduzível (os bots já têm semente própria)
+        Rng.Randomize();
+        if (Cfg.SmokeE4) Rng.Seed = 20261125; // partida só de bots reproduzível (os bots já têm semente própria)
         Geo = CourtGeo.Build(Cfg.Size);
         CourtBuilder.Build(this, Geo);
 
@@ -567,7 +571,7 @@ public partial class Match : Node3D
         FtT = -t.FreeThrowPrep;
         FtPressed = false;
         FtFlash = 0; // o resultado do lance anterior sai quando o próximo começa
-        FtDur = Mathf.Max(0.25f, t.FreeThrowSkillTime + (float)GD.RandRange(-t.DunkFlightJitter, t.DunkFlightJitter));
+        FtDur = Mathf.Max(0.25f, t.FreeThrowSkillTime + Rng.RandfRange(-t.DunkFlightJitter, t.DunkFlightJitter));
         var spot = FtSpot(FtShooter, out float yaw);
         FtShooter.Teleport(spot, yaw, setHome: false);
         Ball.GiveTo(FtShooter);
@@ -839,7 +843,9 @@ public partial class Match : Node3D
         if (_smokeTime < 150f) return;
         int C(string k) => EventCount.GetValueOrDefault(k);
         int total = Score[0] + Score[1];
-        bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 6 && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
+        // v0.22: os bots também pontuam enterrando; o teste exige que tentem dos dois jeitos (≥ 4 arremessos e ≥ 8 tentativas)
+        bool ok = total >= 8 && Score[0] >= 2 && Score[1] >= 2 && C("SHOT") >= 4 && C("SHOT") + C("DUNK") >= 8
+                  && C("PASS") + C("HIGHPASS") >= 3 && _possChanges >= 8;
         GD.Print($"[E4] placar={Score[0]}x{Score[1]} arremessos={C("SCORE_SHOT")}/{C("SHOT")} passes={C("PASS")}+{C("HIGHPASS")} enterradas={C("DUNK_OK")}/{C("DUNK")} (erros {C("DUNK_FAIL")}) " +
                  $"faltas={C("FOUL")} lances_livres={C("SCORE_FT")}/{C("FT_OK") + C("FT_MISS")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
                  $"trocas_de_posse={_possChanges} -> {(ok ? "OK" : "FALHOU")}");

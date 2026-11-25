@@ -681,7 +681,7 @@ public partial class Player : CharacterBody3D
         var rim = M.Geo.RimCenter[hoop];
         var dir = FlatToRim(hoop).Normalized();
         // a bola chega um pouco acima e à frente do centro do aro
-        float dur = t.DunkFlightTime + (float)GD.RandRange(-t.DunkFlightJitter, t.DunkFlightJitter);
+        float dur = t.DunkFlightTime + M.Rng.RandfRange(-t.DunkFlightJitter, t.DunkFlightJitter);
         BeginFlight(FlightKind.Dunk, Mathf.Max(dur, 0.25f), rim - dir * 0.1f + Vector3.Up * 0.35f, hoop);
         M.LogEvent("DUNK", this);
     }
