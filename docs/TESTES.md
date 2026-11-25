@@ -3,6 +3,29 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.23 — 2º personagem (Ametista, nome provisório) e troca no menu
+
+**Atualizar:** menu principal → "Atualizar para v0.23".
+
+1. **Menu principal:** botão novo **"Personagem: Rei"**. Clique: vira **"Personagem: Ametista"**; clique de novo volta ao Rei. Feche e abra o jogo: a escolha fica salva.
+2. **Jogar (local) com Ametista:** você aparece com cabelo roxo em topete, casaco verde aberto com camiseta branca, calça cinza com barra dobrada e tênis branco/verde; pele morena e olhos âmbar. Mãos flutuando como no Rei.
+3. **Outros jogadores:** bots/bonecos alternam Rei e Ametista pela vaga (provisório). Confira que o anel no chão continua mostrando o time.
+4. **Animações:** com Ametista, ande, corra, quique, drible (X), passe, arremesse, pule, roube, enterre e fique pendurado no aro — tudo igual ao Rei (mesmo esqueleto).
+5. **Expressões (Q / B):** com Ametista, a roda mostra **Relaxado, Focado, Sorriso convencido, Bravo, Rindo, Surpreso**. Com o Rei, os nomes de sempre. Atordoado = Surpreso; sofreu ponto = Bravo; comemorando = Rindo.
+6. **Online:** cada um escolhe o personagem no menu ANTES de criar/entrar no lobby. No lobby aparece "Nome · Personagem". Na partida, cada um vê o personagem certo do outro. (Versão da rede mudou: host e cliente precisam estar na v0.23.)
+
+---
+## v0.23 — Roubo barrado pelo drible mais perceptível
+
+**Atualizar:** menu principal → "Atualizar para v0.23".
+
+1. Tente roubar (E / X sem bola) de alguém no **drible especial** (ou deixe um bot tentar em você driblando).
+2. Na bola aparece um **clarão branco rápido**, um **anel azul** abrindo com um anel branco por dentro e uns **risquinhos** brancos; tudo some em ~0,35 s. Toca também um **"tsk"** curto e baixinho.
+3. Tem que dar para notar que o roubo foi barrado, sem chamar muita atenção.
+4. Roubo em quem NÃO está driblando: nada disso aparece.
+5. Online: os dois veem/ouvem (o som não toca duas vezes).
+
+---
 ## v0.22 — Rosto, quique, ondas da enterrada, roubo no drible, cara brava, som de cesta sofrida
 
 **Atualizar:** menu principal → "Atualizar para v0.22".
