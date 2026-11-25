@@ -1180,6 +1180,16 @@
     "default": 0.05
   },
   {
+    "key": "SkillResultHold",
+    "section": "Enterrada",
+    "label": "Resultado do skill check na tela",
+    "desc": "Segundos que o skill check fica na tela depois de acertar ou errar, com o ponteiro parado onde foi apertado (verde = certo, vermelho = errado). Vale tamb\u00E9m para os lances livres. S\u00F3 visual.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.75
+  },
+  {
     "key": "DunkFlightJitter",
     "section": "Enterrada",
     "label": "Varia\u00E7\u00E3o da dura\u00E7\u00E3o do voo",

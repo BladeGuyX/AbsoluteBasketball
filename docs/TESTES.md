@@ -3,6 +3,21 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.19 — Skill check mais bonito e resultado que fica na tela
+
+**Atualizar:** menu principal → "Atualizar para v0.19".
+
+1. Faça uma enterrada: o anel do skill check aparece com uma animaçãozinha de entrada (cresce rápido). Ele tem uma faixa escura, marquinhas, uma **zona dourada** (onde apertar) e uma **agulha branca com miolo vermelho** que deixa um rastro clarinho.
+2. Quando a agulha chega perto da zona dourada, a zona brilha mais forte.
+3. **Acerte** a enterrada: o anel continua na tela por **0,75 s**, com a agulha **parada onde você apertou**, zona/agulha/rastro **verdes**, um ✓ ao lado da zona e um anel verde que se expande e some. Depois o anel some suavemente.
+4. **Erre apertando cedo**: a jogada erra na hora (como antes: bola cai, você fica atordoado), mas o anel continua 0,75 s, **vermelho**, com um ✗ e a agulha parada ANTES da zona — dá para ver quanto faltou.
+5. **Erre apertando tarde** (passou da zona): mesmo resultado vermelho, agulha parada DEPOIS da zona.
+6. **Não aperte nada**: quando acabar o tempo, aparece o resultado vermelho com a agulha logo depois da zona.
+7. Lances livres (faça uma falta / sofra uma falta na enterrada): na preparação o anel já aparece com a zona marcada (sem agulha). Depois funciona igual aos itens 3 a 6. O resultado do 1º lance some quando o 2º começa.
+8. Online (como cliente): o resultado aparece na hora em que você aperta (sem esperar o host), com a agulha onde você viu, e não aparece duas vezes.
+9. No artifact, seção Enterrada: **"Resultado do skill check na tela"** (padrão 0,75 s) muda quanto tempo o resultado fica. Mude, salve o tuning.json, F5 e confira.
+
+---
 ## v0.18 — Quadra nova (cena Court, linhas por shader, piso de madeira)
 
 **Atualizar:** menu principal → "Atualizar para v0.18".

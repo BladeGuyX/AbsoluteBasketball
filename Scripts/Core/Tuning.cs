@@ -317,6 +317,8 @@ public sealed class Tuning
     public float DunkFlightTime = 0.8f;
     [Param(SDunk, "Janela do skill check", "Duração (s) da janela certa para apertar o arremesso (Espaço não vale), centrada no toque na cesta. Vale também para os lances livres. Menor = mais difícil.", 0.03f, 0.6f, 0.01f)]
     public float DunkWindow = 0.05f;
+    [Param(SDunk, "Resultado do skill check na tela", "Segundos que o skill check fica na tela depois de acertar ou errar, com o ponteiro parado onde foi apertado (verde = certo, vermelho = errado). Vale também para os lances livres. Só visual.", 0, 3, 0.05f)]
+    public float SkillResultHold = 0.75f;
     [Param(SDunk, "Variação da duração do voo", "Cada enterrada (e cada lance livre) dura a duração ± até este valor (s), sorteado: o ponteiro do skill check muda de velocidade e não dá para decorar.", 0, 0.6f, 0.01f)]
     public float DunkFlightJitter = 0.2f;
     [Param(SDunk, "Alcance da mão", "Altura (m) da bola acima dos pés com os braços esticados na enterrada.", 1.5f, 3.5f, 0.05f)]

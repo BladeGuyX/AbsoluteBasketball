@@ -670,8 +670,8 @@ public partial class Player : CharacterBody3D
     {
         var t = Tuning.I;
         var rim = M.Geo.RimCenter[FlightHoop];
-        // acertou: flash verde; errou: o anel some (v0.9)
-        if (Flight == FlightKind.Dunk) { SkillFlash = ok ? 0.6f : 0f; SkillFlashOk = ok; }
+        // resultado fica na tela com o ponteiro parado (v0.19): verde = certo, vermelho = errado
+        if (Flight == FlightKind.Dunk) { SkillFlash = Mathf.Max(t.SkillResultHold, 0.001f); SkillFlashOk = ok; }
         if (ok)
         {
             BallLockoutTimer = 0.8f;

@@ -557,6 +557,7 @@ public partial class Match : Node3D
         _ftStage = FtStage.Check;
         FtT = -t.FreeThrowPrep;
         FtPressed = false;
+        FtFlash = 0; // o resultado do lance anterior sai quando o próximo começa
         FtDur = Mathf.Max(0.25f, t.FreeThrowSkillTime + (float)GD.RandRange(-t.DunkFlightJitter, t.DunkFlightJitter));
         var spot = FtSpot(FtShooter, out float yaw);
         FtShooter.Teleport(spot, yaw, setHome: false);
@@ -602,7 +603,7 @@ public partial class Match : Node3D
     void FtResult(bool ok)
     {
         var t = Tuning.I;
-        FtFlash = ok ? 0.6f : 0f; // errou: o anel some (v0.9)
+        FtFlash = Mathf.Max(t.SkillResultHold, 0.001f); // resultado fica na tela com o ponteiro parado (v0.19)
         FtFlashOk = ok;
         FtFlashPlayer = FtShooter;
         LogEvent(ok ? "FT_OK" : "FT_MISS", FtShooter);
@@ -729,6 +730,15 @@ public partial class Match : Node3D
             if (!_e3Shots.Contains("ready") && _readyFrames >= 4) E3Shot("ready");
             if (!_e3Shots.Contains("dunk") && lp.Flight == FlightKind.Dunk && lp.FlightT > lp.FlightDur * 0.6f) E3Shot("dunk");
             if (!_e3Shots.Contains("ft") && FtChecking && FtShooter == lp && FtT > FtDur * 0.5f) E3Shot("ft");
+            // resultado do skill check (ponteiro parado), um print para certo e outro para errado
+            float hold = Mathf.Max(Tuning.I.SkillResultHold, 0.001f);
+            bool resDunk = lp.Flight == FlightKind.None && lp.SkillFlash > 0 && lp.SkillFlash < hold * 0.75f;
+            bool resFt = FtFlash > 0 && FtFlashPlayer == lp && FtFlash < hold * 0.75f;
+            if (resDunk || resFt)
+            {
+                string tag = (resDunk ? "dunkres_" : "ftres_") + ((resDunk ? lp.SkillFlashOk : FtFlashOk) ? "ok" : "miss");
+                if (!_e3Shots.Contains(tag)) E3Shot(tag);
+            }
         }
     }
 
@@ -870,8 +880,10 @@ public partial class Match : Node3D
     readonly List<NetSnapshot> _snaps = new();
     float _renderTick = -1;
     BotBrain _clientBot;
-    /// <summary>Cliente: errou o skill check na própria tela → esconde o anel por um instante (sem esperar o host).</summary>
-    public float ClientSkillHideT;                 // teste de rede: bot gera o input do cliente
+    /// <summary>Cliente: apertou no skill check → mostra o resultado na hora, com o ponteiro onde estava na tela dele
+    /// (sem esperar o host). Depois, <see cref="ClientSkillMuteT"/> evita repetir o resultado que o host manda atrasado.</summary>
+    public float ClientSkillHold, ClientSkillT, ClientSkillDur, ClientSkillMuteT;
+    public bool ClientSkillOk;
     public int ClientSnapshotsApplied;
 
     /// <summary>Cliente: snapshot recebido do host (guarda para interpolar).</summary>
@@ -902,11 +914,21 @@ public partial class Match : Node3D
         {
             float dur = -1;
             if (LocalPlayer.Flight == FlightKind.Dunk) { inp.SkillT = LocalPlayer.FlightT; dur = LocalPlayer.FlightDur; }
-            else if (FtChecking && FtShooter == LocalPlayer) { inp.SkillT = Mathf.Max(FtT, 0f); dur = FtDur; }
-            // errou na tela dele: o anel some na hora (o host confirma depois)
-            if (dur > 0 && Mathf.Abs(inp.SkillT - dur) > Tuning.I.DunkWindow * 0.5f) ClientSkillHideT = 1.0f;
+            else if (FtChecking && FtShooter == LocalPlayer && FtT >= 0) { inp.SkillT = Mathf.Max(FtT, 0f); dur = FtDur; }
+            // resultado na tela dele na hora (o host julga pelo mesmo SkillT, então dá o mesmo veredito)
+            if (dur > 0 && ClientSkillHold <= 0)
+            {
+                ClientSkillT = inp.SkillT; ClientSkillDur = dur;
+                ClientSkillOk = Mathf.Abs(inp.SkillT - dur) <= Tuning.I.DunkWindow * 0.5f;
+                ClientSkillHold = Mathf.Max(Tuning.I.SkillResultHold, 0.001f);
+            }
         }
-        if (ClientSkillHideT > 0) ClientSkillHideT -= dt;
+        if (ClientSkillHold > 0)
+        {
+            ClientSkillHold -= dt;
+            if (ClientSkillHold <= 0) ClientSkillMuteT = 0.6f; // o flash do host chega atrasado: não mostrar de novo
+        }
+        else if (ClientSkillMuteT > 0) ClientSkillMuteT -= dt;
         NetSession.I?.SendInput(inp);
 
         if (_snaps.Count > 0)
