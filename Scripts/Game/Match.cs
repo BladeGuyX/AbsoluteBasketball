@@ -120,6 +120,7 @@ public partial class Match : Node3D
             if (Cfg.SmokeE4) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
         }
 
+        Sfx.LocalTeam = LocalPlayer?.Team ?? -1;
         Cam = new CameraRig { Target = LocalPlayer ?? Players.FirstOrDefault(), Name = "CameraRig" };
         AddChild(Cam);
         _preview = new TrajectoryPreview { Name = "Trajectory" };
@@ -395,7 +396,7 @@ public partial class Match : Node3D
         Score[team] += pts;
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
-        Sfx.Play2D(this, "score", -7);
+        Sfx.Play2D(this, "score_t" + team, -7); // cada tela toca "cesta feita" ou "cesta sofrida" (Sfx.LocalTeam)
         UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
         LogEvent(freeThrow ? "SCORE_FT" : Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
         GD.Print($"[SCORE] time {team} +{pts} ({(freeThrow ? "lance livre" : three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
@@ -692,6 +693,8 @@ public partial class Match : Node3D
 
     public void OnStealFailed(Player thief, Player immuneTarget)
     {
+        // v0.22: tentou pegar a bola de quem está driblando → efeito leve na bola (deixa visual, vai aos clientes)
+        if (immuneTarget != null && immuneTarget.IsDribbling) Sfx.Play3D(this, "fx_parry", Ball.GlobalPosition);
         LogEvent("STEAL_FAIL", thief, immuneTarget);
     }
 

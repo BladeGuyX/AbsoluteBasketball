@@ -166,15 +166,35 @@ public static class PoseShot
             cam.LookAt(new Vector3(cx, 1.28f * sc, 20), Vector3.Up);
         }
 
+        // efeitos (v0.22): a mesma enterrada em 3 momentos (0,35 s / 0,2 s / 0,1 s depois) e o roubo barrado
+        void Fx()
+        {
+            var o = new Vector3(0, 0, -40);
+            float hh = Tuning.I.HoopHeight;
+            for (int i = 0; i < 3; i++)
+                root.AddChild(Mat.MeshNode(new TorusMesh { InnerRadius = Tuning.I.RimRadius - 0.03f, OuterRadius = Tuning.I.RimRadius + 0.03f }, Mat.Toon(Palette.Rim), o + new Vector3(i * 5.5f, hh, 0)));
+            var fxHost = new Node3D();
+            root.AddChild(fxHost);
+            void At(double when, System.Action a) => tree.CreateTimer(when).Timeout += a;
+            At(0.25, () => ImpactFx.Dunk(fxHost, o + new Vector3(0, hh, 0), 1f));
+            At(0.40, () => ImpactFx.Dunk(fxHost, o + new Vector3(5.5f, hh, 0), 1f));
+            At(0.50, () => ImpactFx.Dunk(fxHost, o + new Vector3(11f, hh, 0), 1f));
+            At(0.45, () => ImpactFx.Parry(fxHost, o + new Vector3(15f, 1.2f, 0)));
+            At(0.53, () => ImpactFx.Parry(fxHost, o + new Vector3(16.5f, 1.2f, 0)));
+            cam.Position = o + new Vector3(8f, 3.2f, -15f);
+            cam.LookAt(o + new Vector3(8f, 2.4f, 0), Vector3.Up);
+        }
+
         int page = 0;
         void Next()
         {
             if (page < pages) { Page(page); }
             else if (page == pages) { Faces(); }
+            else if (page == pages + 1) { Fx(); }
             else { tree.Quit(); return; }
             tree.CreateTimer(0.6).Timeout += () =>
             {
-                string name = page < pages ? "_" + (char)('a' + page) : "_faces";
+                string name = page < pages ? "_" + (char)('a' + page) : page == pages ? "_faces" : "_fx";
                 host.GetViewport().GetTexture().GetImage().SavePng(Out(name));
                 GD.Print("[POSE] " + Out(name));
                 page++;

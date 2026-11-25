@@ -81,7 +81,8 @@ public sealed class CharacterVisual : IPlayerVisual
     readonly Pose _pose = new(), _tmp = new(), _tmp2 = new();
 
     float _time, _phase, _moveW, _runW, _hangT, _catchT, _prevBallY, _apex, _landFx;
-    bool _hadBall, _wasAir, _bigFall, _handInit, _ballHandRight = true;
+    bool _hadBall, _wasAir, _bigFall, _handInit, _ballHandRight = true, _rising;
+    float _curMax;
     Vector3 _hl, _hr;
 
     public CharacterVisual(Player p) : this(p, p.Team, p) { }
@@ -643,21 +644,23 @@ public sealed class CharacterVisual : IPlayerVisual
             }
             else
             {
-                // quique: a mão encontra a bola no alto, empurra um pouco e volta a esperar
+                // quique (v0.22): a mão fica no alto e só encosta nos últimos centímetros — amortece a bola que chega
+                // e dá um empurrãozinho; o resto do caminho a bola faz sozinha (sobe e desce no ar)
                 bool right = s.BallSide >= 0;
                 if (Mathf.Abs(s.BallSide) > 0.3f) _ballHandRight = right;
-                bool down = b.Y < _prevBallY - 1e-4f;
-                _apex = Mathf.Max(_apex - dt * 0.8f, b.Y);
+                if (b.Y > _prevBallY + 1e-4f) { _rising = true; _curMax = Mathf.Max(_curMax, b.Y); }
+                else if (b.Y < _prevBallY - 1e-4f && _rising) { _rising = false; _apex = Mathf.Max(_curMax, b.Y); _curMax = b.Y; }
+                if (_apex <= 0) _apex = b.Y;
                 float top = b.Y + reach;
-                float wait = _apex + reach + 0.012f;
-                var target = new Vector3(b.X, down && b.Y > _apex - 0.13f ? top : Mathf.Max(wait, top), b.Z);
+                float rest = _apex + reach - Tuning.I.DribbleHandContact / sc;
+                var target = new Vector3(b.X, Mathf.Max(top, rest), b.Z);
                 if (_ballHandRight) { tr = target; rateR = 70; } else { tl = target; rateL = 70; }
             }
             _prevBallY = b.Y;
         }
         else
         {
-            _apex = 0;
+            _apex = 0; _curMax = 0;
             if (s.Hanging)
             {
                 // mãos agarradas na frente do aro
@@ -706,6 +709,7 @@ public sealed class CharacterVisual : IPlayerVisual
             if (s.Slowed) id = Expressions.Bravo;
             if (s.Dunking || s.Hanging) id = Expressions.Bravo;
             if (s.Mood == 1) id = Expressions.Feliz;
+            if (s.Angry) id = Expressions.Bravo;
             if (s.Stunned) id = Expressions.Surpreso;
         }
         if (id == _faceShown) return;

@@ -1370,6 +1370,26 @@
     "default": 26
   },
   {
+    "key": "DribbleHandContact",
+    "section": "Personagem (visual)",
+    "label": "Contato da m\u00E3o no quique",
+    "desc": "Quantos metros a m\u00E3o acompanha a bola no alto do quique (empurra/amortece). O resto do caminho a bola vai sozinha no ar.",
+    "min": 0,
+    "max": 0.3,
+    "step": 0.005,
+    "default": 0.06
+  },
+  {
+    "key": "ConcedeAngryTime",
+    "section": "Personagem (visual)",
+    "label": "Cara brava ao sofrer ponto",
+    "desc": "Segundos que o personagem fica bravo sozinho quando o time advers\u00E1rio pontua (a express\u00E3o da roda tem prioridade). 0 = desliga.",
+    "min": 0,
+    "max": 10,
+    "step": 0.5,
+    "default": 3
+  },
+  {
     "key": "EmoteDuration",
     "section": "Personagem (visual)",
     "label": "Dura\u00E7\u00E3o da express\u00E3o",

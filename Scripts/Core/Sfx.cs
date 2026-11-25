@@ -73,6 +73,15 @@ public static class Sfx
             return v * 0.2f;
         });
 
+        // v0.22: cesta sofrida — mesmos sininhos, descendo e em tom menor, mais graves e mais lentos
+        float[] down = { 587.33f, 466.16f, 392.00f, 293.66f };
+        Streams["score_bad"] = Make(1.3f, t =>
+        {
+            float v = 0;
+            for (int i = 0; i < down.Length; i++) v += Bell(t - i * 0.1f, down[i] * (1f - 0.015f * t));
+            return v * 0.19f;
+        });
+
         // vitória: fanfarra curta (Sol-Dó-Mi-Sol + acorde final)
         (float start, float dur, float f)[] fan =
         {
@@ -121,9 +130,18 @@ public static class Sfx
         p.Play();
     }
 
+    /// <summary>Time do jogador desta tela (−1 = ninguém): escolhe o som de cesta feita/sofrida.</summary>
+    public static int LocalTeam = -1;
+
     public static void Play2D(Node parent, string name, float volumeDb = 0f, float pitch = 1f)
     {
         Broadcast?.Invoke(name, Vector3.Zero, volumeDb, pitch, false);
+        // "score_t0"/"score_t1" (v0.22): cada tela toca o som do ponto do SEU time ou o de cesta sofrida
+        if (name.StartsWith("score_t") && name.Length == 8)
+        {
+            int team = name[7] - '0';
+            name = LocalTeam < 0 || LocalTeam == team ? "score" : "score_bad";
+        }
         Init();
         if (parent == null || !Streams.TryGetValue(name, out var s)) return;
         var p = new AudioStreamPlayer { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch };

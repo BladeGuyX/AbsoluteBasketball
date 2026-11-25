@@ -609,12 +609,12 @@ def ellipse(cx, cz, a, b, n=24):
     return [(cx + a * math.cos(2 * math.pi * i / n), cz + b * math.sin(2 * math.pi * i / n)) for i in range(n)]
 
 
-EYE_X, EYE_Z = 0.086, 0.962
+EYE_X, EYE_Z = 0.09, 0.99   # v0.22: olhos mais altos (o rosto ficava baixo demais)
 
 
 def eye(face, s, lid=0.010, slope=0.25, a=0.031, b=0.029, low=None, pupil=(0.013, 0.018), lid_w=0.009, wing=True,
         top_follow=False):
-    k = 1.18  # olhos maiores (cabeça maior que na 1ª versão)
+    k = 1.5  # olhos grandes como na concept
     lid, a, b, lid_w = lid * k, a * k, b * k, lid_w * 1.1
     low = None if low is None else low * k
     pupil = None if not pupil else (pupil[0] * k, pupil[1] * k)
@@ -660,7 +660,7 @@ def eye(face, s, lid=0.010, slope=0.25, a=0.031, b=0.029, low=None, pupil=(0.013
 
 def brow(face, s, z=1.055, angle=12.0, length=0.052, w0=0.0095, w1=0.0045, x=EYE_X, arch=0.0):
     """Sobrancelha: angle > 0 = lado de dentro mais baixo (bravo/sério). z é relativo ao olho antigo (0,985)."""
-    z = z - 0.985 + EYE_Z + 0.006
+    z = z - 0.985 + EYE_Z - 0.04   # v0.22: sobrancelhas mais perto dos olhos
     length *= 1.15
     xi, xo = s * (x - length * 0.5), s * (x + length * 0.5)
     dz = math.tan(math.radians(angle)) * length * 0.5
@@ -673,7 +673,7 @@ def brow(face, s, z=1.055, angle=12.0, length=0.052, w0=0.0095, w1=0.0045, x=EYE
     face.strip(pts, w0, w1, "Tinta", 3)
 
 
-MOUTH_Z = 0.862
+MOUTH_Z = 0.888
 MOUTH_K = 1.6
 
 
@@ -714,7 +714,7 @@ def make_faces():
     f = Face()
     for s in (1, -1):
         eye(f, s, lid=0.002, slope=0.55, low=-0.018, lid_w=0.011)
-        brow(f, s, z=1.041, angle=30, w0=0.012, w1=0.005)
+        brow(f, s, z=1.05, angle=28, w0=0.012, w1=0.005)
     w, h = 0.05, 0.026
     pts = []
     for i in range(20):
@@ -744,7 +744,7 @@ def make_faces():
     f = Face()
     for s in (1, -1):
         eye(f, s, a=0.03, b=0.035, pupil=(0.009, 0.012), top_follow=True, lid_w=0.006, wing=False)
-        brow(f, s, z=1.074, angle=-8, arch=0.006, w0=0.008)
+        brow(f, s, z=1.098, angle=-8, arch=0.006, w0=0.008)
     f.poly(ellipse(0.0, MOUTH_Z - 0.004, 0.011, 0.015, 16), "Boca", 0)
     faces.append(f.build("Rosto_Surpreso"))
     return faces

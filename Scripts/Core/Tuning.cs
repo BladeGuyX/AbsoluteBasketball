@@ -360,6 +360,10 @@ public sealed class Tuning
     public float AnimBlendSpeed = 14f;
     [Param(SChar, "Rapidez das mãos", "Quão rápido as mãos flutuantes seguem o alvo (maior = mais grudadas).", 4, 80, 1)]
     public float HandFollow = 26f;
+    [Param(SChar, "Contato da mão no quique", "Quantos metros a mão acompanha a bola no alto do quique (empurra/amortece). O resto do caminho a bola vai sozinha no ar.", 0, 0.3f, 0.005f)]
+    public float DribbleHandContact = 0.06f;
+    [Param(SChar, "Cara brava ao sofrer ponto", "Segundos que o personagem fica bravo sozinho quando o time adversário pontua (a expressão da roda tem prioridade). 0 = desliga.", 0, 10, 0.5f)]
+    public float ConcedeAngryTime = 3f;
     [Param(SChar, "Duração da expressão", "Segundos que a expressão escolhida na roda fica no rosto (ou até escolher outra).", 1, 20, 0.5f)]
     public float EmoteDuration = 5f;
 

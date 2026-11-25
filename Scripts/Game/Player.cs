@@ -62,8 +62,8 @@ public partial class Player : CharacterBody3D
     /// <summary>v0.21: expressão escolhida na roda (0 = nenhuma; ver <see cref="Expressions"/>) e quanto tempo falta.</summary>
     public byte Emote;
     public float EmoteT;
-    float _celebrateT;
-    int _lastTeamScore = -1;
+    float _celebrateT, _angryT;
+    int _lastTeamScore = -1, _lastOppScore = -1;
 
     // prévia do arremesso = exatamente o que vai sair (calculada no fim de cada tick)
     ShotMath.ShotPlan _shotPlan;
@@ -596,6 +596,12 @@ public partial class Player : CharacterBody3D
             if (_lastTeamScore >= 0 && sc > _lastTeamScore) _celebrateT = 1.8f;
             _lastTeamScore = sc;
             if (_celebrateT > 0) _celebrateT -= dt;
+            // v0.22: o adversário pontuou → fica bravo sozinho por um tempo
+            int opp = M.Score[1 - Team];
+            if (_lastOppScore >= 0 && opp > _lastOppScore) _angryT = Tuning.I.ConcedeAngryTime;
+            _lastOppScore = opp;
+            if (_angryT > 0) _angryT -= dt;
+            st.Angry = _angryT > 0;
             bool ended = M.Phase == MatchPhase.Ended && M.Winner >= 0;
             st.Mood = (ended && M.Winner == Team) || (_celebrateT > 0 && !ended) ? 1 : ended ? 2 : 0;
         }

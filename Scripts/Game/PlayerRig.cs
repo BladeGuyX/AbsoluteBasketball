@@ -32,6 +32,7 @@ public struct RigState
     public bool Defending;     // marcando de perto quem tem a bola
     public int Mood;           // 1 = comemorando, 2 = triste (perdeu)
     public byte Emote;         // expressão da roda (0 = automática)
+    public bool Angry;         // v0.22: o adversário acabou de pontuar
 }
 
 /// <summary>Visual do jogador: o placeholder (<see cref="PlayerRig"/>) ou o modelo do Blender (<see cref="CharacterVisual"/>).</summary>

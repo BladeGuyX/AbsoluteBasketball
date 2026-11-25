@@ -3,6 +3,19 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.22 — Rosto, quique, ondas da enterrada, roubo no drible, cara brava, som de cesta sofrida
+
+**Atualizar:** menu principal → "Atualizar para v0.22".
+
+1. **Rosto:** olhos maiores e mais altos na cabeça, sobrancelhas logo acima das pálpebras (nas 6 expressões da roda: Q / B). A cara não fica mais listrada de sombra do cabelo.
+2. **Quique:** parado ou andando com a bola, a mão **fica no alto** e só encosta na bola nos últimos centímetros (amortece e dá um empurrãozinho). A bola desce e sobe sozinha no ar. Vale também no drible especial (mais baixo e rápido). Ajuste: artifact → "Personagem (visual)" → **Contato da mão no quique** (0,06 m).
+3. **Enterrada certa:** brilho curto no aro, **onda fina** saindo do aro com um eco mais claro, onda leve no chão com poeira e faíscas em risquinhos laranja. Mais discreto que na v0.21. A câmera continua tremendo (ajustes iguais: "Efeito de impacto", "Tremor da câmera na enterrada").
+4. **Roubo no drible:** tente roubar de quem está no drible especial (ou deixe um bot tentar em você driblando). Aparece um **anelzinho azulado com faíscas** na bola. Roubo em quem não está driblando não mostra isso.
+5. **Cara brava:** quando o time adversário pontua, os jogadores do time que sofreu ficam **bravos sozinhos por 3 s**. Se você escolheu uma expressão na roda, a sua vale. Ajuste: **Cara brava ao sofrer ponto** (0 = desliga).
+6. **Som:** quando o SEU time pontua, toca o sininho de sempre. Quando você **sofre** a cesta, toca a versão **descendo e mais grave**.
+7. **Online:** cada um ouve o som do próprio time (o host ouve "sofrida" quando o cliente pontua e vice-versa). O efeito do roubo no drible e a cara brava aparecem para os dois.
+
+---
 ## v0.21 — O Rei (1º personagem), animações novas, roda de expressões
 
 **Atualizar:** menu principal → "Atualizar para v0.21".
