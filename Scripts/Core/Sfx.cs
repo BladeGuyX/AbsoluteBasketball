@@ -107,6 +107,8 @@ public static class Sfx
         Streams["slam"] = Make(0.7f, t => Mathf.Sin(Tau * (70 - 40 * t) * t) * Mathf.Exp(-t * 7) * 0.9f
             + (Mathf.Sin(Tau * 410 * t) + 0.5f * Mathf.Sin(Tau * 1130 * t)) * Mathf.Exp(-t * 14) * 0.25f
             + Noise() * Mathf.Exp(-t * 35) * 0.35f);
+        // v0.23: roubo barrado pelo drible — "tsk" curto e agudo (raspão), baixinho
+        Streams["parry"] = Make(0.16f, t => (Noise() * 0.5f + Mathf.Sin(Tau * (1900 - 3000 * t) * t) * 0.5f) * Mathf.Exp(-t * 32) * Mathf.Min(1f, t / 0.003f) * 0.55f);
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);
     }
 
@@ -132,6 +134,18 @@ public static class Sfx
 
     /// <summary>Time do jogador desta tela (−1 = ninguém): escolhe o som de cesta feita/sofrida.</summary>
     public static int LocalTeam = -1;
+
+    /// <summary>Toca só nesta tela (não vai aos clientes nem dispara <see cref="Played"/>) — para sons de deixas visuais.</summary>
+    public static void PlayLocal3D(Node parent, string name, Vector3 pos, float volumeDb = 0f, float pitch = 1f)
+    {
+        Init();
+        if (parent == null || !Streams.TryGetValue(name, out var s)) return;
+        var p = new AudioStreamPlayer3D { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch, UnitSize = 6 };
+        parent.AddChild(p);
+        p.GlobalPosition = pos;
+        p.Finished += p.QueueFree;
+        p.Play();
+    }
 
     public static void Play2D(Node parent, string name, float volumeDb = 0f, float pitch = 1f)
     {

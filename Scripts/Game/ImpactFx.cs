@@ -16,6 +16,9 @@ public partial class ImpactFx : Node3D
     static Shader _shader;
     static readonly RandomNumberGenerator Rng = new();
     static Shader FxShader => _shader ??= GD.Load<Shader>("res://Shaders/impact_fx.gdshader");
+    static Shader _mixShader;
+    /// <summary>Mesma coisa com mistura normal (não aditiva): aparece também em fundo claro (quadra, areia).</summary>
+    static Shader MixShader => _mixShader ??= new Shader { Code = FxShader.Code.Replace("blend_add", "blend_mix") };
 
     public override void _EnterTree() => Sfx.Played += OnSound;
     public override void _ExitTree() => Sfx.Played -= OnSound;
@@ -23,7 +26,12 @@ public partial class ImpactFx : Node3D
     void OnSound(string name, Vector3 pos, float db)
     {
         if (!IsInsideTree()) return;
-        if (name == "fx_parry") { Parry(this, pos); return; }
+        if (name == "fx_parry")
+        {
+            Parry(this, pos);
+            Sfx.PlayLocal3D(this, "parry", pos, -9f); // som só nesta tela (a deixa já chega a todo mundo)
+            return;
+        }
         if (name != "fx_dunk") return;
         var t = Tuning.I;
         if (t.DunkImpactFx > 0.001f) Dunk(this, pos, t.DunkImpactFx);
@@ -38,9 +46,9 @@ public partial class ImpactFx : Node3D
 
     /// <summary>Uma peça do shader (onda ou brilho) animada no tempo.</summary>
     static void Piece(FxNode root, Vector3 local, bool billboard, int mode, float radius, float start, float dur, Color color,
-        float width = 0.07f, float trail = 0.3f, float breakup = 0.3f, float from = 0f)
+        float width = 0.07f, float trail = 0.3f, float breakup = 0.3f, float from = 0f, bool mix = false)
     {
-        var mat = new ShaderMaterial { Shader = FxShader };
+        var mat = new ShaderMaterial { Shader = mix ? MixShader : FxShader };
         mat.SetShaderParameter("mode", mode);
         mat.SetShaderParameter("billboard", billboard);
         mat.SetShaderParameter("color", color);
@@ -59,7 +67,7 @@ public partial class ImpactFx : Node3D
         });
     }
 
-    static CpuParticles3D Sparks(int amount, float vMin, float vMax, float life, float gravity, Color c0, Color c1, Vector3 size)
+    static CpuParticles3D Sparks(int amount, float vMin, float vMax, float life, float gravity, Color c0, Color c1, Vector3 size, bool add = true)
     {
         var p = new CpuParticles3D
         {
@@ -74,7 +82,7 @@ public partial class ImpactFx : Node3D
         p.ColorRamp = ramp;
         var m = Mat.Unshaded(Colors.White, true);
         m.VertexColorUseAsAlbedo = true;
-        m.BlendMode = BaseMaterial3D.BlendModeEnum.Add;
+        if (add) m.BlendMode = BaseMaterial3D.BlendModeEnum.Add;
         p.MaterialOverride = m;
         return p;
     }
@@ -98,12 +106,14 @@ public partial class ImpactFx : Node3D
     /// <summary>Roubo barrado por quem está driblando (pos = bola): efeito leve.</summary>
     public static void Parry(Node parent, Vector3 pos)
     {
-        var root = new FxNode { Life = 0.4f };
+        // v0.23: mais visível (mistura normal, maior e mais demorado), mas ainda rápido: clarão + anel + risquinhos
+        var root = new FxNode { Life = 0.5f };
         parent.AddChild(root);
         root.GlobalPosition = pos;
-        Piece(root, Vector3.Zero, true, 1, 0.35f, 0f, 0.1f, new Color(0.85f, 0.95f, 1f, 0.55f));
-        Piece(root, Vector3.Zero, true, 0, 0.55f, 0f, 0.24f, new Color(0.65f, 0.85f, 1f, 0.85f), 0.1f, 0.25f, 0.2f, 0.35f);
-        root.AddChild(Sparks(7, 2f, 3.5f, 0.25f, -4f, new Color(0.9f, 0.97f, 1f), new Color(0.5f, 0.75f, 1f, 0f), new Vector3(0.012f, 0.08f, 0.012f)));
+        Piece(root, Vector3.Zero, true, 1, 0.5f, 0f, 0.14f, new Color(1f, 1f, 1f, 0.9f), mix: true);
+        Piece(root, Vector3.Zero, true, 0, 0.9f, 0f, 0.34f, new Color(0.8f, 0.92f, 1f, 0.95f), 0.11f, 0.3f, 0.15f, 0.25f, mix: true);
+        Piece(root, Vector3.Zero, true, 0, 0.65f, 0.06f, 0.26f, new Color(0.45f, 0.7f, 1f, 0.8f), 0.06f, 0f, 0.4f, 0.3f, mix: true);
+        root.AddChild(Sparks(10, 2.5f, 4.5f, 0.3f, -6f, new Color(1f, 1f, 1f), new Color(0.55f, 0.8f, 1f, 0f), new Vector3(0.02f, 0.12f, 0.02f), add: false));
     }
 
     /// <summary>Poeirinha no chão ao pousar (s = tamanho; 1 = depois de enterrar).</summary>
