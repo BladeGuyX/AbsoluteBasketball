@@ -100,9 +100,14 @@ public static class Sfx
     /// <summary>Online (host): cada som tocado também vai para os clientes (junto do próximo snapshot).</summary>
     public static Action<string, Vector3, float, float, bool> Broadcast;
 
+    /// <summary>v0.17: todo som 3D tocado (host, offline e cliente online). A cesta usa para balançar rede/aro.
+    /// Nomes sem som (ex.: "fx_dunk") servem de deixa visual replicada sem mudar o protocolo.</summary>
+    public static event Action<string, Vector3, float> Played;
+
     public static void Play3D(Node parent, string name, Vector3 pos, float volumeDb = 0f, float pitch = 1f)
     {
         Broadcast?.Invoke(name, pos, volumeDb, pitch, true);
+        Played?.Invoke(name, pos, volumeDb);
         Init();
         if (parent == null || !Streams.TryGetValue(name, out var s)) return;
         var p = new AudioStreamPlayer3D { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch, UnitSize = 6 };

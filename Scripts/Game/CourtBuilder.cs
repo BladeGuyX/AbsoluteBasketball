@@ -151,9 +151,15 @@ public static class CourtBuilder
         var rim = g.RimCenter[h];
         var board = g.Board[h];
         var dark = Mat.ToonOutlined(new Color("39414f"), 0.02f);
+        var pb = g.PoleBase[h];
+        var poleBody = new StaticBody3D { CollisionLayer = 1, CollisionMask = 0 };
+        poleBody.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.7f, 4f, 0.7f) }, Position = pb + new Vector3(0, 2f, 0) });
+        root.AddChild(poleBody);
+
+        // v0.17: modelo do Blender (hoop_azul/hoop_laranja.glb); sem ele, o placeholder abaixo
+        if (HoopVisual.Create(g, h) is { } visual) { root.AddChild(visual); return; }
 
         // poste + braço
-        var pb = g.PoleBase[h];
         root.AddChild(Mat.MeshNode(new CylinderMesh { TopRadius = g.PoleRadius, BottomRadius = g.PoleRadius * 1.2f, Height = g.PoleHeight }, dark,
             pb + Vector3.Up * g.PoleHeight / 2f));
         float armLen = Mathf.Abs(pb.X - board.GetCenter().X);
@@ -162,9 +168,6 @@ public static class CourtBuilder
         // base acolchoada
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.7f, 1.4f, 0.7f) }, Mat.ToonOutlined(Palette.TeamDark[CourtGeo.ScoringTeamForHoop(h) == 0 ? 1 : 0]),
             pb + new Vector3(0, 0.7f, 0)));
-        var poleBody = new StaticBody3D { CollisionLayer = 1, CollisionMask = 0 };
-        poleBody.AddChild(new CollisionShape3D { Shape = new BoxShape3D { Size = new Vector3(0.7f, 4f, 0.7f) }, Position = pb + new Vector3(0, 2f, 0) });
-        root.AddChild(poleBody);
 
         // tabela
         root.AddChild(Mat.MeshNode(new BoxMesh { Size = board.Size }, Mat.ToonOutlined(new Color("f7fbff"), 0.015f), board.GetCenter()));

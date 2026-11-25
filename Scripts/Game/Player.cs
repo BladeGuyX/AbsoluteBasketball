@@ -678,6 +678,7 @@ public partial class Player : CharacterBody3D
             M.Ball.Throw(this, rim + Vector3.Up * 0.3f, new Vector3(0, -7f, 0), BallState.Shot);
             Sfx.Play3D(M, "rim", rim, 2, 0.8f);
             Sfx.Play3D(M, "board", rim, 0, 0.9f);
+            Sfx.Play3D(M, "fx_dunk", rim);   // sem som: faz o aro tremer (HoopVisual), inclusive no cliente
             M.LogEvent("DUNK_OK", this);
         }
         else

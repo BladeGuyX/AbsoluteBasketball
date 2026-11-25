@@ -103,13 +103,14 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 | Modelo | Script | Concept | Encaixe | Versão |
 |---|---|---|---|---|
 | Bola (`ball.glb`) | `make_ball.py` | `concepts/ball.png` | `Ball._Ready`: instancia o .glb escalado para `Tuning.BallRadius` (o modelo tem raio 0,22 m). Materiais `Borracha` (contorno 0,012) e `Costura` (sem contorno). Se o .glb faltar, usa a esfera placeholder. | v0.14 |
+| Cesta (`hoop_azul.glb`, `hoop_laranja.glb`) | `make_hoop.py` (gera as duas) | `concepts/hoop.png` | `HoopVisual.Create` (chamado no `CourtBuilder.BuildHoop`; sem o .glb usa o placeholder). Hoop 0 = azul, hoop 1 = laranja (cor de quem DEFENDE). Cada peça é posicionada/escalada pela geometria do tuning (`CourtGeo`). Aro e Rede ficam num `RimPivot` (dobradiça na frente da tabela) que gira para tremer. Rede: shader próprio com balanço (`push`, `stretch`, `flare`) + contorno; gatilhos via `Sfx.Played` ("swish", "rim", e a deixa muda "fx_dunk"), que também dispara no cliente online. Tuning: `NetSwishStrength`, `RimDunkShake`, `RimHitShake`. | v0.17 |
 
 - `Mat.ApplyToon(raiz, nome => espessura)` troca os materiais importados pelo toon do jogo, com a cor base de cada material do .glb. A função recebe o nome do material e devolve a espessura do contorno (0 = sem contorno). Use também nos próximos modelos.
 - Bola: as costuras são faixas em relevo de 2,5 mm na mesma malha (~1,9 mil triângulos). Gomos e textura da concept foram ignorados de propósito (visual toon liso).
 
 ## Integração na Godot (fazer quando o 1º modelo chegar)
 - **Bola:** ✅ feito na v0.14 (ver "Modelos prontos").
-- **Cesta:** `CourtBuilder.BuildHoop` cria as peças por código. Trocar por `hoop.glb`, posicionando cada peça pelo nome conforme `CourtGeo` (`RimCenter`, `Board`, `PoleBase`). As colisões continuam as do código.
+- **Cesta:** ✅ feito na v0.17 (ver "Modelos prontos"). Texto antigo: `CourtBuilder.BuildHoop` cria as peças por código. Trocar por `hoop.glb`, posicionando cada peça pelo nome conforme `CourtGeo` (`RimCenter`, `Board`, `PoleBase`). As colisões continuam as do código.
   - Hoop 0 fica em −X e hoop 1 em +X: girar ±90° para a frente (−Y do Blender = −Z na Godot depois do +Y Up) apontar para o centro da quadra.
 - **Personagem:** criar `CharacterVisual` com a mesma interface do `PlayerRig` (`Update(RigState)`), carregando o .glb.
   - Usar `AnimationTree` (máquina de estados + blend de locomoção pela velocidade), IK dos braços até a bola (`SkeletonIK3D` ou modifier) e cor do time no material `Uniforme`.
@@ -121,7 +122,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 ## Ordem sugerida
 1. Personagem base (T-pose) + ajuste do `rig_base` às proporções da concept.
 2. ~~Bola~~ ✅ (v0.14).
-3. Cesta.
+3. ~~Cesta~~ ✅ (v0.17).
 4. Animações: primeiro as de locomoção e arremesso (`idle`, `walk`, `run`, `*_ball`, `shoot_charge`, `shoot`), depois o resto.
 5. Cenário.
 

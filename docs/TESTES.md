@@ -3,6 +3,22 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.17 — Cesta nova (modelo do Blender), rede que balança e aro que treme
+
+**Atualizar:** menu principal → "Atualizar para v0.17".
+
+1. Comece uma partida: as duas cestas são o modelo novo. A cesta que o AZUL defende tem poste/base/moldura azul-marinho e vidro azul-claro. A que o LARANJA defende tem tudo em vermelho/laranja e vidro pêssego.
+2. Olhe a cesta de perto: aro vermelho com ganchinhos, rede branca em losango, tabela com moldura escura e acolchoado embaixo, quadrado branco, braço com diagonal, base acolchoada com faixa clara, estrela e rodinhas.
+3. Arremesse e acerte (de preferência sem tocar no aro): a rede estica para baixo, abre e balança, e o aro dá uma tremidinha.
+4. Arremesse e bata no aro: o aro treme (mais forte quanto mais forte a batida) e a rede balança um pouco para o lado.
+5. Faça uma enterrada certa: o aro entorta para baixo, volta tremendo e a rede balança forte.
+6. Enterrada errada: só a tremidinha de batida no aro, sem o tranco forte.
+7. A física não mudou: a bola bate no aro, na tabela e no poste nos mesmos lugares de antes (o modelo segue as medidas do tuning).
+8. No artifact, seção Quadra: **"Balanço da rede"** (padrão 1), **"Tremor do aro na enterrada"** (padrão 9 graus) e **"Tremor do aro na batida"** (padrão 1). 0 desliga. Aperte F5 e comece outra partida.
+9. Mude "Raio do aro", "Altura do aro" ou o tamanho da tabela no tuning: o modelo acompanha (aro, rede, tabela, quadrado e braço se ajustam).
+10. Online: o amigo também vê a rede balançar e o aro tremer, inclusive na enterrada.
+
+---
 ## v0.16 — Bola na mão não gira
 
 **Atualizar:** menu principal → "Atualizar para v0.16".

@@ -189,6 +189,12 @@ public sealed class Tuning
     public float BoardWidth = 3.3f;
     [Param(SCourt, "Altura da tabela", "Altura da tabela (m).", 0.5f, 5, 0.05f)]
     public float BoardHeight = 1.85f;
+    [Param(SCourt, "Balanço da rede", "Força do balanço visual da rede quando a bola entra ou bate no aro (0 = parada).", 0, 3, 0.05f)]
+    public float NetSwishStrength = 1f;
+    [Param(SCourt, "Tremor do aro na enterrada", "Quanto o aro entorta para baixo numa enterrada certa (graus). Só visual.", 0, 25, 0.5f)]
+    public float RimDunkShake = 9f;
+    [Param(SCourt, "Tremor do aro na batida", "Força do tremor visual do aro quando a bola bate nele (0 = não treme).", 0, 3, 0.05f)]
+    public float RimHitShake = 1f;
     [Param(SCourt, "Tolerância da cesta", "Quanto (fração do raio da bola) ela pode encostar no aro e ainda contar ao passar.", 0, 1, 0.05f)]
     public float ScoreTolerance = 0.5f;
     [Param(SCourt, "Distância do aro à linha de fundo", "Distância do centro do aro até a linha de fundo (m).", 0.5f, 5, 0.05f)]

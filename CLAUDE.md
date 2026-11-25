@@ -5,7 +5,7 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 
 ## Documentos
 - `docs/GDD.md` — especificação completa do usuário (regras/mecânicas/controles) + decisões de implementação. **Fonte da verdade.**
-- `docs/PLANO.md` — etapas e status. **Estado atual: v0.13 (valores do artifact do usuário aplicados como padrão; passe rápido consertado) — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Etapa 6 feita (ícones, vibração, câmera, arremesso no pulo, enterrada no X). Em andamento: **Etapa 7 (arte)** — guia em `docs/ARTE.md`. **v0.14: bola pronta** (`art_source/scripts/make_ball.py` → `assets/models/ball.glb`, no jogo via `Ball._Ready` + `Mat.ApplyToon`; v0.16: na mão não gira — `HeldBallSpin` = 0; só gira em voo/solta). Próximos modelos: personagem, cesta, animações, cenário (o usuário manda as concepts).**
+- `docs/PLANO.md` — etapas e status. **Estado atual: v0.13 (valores do artifact do usuário aplicados como padrão; passe rápido consertado) — Etapas 0 a 5 (online testado pelo usuário com um amigo; falta predição do jogador local) + correções v0.9. Etapa 6 feita (ícones, vibração, câmera, arremesso no pulo, enterrada no X). Em andamento: **Etapa 7 (arte)** — guia em `docs/ARTE.md`. **v0.14: bola pronta** (`art_source/scripts/make_ball.py` → `assets/models/ball.glb`, no jogo via `Ball._Ready` + `Mat.ApplyToon`; v0.16: na mão não gira — `HeldBallSpin` = 0; só gira em voo/solta). **v0.17: cesta pronta** (`make_hoop.py` → `hoop_azul.glb`/`hoop_laranja.glb`, no jogo via `Scripts/Game/HoopVisual.cs`; rede balança por shader e aro treme, gatilhos por `Sfx.Played` — som "swish"/"rim" e deixa muda "fx_dunk" no `FinishDunk`). Próximos modelos: personagem, animações, cenário (o usuário manda as concepts).**
 - `docs/ARTE.md` — **guia da Etapa 7** (fluxo Blender → .glb → Godot, convenções, medidas, animações, integração). Ler antes de modelar.
 - `docs/TESTES.md` — roteiros de teste manual por versão.
 - Artifact de tuning (editor de valores): https://claude.ai/artifact/FjmhXo9dKiHoCRZk5zZLFo
@@ -114,6 +114,12 @@ O usuário fala português (pt-BR) — responda em pt-BR.
 - Gere cada modelo por um script em art_source/scripts/ para ser reproduzível.
 - Exporte para assets/models/<nome>.glb.
 - As concept arts são apenas referências, então tente ignorar sombras e brilhos pintados e focar na forma e nas cores.
+
+## Campo
+- Dimensões padrão FIBA: 28 × 15 m, ajustáveis via [Export] na cena Court.
+- Marcações por shader, em metros. Nunca escalar o nó do campo — alterar os parâmetros.
+- Peças de tamanho fixo: garrafão, círculos, arco de 3 pontos. Só retas e piso esticam.
+- Cestas posicionadas automaticamente a 1.575 m da linha de fundo.
 
 ## Regras de animação
 - Tente criar as animações na própria Godot quando possível.

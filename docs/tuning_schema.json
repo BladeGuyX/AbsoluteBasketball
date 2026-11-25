@@ -610,6 +610,36 @@
     "default": 1.85
   },
   {
+    "key": "NetSwishStrength",
+    "section": "Quadra",
+    "label": "Balan\u00E7o da rede",
+    "desc": "For\u00E7a do balan\u00E7o visual da rede quando a bola entra ou bate no aro (0 = parada).",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 1
+  },
+  {
+    "key": "RimDunkShake",
+    "section": "Quadra",
+    "label": "Tremor do aro na enterrada",
+    "desc": "Quanto o aro entorta para baixo numa enterrada certa (graus). S\u00F3 visual.",
+    "min": 0,
+    "max": 25,
+    "step": 0.5,
+    "default": 9
+  },
+  {
+    "key": "RimHitShake",
+    "section": "Quadra",
+    "label": "Tremor do aro na batida",
+    "desc": "For\u00E7a do tremor visual do aro quando a bola bate nele (0 = n\u00E3o treme).",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 1
+  },
+  {
     "key": "ScoreTolerance",
     "section": "Quadra",
     "label": "Toler\u00E2ncia da cesta",
