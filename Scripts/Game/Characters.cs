@@ -3,7 +3,7 @@ using Godot;
 namespace AB;
 
 /// <summary>
-/// v0.23: personagens jogáveis. Todos usam o mesmo esqueleto (rig_base) e as mesmas animações (CharacterVisual);
+/// v0.24: personagens jogáveis. Todos usam o mesmo esqueleto (rig_base) e as mesmas animações (CharacterVisual);
 /// muda só o .glb e os nomes das expressões na roda. A escolha é provisória (botão "Personagem" no menu principal,
 /// salvo em UserSettings.Character) e vai pela rede (Hello → LobbyMember/RosterEntry.Character).
 /// </summary>

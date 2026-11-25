@@ -106,7 +106,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 | Cesta (`hoop_azul.glb`, `hoop_laranja.glb`) | `make_hoop.py` (gera as duas) | `concepts/hoop.png` | `HoopVisual.Create` (chamado no `CourtBuilder.BuildHoop`; sem o .glb usa o placeholder). Hoop 0 = azul, hoop 1 = laranja (cor de quem DEFENDE). Cada peça é posicionada/escalada pela geometria do tuning (`CourtGeo`). Aro e Rede ficam num `RimPivot` (dobradiça na frente da tabela) que gira para tremer. Rede: shader próprio com balanço (`push`, `stretch`, `flare`) + contorno; gatilhos via `Sfx.Played` ("swish", "rim", e a deixa muda "fx_dunk"), que também dispara no cliente online. Tuning: `NetSwishStrength`, `RimDunkShake`, `RimHitShake`. | v0.17 |
 
 | Rei (`rei.glb`) — 1º personagem | `make_rei.py` | `concepts/rei.png` | `CharacterVisual` (ver seção "Personagem: o Rei"). | v0.21 |
-| Ametista (`ametista.glb`) — 2º personagem (nome provisório) | `make_ametista.py` (importa funções do `make_rei.py`) | `concepts/ametista.png` | `CharacterVisual` via `Characters.All[1]` (ver "Novos personagens"). | v0.23 |
+| Ametista (`ametista.glb`) — 2º personagem (nome provisório) | `make_ametista.py` (importa funções do `make_rei.py`) | `concepts/ametista.png` | `CharacterVisual` via `Characters.All[1]` (ver "Novos personagens"). | v0.24 |
 
 - `Mat.ApplyToon(raiz, nome => espessura)` troca os materiais importados pelo toon do jogo, com a cor base de cada material do .glb. A função recebe o nome do material e devolve a espessura do contorno (0 = sem contorno). Use também nos próximos modelos.
 - Bola: as costuras são faixas em relevo de 2,5 mm na mesma malha (~1,9 mil triângulos). Gomos e textura da concept foram ignorados de propósito (visual toon liso).
@@ -131,7 +131,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
   No Blender: `render_preview.py assets/models/rei.glb --no-ref --hide Rosto_Focado,Rosto_Sorr,Rosto_Bravo,Rosto_Feliz,Rosto_Surp`.
 - Sem o .glb, o jogo volta para o boneco placeholder (`PlayerRig`); os dois implementam `IPlayerVisual`.
 
-## Novos personagens (v0.23)
+## Novos personagens (v0.24)
 - Script `make_<nome>.py` que importa `make_rei as rei` e reaproveita `make_head` (troque `rei.make_hair` pelo cabelo novo), `Face`/`eye`/`brow`, `skin`, pesos, `make_legs`, `rounded_box`, `tube`. Materiais: preencha `rei.M` com a paleta nova.
 - **Sempre objetos separados:** `Corpo`, `Cabeca`, `Coroa` (só se o personagem tiver), `Rosto_*` (os 6 MESMOS nomes: Serio, Focado, SorrisoFrio, Bravo, Feliz, Surpreso) e `MaoEsquerda`/`MaoDireita` sem osso.
 - Registrar em `Scripts/Game/Characters.cs` (nome, .glb, rótulos da roda). Materiais novos: incluir o nome no `switch` de `CharacterVisual.ApplyMaterials` para ganhar contorno.
