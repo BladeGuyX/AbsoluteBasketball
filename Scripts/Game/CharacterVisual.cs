@@ -150,10 +150,10 @@ public sealed class CharacterVisual : IPlayerVisual
                 string n = src?.ResourceName ?? "";
                 Material m = n switch
                 {
-                    "CoroaBrilho" or "Gema" or "Olhos" or "Pupila" or "Brilho" or "Tinta" or "Boca" or "Dentes" => Mat.Unshaded(c),
+                    "CoroaBrilho" or "Gema" or "Neon" or "SolaNeon" or "Olhos" or "Pupila" or "Brilho" or "Tinta" or "Boca" or "Dentes" => Mat.Unshaded(c),
                     "Pele" or "Cabelo" or "Calca" or "Botas" or "CabeloEscuro" or "CabeloBrilho" => Mat.ToonOutlined(c, 0.012f),
                     "Casaco" => Mat.ToonOutlined(c, 0.014f),
-                    "Camiseta" or "Tenis" or "TenisVerde" or "Barra" => Mat.ToonOutlined(c, 0.01f),
+                    "Camiseta" or "Tenis" or "TenisVerde" or "TenisDetalhe" or "Barra" or "Punho" => Mat.ToonOutlined(c, 0.01f),
                     "Lapela" => Mat.ToonOutlined(c, 0.006f),
                     "Coroa" or "Sola" => Mat.ToonOutlined(c, 0.008f),
                     _ => Mat.Toon(c),

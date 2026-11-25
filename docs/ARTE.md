@@ -106,6 +106,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 | Cesta (`hoop_azul.glb`, `hoop_laranja.glb`) | `make_hoop.py` (gera as duas) | `concepts/hoop.png` | `HoopVisual.Create` (chamado no `CourtBuilder.BuildHoop`; sem o .glb usa o placeholder). Hoop 0 = azul, hoop 1 = laranja (cor de quem DEFENDE). Cada peça é posicionada/escalada pela geometria do tuning (`CourtGeo`). Aro e Rede ficam num `RimPivot` (dobradiça na frente da tabela) que gira para tremer. Rede: shader próprio com balanço (`push`, `stretch`, `flare`) + contorno; gatilhos via `Sfx.Played` ("swish", "rim", e a deixa muda "fx_dunk"), que também dispara no cliente online. Tuning: `NetSwishStrength`, `RimDunkShake`, `RimHitShake`. | v0.17 |
 
 | Rei (`rei.glb`) — 1º personagem | `make_rei.py` | `concepts/rei.png` | `CharacterVisual` (ver seção "Personagem: o Rei"). | v0.21 |
+| Raio (`raio.glb`) — 3º personagem (nome provisório) | `make_raio.py` (importa `make_rei` e `make_ametista`) | `concepts/raio.png` | `CharacterVisual` via `Characters.All[2]`. | v0.25 |
 | Ametista (`ametista.glb`) — 2º personagem (nome provisório) | `make_ametista.py` (importa funções do `make_rei.py`) | `concepts/ametista.png` | `CharacterVisual` via `Characters.All[1]` (ver "Novos personagens"). | v0.24 |
 
 - `Mat.ApplyToon(raiz, nome => espessura)` troca os materiais importados pelo toon do jogo, com a cor base de cada material do .glb. A função recebe o nome do material e devolve a espessura do contorno (0 = sem contorno). Use também nos próximos modelos.
@@ -136,6 +137,8 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - **Sempre objetos separados:** `Corpo`, `Cabeca`, `Coroa` (só se o personagem tiver), `Rosto_*` (os 6 MESMOS nomes: Serio, Focado, SorrisoFrio, Bravo, Feliz, Surpreso) e `MaoEsquerda`/`MaoDireita` sem osso.
 - Registrar em `Scripts/Game/Characters.cs` (nome, .glb, rótulos da roda). Materiais novos: incluir o nome no `switch` de `CharacterVisual.ApplyMaterials` para ganhar contorno.
 - Conferir: `render_preview.py assets/models/<nome>.glb --no-ref --hide Rosto_Focado,...` e `--pose-shot <png> --char N`.
+- Raio (v0.25, `make_raio.py`, concept `concepts/raio.png`): jaqueta bomber fechada (`J_OPEN`, estufada por `jr`) com punho na cintura; decalques neon por `jacket_poly`/`jacket_strip` (coordenadas em metros sobre a jaqueta), zigue-zague nas pernas (`make_leg_stripes`), raio em relevo no tênis; reaproveita camiseta/quadril/barra/tênis do `make_ametista.py` trocando os nomes dos materiais pelo dicionário `PAL` (chave usada pelas funções → nome no .glb: `TenisVerde`→`TenisDetalhe`, `Sola`→`SolaNeon`). Cabelo = espetos `strand` em anéis (`hair_spike`). Rostos: Serio = "Tranquilo", SorrisoFrio = "Sorriso confiante", Bravo = "Irritado", Feliz = "Empolgado". `Neon`/`SolaNeon` são sem sombra na Godot (brilham).
+- Pele do Rei: `#DFAA84` desde a v0.25 (antes `#F5E6D3`, pálida demais no toon). O toon clareia bastante: escolha a pele uns tons mais escura do que quer ver.
 - Ametista: casaco aberto (`FRONT_OPEN`), camiseta, quadril de calça por baixo, barra dobrada, tênis; cabelo = mechas Bézier (`strand`) + volume do topete; rostos: Serio = "Relaxado", SorrisoFrio = "Sorriso convencido", Feliz = "Rindo".
 
 ## Integração na Godot (fazer quando o 1º modelo chegar)

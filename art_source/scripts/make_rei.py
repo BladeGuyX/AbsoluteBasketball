@@ -35,7 +35,7 @@ def srgb(h):
 
 # paleta da concept (preto levemente levantado para o toon não virar uma mancha só)
 PAL = dict(
-    Pele="#F5E6D3", Cabelo="#1E1E24", Casaco="#202026", Forro="#8B0000", Metal="#7A7A80",
+    Pele="#DFAA84", Cabelo="#1E1E24", Casaco="#202026", Forro="#8B0000", Metal="#7A7A80",
     Calca="#2A2A30", Botas="#17171B", Sola="#6A1515", Cadarco="#5A5A60",
     Coroa="#3A2E31", CoroaBrilho="#FF3A22", Gema="#FF1010",
     Olhos="#E3121C", Pupila="#3A0406", Brilho="#FFFFFF", Tinta="#141416", Boca="#5C1014", Dentes="#FFFFFF",

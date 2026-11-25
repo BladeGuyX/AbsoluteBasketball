@@ -25,6 +25,11 @@ public static class Characters
             Name = "Ametista", Model = "res://assets/models/ametista.glb",
             FaceLabels = new[] { "", "Relaxado", "Focado", "Sorriso convencido", "Bravo", "Rindo", "Surpreso" },
         },
+        new()
+        {
+            Name = "Raio", Model = "res://assets/models/raio.glb",
+            FaceLabels = new[] { "", "Tranquilo", "Focado", "Sorriso confiante", "Irritado", "Empolgado", "Surpreso" },
+        },
     };
 
     public static int Count => All.Length;

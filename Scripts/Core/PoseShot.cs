@@ -87,7 +87,7 @@ public static class PoseShot
     public static void Run(Node host, string path)
     {
         if (OS.GetCmdlineUserArgs() is var ua && System.Array.IndexOf(ua, "--side") >= 0) Yaw = Mathf.DegToRad(-80f);
-        int ci0 = System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--char"); // v0.23: --char N = personagem (0 = Rei, 1 = Ametista)
+        int ci0 = System.Array.IndexOf(OS.GetCmdlineUserArgs(), "--char"); // v0.23: --char N = personagem (0 = Rei, 1 = Ametista, 2 = Raio)
         int ch = ci0 >= 0 && ci0 + 1 < OS.GetCmdlineUserArgs().Length && int.TryParse(OS.GetCmdlineUserArgs()[ci0 + 1], out int cv) ? Characters.Clamp(cv) : 0;
         DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
         DisplayServer.WindowSetSize(new Vector2I(1800, 1000));

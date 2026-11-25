@@ -3,6 +3,19 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.25 — 3º personagem (Raio, nome provisório) e pele do Rei
+
+**Atualizar:** menu principal → "Atualizar para v0.25".
+
+1. **Menu principal:** clique em "Personagem" até aparecer **"Personagem: Raio"** (ordem: Rei → Ametista → Raio → Rei).
+2. **Jogar (local) com o Raio:** cabelo ciano bem espetado, jaqueta preta de gola alta com **raios neon** (no peito, raio grande nas costas, zigue-zague nos lados), calça preta com zigue-zague neon do lado, tênis pretos com **sola ciano brilhando** e um raio na lateral. Olhos ciano.
+3. **Animações:** ande, corra, quique, drible (X), passe, arremesse, pule, roube, enterre e fique pendurado no aro. Confira que os raios da jaqueta/calça acompanham o corpo e não "descolam".
+4. **Expressões (Q / B):** com o Raio a roda mostra **Tranquilo, Focado, Sorriso confiante, Irritado, Empolgado, Surpreso**. Sofreu ponto = Irritado; comemorando = Empolgado.
+5. **Rei:** a pele está mais rosada/bronzeada (menos branca), ainda clara. Mãos com a mesma cor do rosto.
+6. **Bots:** alternam Rei / Ametista / Raio pela vaga.
+7. **Online:** os dois precisam estar na v0.25 para verem o Raio (na v0.24 ele aparece como Rei).
+
+---
 ## v0.24 — 2º personagem (Ametista, nome provisório) e troca no menu
 
 **Atualizar:** menu principal → "Atualizar para v0.24".
