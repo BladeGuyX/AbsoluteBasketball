@@ -111,8 +111,8 @@ public partial class ImpactFx : Node3D
         parent.AddChild(root);
         root.GlobalPosition = pos;
         Piece(root, Vector3.Zero, true, 1, 0.5f, 0f, 0.14f, new Color(1f, 1f, 1f, 0.9f), mix: true);
-        Piece(root, Vector3.Zero, true, 0, 0.9f, 0f, 0.34f, new Color(0.8f, 0.92f, 1f, 0.95f), 0.11f, 0.3f, 0.15f, 0.25f, mix: true);
-        Piece(root, Vector3.Zero, true, 0, 0.65f, 0.06f, 0.26f, new Color(0.45f, 0.7f, 1f, 0.8f), 0.06f, 0f, 0.4f, 0.3f, mix: true);
+        Piece(root, Vector3.Zero, true, 0, 0.9f, 0f, 0.36f, new Color(0.35f, 0.68f, 1f, 1f), 0.14f, 0.2f, 0.12f, 0.25f, mix: true);
+        Piece(root, Vector3.Zero, true, 0, 0.62f, 0.05f, 0.26f, new Color(1f, 1f, 1f, 0.95f), 0.08f, 0f, 0.3f, 0.3f, mix: true);
         root.AddChild(Sparks(10, 2.5f, 4.5f, 0.3f, -6f, new Color(1f, 1f, 1f), new Color(0.55f, 0.8f, 1f, 0f), new Vector3(0.02f, 0.12f, 0.02f), add: false));
     }
 
