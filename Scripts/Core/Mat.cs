@@ -60,6 +60,26 @@ void fragment() { ALBEDO = color.rgb; }",
         return mat;
     }
 
+    /// <summary>
+    /// Etapa 7: troca os materiais importados de um modelo do Blender pelo toon do jogo, com a cor base de cada um.
+    /// outlineFor(nome do material) = espessura do contorno (0 = sem contorno).
+    /// </summary>
+    public static void ApplyToon(Node root, System.Func<string, float> outlineFor)
+    {
+        foreach (var child in root.FindChildren("*", "MeshInstance3D", true, false))
+        {
+            var mi = (MeshInstance3D)child;
+            for (int i = 0; i < mi.Mesh.GetSurfaceCount(); i++)
+            {
+                var src = mi.Mesh.SurfaceGetMaterial(i);
+                var color = src is BaseMaterial3D b ? b.AlbedoColor : Colors.White;
+                string name = src?.ResourceName ?? "";
+                float th = outlineFor(name);
+                mi.SetSurfaceOverrideMaterial(i, th > 0 ? ToonOutlined(color, th) : Toon(color));
+            }
+        }
+    }
+
     public static MeshInstance3D MeshNode(Mesh mesh, Material mat, Vector3 pos, bool shadows = true)
     {
         var mi = new MeshInstance3D { Mesh = mesh, MaterialOverride = mat, Position = pos };

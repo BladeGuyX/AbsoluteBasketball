@@ -22,13 +22,28 @@ public partial class Ball : Node3D
     public bool FreeThrow;         // lance livre: se entrar vale FreeThrowPoints (some ao tocar o chão / ser pega)
     int _noScoreHoop = -1;         // passou subindo pelo aro: a descida não vale cesta
 
-    MeshInstance3D _mesh;
+    Node3D _mesh;   // visual (gira ao rolar): modelo do Blender ou a esfera placeholder
+
+    const string ModelPath = "res://assets/models/ball.glb";
+    const float ModelRadius = 0.22f;   // raio do ball.glb (art_source/scripts/make_ball.py)
 
     public override void _Ready()
     {
         float r = Tuning.I.BallRadius;
-        _mesh = Mat.MeshNode(new SphereMesh { Radius = r, Height = r * 2f, RadialSegments = 24, Rings = 12 },
+        if (ResourceLoader.Exists(ModelPath) && GD.Load<PackedScene>(ModelPath) is { } scene)
+        {
+            _mesh = new Node3D { Name = "Visual" };
+            var model = scene.Instantiate<Node3D>();
+            model.Scale = Vector3.One * (r / ModelRadius);
+            _mesh.AddChild(model);
+            // toon do jogo com a cor do .glb; contorno só no couro (as costuras ficam por cima)
+            Mat.ApplyToon(model, name => name == "Borracha" ? 0.012f : 0f);
+            AddChild(_mesh);
+            return;
+        }
+        var sphere = Mat.MeshNode(new SphereMesh { Radius = r, Height = r * 2f, RadialSegments = 24, Rings = 12 },
             Mat.ToonOutlined(Palette.Ball, 0.012f), Vector3.Zero);
+        _mesh = sphere;
         AddChild(_mesh);
         var seam = Mat.Unshaded(Palette.Ink);
         _mesh.AddChild(Mat.MeshNode(new TorusMesh { InnerRadius = r * 0.985f, OuterRadius = r * 1.03f, Rings = 24, RingSegments = 4 }, seam, Vector3.Zero, false));

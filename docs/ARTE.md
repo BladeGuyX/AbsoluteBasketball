@@ -99,8 +99,16 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - as animações com bola só precisam deixar a mão no lugar aproximado;
 - **não** anime a bola dentro do .blend.
 
+## Modelos prontos
+| Modelo | Script | Concept | Encaixe | Versão |
+|---|---|---|---|---|
+| Bola (`ball.glb`) | `make_ball.py` | `concepts/ball.png` | `Ball._Ready`: instancia o .glb escalado para `Tuning.BallRadius` (o modelo tem raio 0,22 m). Materiais `Borracha` (contorno 0,012) e `Costura` (sem contorno). Se o .glb faltar, usa a esfera placeholder. | v0.14 |
+
+- `Mat.ApplyToon(raiz, nome => espessura)` troca os materiais importados pelo toon do jogo, com a cor base de cada material do .glb. A função recebe o nome do material e devolve a espessura do contorno (0 = sem contorno). Use também nos próximos modelos.
+- Bola: as costuras são faixas em relevo de 2,5 mm na mesma malha (~1,9 mil triângulos). Gomos e textura da concept foram ignorados de propósito (visual toon liso).
+
 ## Integração na Godot (fazer quando o 1º modelo chegar)
-- **Bola:** `Ball.cs` cria `_mesh`, uma esfera. Trocar por `assets/models/ball.glb`, escalado para `Tuning.BallRadius`. O giro ao rolar já gira o `_mesh`.
+- **Bola:** ✅ feito na v0.14 (ver "Modelos prontos").
 - **Cesta:** `CourtBuilder.BuildHoop` cria as peças por código. Trocar por `hoop.glb`, posicionando cada peça pelo nome conforme `CourtGeo` (`RimCenter`, `Board`, `PoleBase`). As colisões continuam as do código.
   - Hoop 0 fica em −X e hoop 1 em +X: girar ±90° para a frente (−Y do Blender = −Z na Godot depois do +Y Up) apontar para o centro da quadra.
 - **Personagem:** criar `CharacterVisual` com a mesma interface do `PlayerRig` (`Update(RigState)`), carregando o .glb.
@@ -112,7 +120,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 
 ## Ordem sugerida
 1. Personagem base (T-pose) + ajuste do `rig_base` às proporções da concept.
-2. Bola.
+2. ~~Bola~~ ✅ (v0.14).
 3. Cesta.
 4. Animações: primeiro as de locomoção e arremesso (`idle`, `walk`, `run`, `*_ball`, `shoot_charge`, `shoot`), depois o resto.
 5. Cenário.

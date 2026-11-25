@@ -3,6 +3,18 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.14 — Bola nova (primeiro modelo do Blender)
+
+**Atualizar:** menu principal → "Atualizar para v0.14" (ou baixe o .zip da release).
+
+1. Comece uma partida: a bola tem o modelo novo, laranja (#E8742A) com as costuras escuras da concept. Vista de frente, mostra uma cruz e duas costuras curvas nas laterais, em ") | (".
+2. A bola continua do mesmo tamanho e com contorno preto (visual toon), igual aos bonecos.
+3. Role a bola no chão e arremesse: ela gira ao rolar e no voo. As costuras giram junto, sem "escorregar" pela superfície.
+4. Olhe a bola de perto, em vários ângulos: as costuras não piscam e não somem, e não aparece fresta entre a costura e a bola.
+5. Na sombra e no sol, as cores continuam legíveis (laranja e preto, sem ficar marrom demais).
+6. Jogue online (host e amigo): os dois veem a bola nova.
+
+---
 ## v0.13 — Seus valores do artifact viram padrão + passe rápido consertado
 
 **Atualizar:** menu principal → "Atualizar para v0.13" (ou baixe o .zip da release).
