@@ -3,7 +3,7 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
-## v0.23 — 2º personagem (Ametista, nome provisório) e troca no menu
+## v0.24 (ainda não publicada — outro chat) — 2º personagem (Ametista, nome provisório) e troca no menu
 
 **Atualizar:** menu principal → "Atualizar para v0.23".
 
