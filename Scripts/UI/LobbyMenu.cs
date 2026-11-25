@@ -11,7 +11,7 @@ public partial class LobbyMenu : Control
 {
     VBoxContainer _teamA, _teamB, _friends;
     Label _info, _wait;
-    OptionButton _size, _mode, _diff;
+    OptionButton _size, _mode, _diff, _abil;
     SpinBox _pts, _mins, _teamSize;
     Label _ptsLbl, _minsLbl;
     Button _start;
@@ -68,6 +68,10 @@ public partial class LobbyMenu : Control
         _diff = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
         _diff.AddItem("Fácil", 0); _diff.AddItem("Normal", 1); _diff.AddItem("Difícil", 2);
         Row(grid, "Bots (vagas vazias)", _diff);
+        _abil = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _abil.AddItem("Com habilidades", 0); _abil.AddItem("Sem habilidades", 1);
+        Row(grid, "Habilidades", _abil);
+        _abil.ItemSelected += _ => OnSettingChanged();
         _size.ItemSelected += _ => OnSettingChanged();
         _mode.ItemSelected += _ => OnSettingChanged();
         _pts.ValueChanged += _ => OnSettingChanged();
@@ -78,6 +82,14 @@ public partial class LobbyMenu : Control
         var buttons = new HBoxContainer();
         buttons.AddThemeConstantOverride("separation", 12);
         left.AddChild(buttons);
+        // v0.26: cada um escolhe o personagem no lobby (vai para o host e aparece para todos)
+        Button chrBtn = null;
+        chrBtn = UiKit.Btn("Escolher personagem", () => AddChild(new CharacterSelect
+        {
+            ConfirmText = "Escolher", AbilitiesOn = NetSession.I.Settings.Abilities,
+            OnConfirm = id => NetSession.I.SetMyCharacter(id), OnBack = () => chrBtn.GrabFocus(),
+        }), 300);
+        buttons.AddChild(chrBtn);
         _start = UiKit.Btn("Começar partida", () => ns.HostStartMatch(), 300);
         _start.Visible = ns.IsHost;
         buttons.AddChild(_start);
@@ -155,6 +167,7 @@ public partial class LobbyMenu : Control
             TimeMinutes = (float)_mins.Value,
             TeamSize = (int)_teamSize.Value,
             BotDifficulty = _diff.Selected,
+            Abilities = _abil.Selected == 0,
         };
         NetSession.I.HostSetSettings(s);
     }
@@ -180,7 +193,8 @@ public partial class LobbyMenu : Control
         UpdateVisibility();
         _teamSize.Value = s.TeamSize;
         _diff.Selected = Mathf.Clamp(s.BotDifficulty, 0, 2);
-        foreach (var c in new Control[] { _size, _mode, _pts, _mins, _teamSize, _diff })
+        _abil.Selected = s.Abilities ? 0 : 1;
+        foreach (var c in new Control[] { _size, _mode, _pts, _mins, _teamSize, _diff, _abil })
         {
             if (c is OptionButton ob) ob.Disabled = !ns.IsHost;
             else if (c is SpinBox sb) sb.Editable = ns.IsHost;

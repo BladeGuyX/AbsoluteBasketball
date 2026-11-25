@@ -37,12 +37,12 @@ public static class Passing
             float vy;
             if (!high)
             {
-                time = d / t.PassSpeed;
+                time = d / Mathf.Max(from.St.PassSpeed, 0.5f);
                 vy = dh / time + g * time / 2f;
             }
             else
             {
-                float apex = Mathf.Max(t.HighPassApex, Mathf.Max(releasePos.Y, target.Y) + 0.5f);
+                float apex = Mathf.Max(from.St.HighPassApex, Mathf.Max(releasePos.Y, target.Y) + 0.5f);
                 vy = Mathf.Sqrt(2f * g * (apex - releasePos.Y));
                 float disc = vy * vy - 2f * g * dh;
                 time = (vy + Mathf.Sqrt(Mathf.Max(disc, 0))) / g;
@@ -107,17 +107,17 @@ public static class Passing
         return false;
     }
 
-    static bool InRange(Player from, Player to) =>
-        new Vector2(to.GlobalPosition.X - from.GlobalPosition.X, to.GlobalPosition.Z - from.GlobalPosition.Z).Length() <= Tuning.I.PassRange;
+    static bool InRange(Player from, Player to, float rangeMult) =>
+        new Vector2(to.GlobalPosition.X - from.GlobalPosition.X, to.GlobalPosition.Z - from.GlobalPosition.Z).Length() <= from.St.PassRange * rangeMult;
 
     /// <summary>Toque rápido: aliado livre mais próximo.</summary>
-    public static Player Nearest(Player from, bool high)
+    public static Player Nearest(Player from, bool high, float rangeMult = 1f)
     {
         Player best = null;
         float bestD = float.MaxValue;
         foreach (var q in from.M.Players)
         {
-            if (q == from || q.Team != from.Team || !q.CanCatch || !InRange(from, q)) continue;
+            if (q == from || q.Team != from.Team || !q.CanCatch || !InRange(from, q, rangeMult)) continue;
             float d = from.GlobalPosition.DistanceSquaredTo(q.GlobalPosition);
             if (d < bestD && LaneClear(from, q, high)) { bestD = d; best = q; }
         }
@@ -125,12 +125,12 @@ public static class Passing
     }
 
     /// <summary>Passe carregado: bola lançada na direção da câmera (yaw + inclinação + elevação), sem alvo.</summary>
-    public static Vector3 AimedVelocity(float aimYaw, float aimPitch, bool high)
+    public static Vector3 AimedVelocity(float aimYaw, float aimPitch, bool high, float speedMult = 1f)
     {
         var t = Tuning.I;
         float lift = high ? t.AimHighPassLiftDeg : t.AimPassLiftDeg;
         float elev = Mathf.Clamp(aimPitch + Mathf.DegToRad(lift), Mathf.DegToRad(-30f), Mathf.DegToRad(80f));
-        float speed = high ? t.AimHighPassSpeed : t.AimPassSpeed;
+        float speed = (high ? t.AimHighPassSpeed : t.AimPassSpeed) * speedMult;
         return ShotMath.Dir(aimYaw) * (speed * Mathf.Cos(elev)) + Vector3.Up * (speed * Mathf.Sin(elev));
     }
 }

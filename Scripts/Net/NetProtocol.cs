@@ -19,6 +19,7 @@ public enum Msg : byte
     Hud,            // H→C: mensagem/contagem/fim de jogo (confiável)
     BackToLobby,    // H→C: volta todo mundo para o lobby
     Reject,         // H→C: recusado (versão diferente, cheio, partida em andamento)
+    SetCharacter,   // C→H: v0.26: escolhi o personagem X (tela de seleção no lobby)
 }
 
 /// <summary>Configurações da partida online (o host escolhe no lobby).</summary>
@@ -30,15 +31,18 @@ public sealed class OnlineSettings
     public float TimeMinutes = 5f;
     public int TeamSize = 2;          // jogadores por time; vagas vazias viram bots
     public int BotDifficulty = 1;
+    public bool Abilities = true;     // v0.26: false = modo sem habilidades
 
     public void Write(NetWriter w)
     {
         w.U8((byte)Size); w.U8((byte)Mode); w.I16((short)TargetScore); w.F(TimeMinutes); w.U8((byte)TeamSize); w.U8((byte)BotDifficulty);
+        w.Bool(Abilities);
     }
 
     public static OnlineSettings Read(NetReader r) => new()
     {
         Size = (CourtSize)r.U8(), Mode = (WinMode)r.U8(), TargetScore = r.I16(), TimeMinutes = r.F(), TeamSize = r.U8(), BotDifficulty = r.U8(),
+        Abilities = r.Bool(),
     };
 
     public OnlineSettings Clone() => (OnlineSettings)MemberwiseClone();
@@ -65,7 +69,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 5; // v0.23: personagem no Hello, no lobby e na escalação
+    public const int Version = 6; // v0.26: habilidades (botões, alvo, estado), cutscenes, modo sem habilidades, troca de personagem no lobby
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>
@@ -118,6 +122,8 @@ public sealed class RemoteInput
     public float ShootSkillT = -1;   // SkillT do último aperto de arremesso
     public byte EmoteSeq, EmoteId;   // v0.21: expressão (contador: pacote perdido não perde a escolha)
     byte _emoteConsumed;
+    public byte TargetSeq, TargetId, TargetSlot;   // v0.26: alvo escolhido no menu (mesmo esquema do contador)
+    byte _targetConsumed;
     public float Lateness = 0.25f;   // quanto (s) o cliente está atrás do host: tick que ele desenha → chegada aqui
 
     /// <summary>Input deste tick: apertos = contadores que mudaram desde o último tick.</summary>
@@ -127,6 +133,7 @@ public sealed class RemoteInput
         for (int i = 0; i < Counters.Length; i++)
             if (Counters[i] != _consumed[i]) { inp.Pressed |= NetInputCounter.Buttons[i]; _consumed[i] = Counters[i]; }
         if (EmoteSeq != _emoteConsumed) { _emoteConsumed = EmoteSeq; inp.Emote = EmoteId; }
+        if (TargetSeq != _targetConsumed) { _targetConsumed = TargetSeq; inp.Target = TargetId; inp.TargetSlot = TargetSlot; }
         return inp;
     }
 }
@@ -134,7 +141,7 @@ public sealed class RemoteInput
 /// <summary>Cliente: conta os apertos de cada botão (manda os contadores em todo pacote).</summary>
 public sealed class NetInputCounter
 {
-    public static readonly Btn[] Buttons = { Btn.Sprint, Btn.Shoot, Btn.Pass, Btn.Jump, Btn.Dribble, Btn.Steal, Btn.Variation };
+    public static readonly Btn[] Buttons = { Btn.Sprint, Btn.Shoot, Btn.Pass, Btn.Jump, Btn.Dribble, Btn.Steal, Btn.Variation, Btn.Ab1, Btn.Ab2, Btn.Ab3, Btn.Ult };
     public readonly byte[] Counters = new byte[Buttons.Length];
     public int Seq;
 
@@ -171,5 +178,6 @@ public sealed class NetSnapshot
     public int BallHolder, BallThrowTeam, BallLastThrower, BallPassTarget;
     public Vector3 BallPos, BallVel;
     public float BallFlightTime;
+    public byte BallAura;
     public readonly List<(int Id, Player.NetState S)> Players = new();
 }

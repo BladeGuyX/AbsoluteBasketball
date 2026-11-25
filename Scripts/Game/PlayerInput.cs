@@ -14,6 +14,11 @@ public enum Btn : uint
     Dribble = 1 << 4,
     Steal = 1 << 5,
     Variation = 1 << 6,
+    // v0.26: habilidades (1, 2, 3 / setinhas ←, ↑, →) e ultimate (4 / ↓)
+    Ab1 = 1 << 7,
+    Ab2 = 1 << 8,
+    Ab3 = 1 << 9,
+    Ult = 1 << 10,
 }
 
 /// <summary>
@@ -34,6 +39,8 @@ public struct PlayerInput
     public float SkillT;
     /// <summary>v0.21: expressão escolhida na roda neste tick (1..Expressions.Count; 0 = nada).</summary>
     public byte Emote;
+    /// <summary>v0.26: alvo escolhido no menu de seleção (Player.Id; 0 = nada) e de qual habilidade (slot 0–3).</summary>
+    public byte Target, TargetSlot;
 
     public readonly bool IsHeld(Btn b) => (Held & b) != 0;
     public readonly bool WasPressed(Btn b) => (Pressed & b) != 0;

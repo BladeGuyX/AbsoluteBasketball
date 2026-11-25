@@ -37,31 +37,41 @@ public partial class AimIndicator : Control
         var t = Tuning.I;
         var c = Size / 2f;
 
+        var cc = M.Cut.CheckFor(p); // v0.26: skill check da cutscene (dono / alvo do duelo)
         // ---- online: o cliente mostra o resultado do próprio aperto na hora (ponteiro onde ele viu) ----
-        if (M.IsClient && M.ClientSkillHold > 0)
+        // (no duelo, o próximo skill check começa na hora: ele tem prioridade sobre o resultado do anterior)
+        bool newerCut = cc != null && cc.Active && cc.Seq != M.ClientSkillSeq && M.ClientSkillSeq >= 0;
+        if (M.IsClient && M.ClientSkillHold > 0 && !newerCut)
         {
-            DrawSkillCheck(c, t, M.ClientSkillT, M.ClientSkillDur, false, true, M.ClientSkillT, M.ClientSkillHold, M.ClientSkillOk, 1f);
+            DrawSkillCheck(c, t, M.ClientSkillT, M.ClientSkillDur, false, true, M.ClientSkillT, M.ClientSkillHold, M.ClientSkillOk, 1f, M.ClientSkillWindow);
             return;
         }
         bool mute = M.IsClient && M.ClientSkillMuteT > 0; // resultado do host chegando atrasado: já foi mostrado
 
+        if (M.Cut.Active)
+        {
+            if (cc != null && (cc.Active || (cc.Flash > 0 && !mute)))
+                DrawSkillCheck(c, t, Mathf.Max(cc.T, 0), cc.Dur, cc.Active, cc.Pressed, cc.PressT, cc.Flash, cc.Ok, cc.T + t.CutCheckPrep, cc.Window, pointer: cc.T >= 0 || !cc.Active);
+            return;
+        }
+
         // ---- enterrada: skill check ----
         if (p.Flight == FlightKind.Dunk || (p.SkillFlash > 0 && !mute))
         {
-            DrawSkillCheck(c, t, p.FlightT, p.FlightDur, p.Flight == FlightKind.Dunk, p.DunkPressed, p.DunkPressT, p.SkillFlash, p.SkillFlashOk, p.FlightT);
+            DrawSkillCheck(c, t, p.FlightT, p.FlightDur, p.Flight == FlightKind.Dunk, p.DunkPressed, p.DunkPressT, p.SkillFlash, p.SkillFlashOk, p.FlightT, t.DunkWindow);
             return;
         }
         // ---- lances livres: mesmo skill check ----
         if ((M.FtChecking && M.FtShooter == p && M.FtT >= 0) || (M.FtFlash > 0 && M.FtFlashPlayer == p && !mute))
         {
             DrawSkillCheck(c, t, M.FtT, M.FtDur, M.FtChecking && M.FtShooter == p, M.FtPressed, M.FtPressT, M.FtFlash, M.FtFlashOk,
-                M.FtT + t.FreeThrowPrep);
+                M.FtT + t.FreeThrowPrep, t.DunkWindow);
             return;
         }
         if (M.FtChecking && M.FtShooter == p)
         {
             // preparação: anel com a zona marcada, esperando o ponteiro
-            DrawSkillCheck(c, t, 0, M.FtDur, true, false, 0, 0, false, M.FtT + t.FreeThrowPrep, pointer: false);
+            DrawSkillCheck(c, t, 0, M.FtDur, true, false, 0, 0, false, M.FtT + t.FreeThrowPrep, t.DunkWindow, pointer: false);
             return;
         }
 
@@ -92,9 +102,9 @@ public partial class AimIndicator : Control
 
         // ---- estados temporários (anel que esvazia) ----
         if (p.Stun > 0) Ring(c, 30, p.Stun / Mathf.Max(t.DunkStunTime, 0.1f), Grey, true);
-        else if (p.StealFail > 0) Ring(c, 30, p.StealFail / Mathf.Max(t.StealFailTime, 0.1f), Red, true);
-        else if (p.IsDribbling) Ring(c, 30, p.DribbleActive / Mathf.Max(t.DribbleDuration, 0.1f), Orange, true);
-        else if (p.LandLock > 0) Ring(c, 30, p.LandLock / Mathf.Max(t.LandLockTime, 0.1f), Grey, true);
+        else if (p.StealFail > 0) Ring(c, 30, p.StealFail / Mathf.Max(p.St.StealFailTime, 0.1f), Red, true);
+        else if (p.IsDribbling) Ring(c, 30, p.DribbleActive / Mathf.Max(t.DribbleDuration + (p.Ab.PerfectDribble ? t.KingDribbleExtra : 0), 0.1f), p.Ab.PerfectDribble ? Red : Orange, true);
+        else if (p.LandLock > 0) Ring(c, 30, p.LandLock / Mathf.Max(p.St.LandLockTime, 0.1f), Grey, true);
     }
 
     void Ring(Vector2 c, float r, float frac, Color col, bool thin = false)
@@ -133,7 +143,7 @@ public partial class AimIndicator : Control
     /// <paramref name="introT"/> = segundos desde que o anel apareceu (animação de entrada).
     /// </summary>
     void DrawSkillCheck(Vector2 c, Tuning t, float time, float durRaw, bool active, bool pressed, float pressT, float flash, bool flashOk,
-        float introT, bool pointer = true)
+        float introT, float window, bool pointer = true)
     {
         const float R = 62;
         const float Sweep = Mathf.Pi * 1.5f;          // o ponteiro percorre 270° até tocar a cesta
@@ -162,11 +172,11 @@ public partial class AimIndicator : Control
 
         // ---- ângulo do ponteiro (no resultado: parado onde apertou / onde acabou o tempo) ----
         float stopT = result && pressed ? pressT : time;
-        float a = a0 + Mathf.Clamp(stopT, 0, dur + t.DunkWindow) * perSec;
+        float a = a0 + Mathf.Clamp(stopT, 0, dur + window) * perSec;
 
         // ---- zona certa (centrada no toque na cesta) ----
         float zc = a0 + Sweep;
-        float zh = Mathf.Max(t.DunkWindow * 0.5f * perSec, 0.035f);
+        float zh = Mathf.Max(window * 0.5f * perSec, 0.035f);
         var zoneCol = result ? resCol : Gold;
         DrawArc(o, R, zc - zh, zc + zh, 12, Fa(Ink), 12, true);
         DrawArc(o, R, zc - zh, zc + zh, 12, Fa(zoneCol with { A = pointer || result ? 1f : 0.6f }), 9, true);

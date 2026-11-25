@@ -68,6 +68,13 @@ section.sec h2 small { font-family: var(--font-mono); font-size: 12px; font-weig
 .reset { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-size: 16px; }
 .reset:disabled { opacity: .25; cursor: default; }
 .row.hidden { display: none; }
+h3.sub { font-family: var(--font-display); font-weight: 700; font-size: 20px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 18px 0 4px; border-bottom: 2px solid var(--line); padding-bottom: 4px; }
+h3.sub.hidden { display: none; }
+.chip.char { border-color: var(--ball); border-width: 2px; }
+.stars { display: flex; gap: 4px; }
+.stars button { background: none; border: 0; padding: 0 2px; font-size: 28px; line-height: 1; cursor: pointer; color: var(--line); }
+.stars button.on { color: #f5b700; }
+.stars button:focus-visible { outline: 3px solid var(--ball); outline-offset: 1px; border-radius: 4px; }
 footer.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--fg); color: var(--bg); padding-block: 12px calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
 footer.bar .in { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 footer.bar .count { font-family: var(--font-display); font-size: 22px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-right: auto; }
@@ -177,8 +184,20 @@ dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
 
     const sec = document.createElement("section");
     sec.className = "sec"; sec.dataset.section = s;
-    sec.innerHTML = `<h2>${s} <small>${schema.filter(p => p.section === s).length} valores</small></h2>`;
-    schema.filter(p => p.section === s).forEach(p => {
+    const inSec = schema.filter(p => p.section === s);
+    const subs = ["Estrelas", "Habilidades", "Avançado"];
+    const hasSub = inSec.some(p => p.sub);
+    const ordered = hasSub ? subs.flatMap(sb => inSec.filter(p => (p.sub || "") === sb)).concat(inSec.filter(p => !subs.includes(p.sub || ""))) : inSec;
+    if (hasSub) b.classList.add("char");
+    sec.innerHTML = `<h2>${s} <small>${inSec.length} valores</small></h2>`;
+    let lastSub = null;
+    ordered.forEach(p => {
+      if (p.sub && p.sub !== lastSub) {
+        lastSub = p.sub;
+        const h = document.createElement("h3"); h.className = "sub";
+        h.textContent = p.sub === "Estrelas" ? "Atributos (1 a 5 estrelas)" : p.sub === "Habilidades" ? "Habilidades e ultimate" : "Avançado";
+        sec.appendChild(h);
+      }
       const r = document.createElement("div");
       r.className = "row";
       const id = "f-" + p.key;
@@ -187,6 +206,16 @@ dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
         <div class="slider"><input type="range" min="${p.min}" max="${p.max}" step="${p.step}" aria-label="${p.label}"></div>
         <div><input class="num" id="${id}" type="number" min="${p.min}" max="${p.max}" step="${p.step}"><div class="def">padrão ${fmt(p, p.default)}</div></div>
         <button class="reset" type="button" title="Voltar ao padrão" aria-label="Voltar ${p.label} ao padrão">↺</button>`;
+      if (p.sub === "Estrelas") {
+        const sl = r.querySelector(".slider");
+        const st = document.createElement("div"); st.className = "stars"; st.setAttribute("aria-label", p.label);
+        [1, 2, 3, 4, 5].forEach(n => {
+          const bt = document.createElement("button"); bt.type = "button"; bt.dataset.n = n; bt.textContent = "★";
+          bt.setAttribute("aria-label", n + " estrela(s)"); bt.onclick = () => set(p, n); st.appendChild(bt);
+        });
+        sl.querySelector("input[type=range]").hidden = true;
+        sl.appendChild(st);
+      }
       const range = r.querySelector("input[type=range]");
       const num = r.querySelector(".num");
       const reset = r.querySelector(".reset");
@@ -206,6 +235,7 @@ dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
   function refresh(p) {
     const o = rows[p.key];
     o.range.value = values[p.key];
+    o.r.querySelectorAll(".stars button").forEach(bt => bt.classList.toggle("on", +bt.dataset.n <= values[p.key]));
     if (document.activeElement !== o.num) o.num.value = fmt(p, values[p.key]);
     o.r.classList.toggle("changed", isChanged(p));
     o.reset.disabled = !isChanged(p);
@@ -236,6 +266,11 @@ dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 1
         const hit = !term || norm(p.label + " " + p.key + " " + p.desc + " " + p.section).includes(term);
         r.classList.toggle("hidden", !(okSec && hit));
         any = any || (okSec && hit);
+      });
+      sec.querySelectorAll("h3.sub").forEach(h => {
+        let n = h.nextElementSibling, vis = false;
+        while (n && n.classList.contains("row")) { if (!n.classList.contains("hidden")) vis = true; n = n.nextElementSibling; }
+        h.classList.toggle("hidden", !vis);
       });
       sec.hidden = !any;
     });

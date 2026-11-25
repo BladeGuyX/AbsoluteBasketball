@@ -49,18 +49,13 @@ public partial class MainMenu : Control
         _box.AddChild(Centered(play));
         _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 420)));
         _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 420)));
-        // v0.23 (provisório): troca o personagem; vale no local e no online (vai no Hello para o host)
+        // v0.26: ver os personagens (atributos e habilidades) e deixar um escolhido (vale também no online)
         Button chr = null;
-        chr = UiKit.Btn(CharText(), () =>
-        {
-            UserSettings.I.Character = (Characters.Clamp(UserSettings.I.Character) + 1) % Characters.Count;
-            UserSettings.Save();
-            chr.Text = CharText();
-        }, 420);
+        chr = UiKit.Btn(CharText(), () => AddChild(new CharacterSelect { ConfirmText = "Escolher", OnConfirm = _ => chr.Text = CharText(), OnBack = () => chr.GrabFocus() }), 420);
         _box.AddChild(Centered(chr));
         _update = UiKit.Btn("", () => Updater.I?.Activate(), 420);
         _box.AddChild(Centered(_update));
-        _box.AddChild(Centered(UiKit.Btn("Sair", () => GetTree().Quit(), 420)));
+        _box.AddChild(Centered(UiKit.Btn("Sair", () => GameRoot.QuitClean(this), 420)));
         RefreshUpdate();
         play.CallDeferred(Control.MethodName.GrabFocus);
     }
@@ -89,7 +84,7 @@ public partial class MainMenu : Control
         };
     }
 
-    static string CharText() => "Personagem: " + Characters.Get(UserSettings.I.Character).Name;
+    static string CharText() => "Personagens (" + Characters.Get(UserSettings.I.Character).Name + ")";
 
     static Control Centered(Control c)
     {
@@ -137,6 +132,13 @@ public partial class MainMenu : Control
         grid.AddChild(minsLbl);
         grid.AddChild(mins);
 
+        var abil = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        abil.AddItem("Com habilidades", 0);
+        abil.AddItem("Sem habilidades", 1);
+        abil.Selected = Last.Abilities ? 0 : 1;
+        grid.AddChild(new Label { Text = "Habilidades" });
+        grid.AddChild(abil);
+
         var allies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.AllyDummies, CustomMinimumSize = new Vector2(360, 56) };
         var kind = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
         kind.AddItem("Bots", 0);
@@ -180,7 +182,8 @@ public partial class MainMenu : Control
         Refresh();
 
         vb.AddChild(UiKit.Lbl("Bots jogam de verdade (atacam, passam, enterram, marcam, roubam e bloqueiam).\nBonecos de treino: o aliado devolve passes; o adversário pula contra arremessos e marca a cesta.", 20, new Color("5b6577")));
-        var start = UiKit.Btn("Iniciar partida", () =>
+        Button start = null;
+        start = UiKit.Btn("Escolher personagem e jogar", () =>
         {
             Last.Size = (CourtSize)size.GetSelectedId();
             Last.Mode = mode.Selected == 1 ? WinMode.Time : WinMode.Points;
@@ -190,7 +193,9 @@ public partial class MainMenu : Control
             Last.EnemyDummies = (int)enemies.Value;
             Last.TrainingDummies = kind.Selected == 1;
             Last.BotDifficulty = diff.Selected;
-            GameRoot.I.StartMatch(Last.Clone());
+            Last.Abilities = abil.Selected == 0;
+            // v0.26: escolha do personagem antes de começar
+            AddChild(new CharacterSelect { AbilitiesOn = Last.Abilities, OnConfirm = _ => GameRoot.I.StartMatch(Last.Clone()), OnBack = () => start.GrabFocus() });
         });
         vb.AddChild(start);
         vb.AddChild(UiKit.Btn("Voltar", ShowHome));

@@ -13,6 +13,19 @@ public partial class GameRoot : Node
 {
     public static GameRoot I { get; private set; }
 
+    /// <summary>
+    /// v0.26: fecha o jogo depois de coletar o lixo do C# (wrappers de objetos da Godot ainda não finalizados). Sem isso,
+    /// às vezes os finalizadores rodavam no meio do desligamento da engine e o processo caía (FATAL em
+    /// _instance_binding_free_callback) — os testes automáticos davam "falhou" mesmo passando.
+    /// </summary>
+    public static void QuitClean(Node n, int code = 0)
+    {
+        System.GC.Collect();
+        System.GC.WaitForPendingFinalizers();
+        System.GC.Collect();
+        n.GetTree().Quit(code);
+    }
+
     CanvasLayer _ui;
     Control _menu;
     Match _match;
@@ -37,19 +50,19 @@ public partial class GameRoot : Node
         {
             File.WriteAllText(args[di + 1], Tuning.SchemaJson());
             GD.Print("[TUNING] esquema salvo em " + args[di + 1]);
-            GetTree().Quit();
+            GameRoot.QuitClean(this);
             return;
         }
 
-        if (args.Contains("--shot-stats")) { ShotStats(); GetTree().Quit(); return; }
+        if (args.Contains("--shot-stats")) { ShotStats(); GameRoot.QuitClean(this); return; }
         int mi = Array.IndexOf(args, "--inspect-model"); // Etapa 7: como a Godot enxerga um .glb (ossos, animações, loop)
-        if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GetTree().Quit(); return; }
+        if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GameRoot.QuitClean(this); return; }
 
         // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
-        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--court-shot" || a == "--pose-shot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
+        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--court-shot" || a == "--pose-shot" || a == "--cut-shot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
         if (!automated)
         {
-            if (SteamService.RelaunchForOverlay(args)) { GetTree().Quit(); return; }
+            if (SteamService.RelaunchForOverlay(args)) { GameRoot.QuitClean(this); return; }
             SteamService.Init();
         }
         else if (args.Contains("--steam-test")) SteamService.Init();
@@ -59,7 +72,7 @@ public partial class GameRoot : Node
         if (args.Contains("--print-version"))
         {
             File.WriteAllText(Path.Combine(Path.GetDirectoryName(OS.GetExecutablePath()) ?? ".", "version_check.txt"), GameVersion.Number);
-            GD.Print("[VERSION] v" + GameVersion.Number); GetTree().Quit(); return;
+            GD.Print("[VERSION] v" + GameVersion.Number); GameRoot.QuitClean(this); return;
         }
         if (args.Contains("--update-test")) { Updater.I.Auto = true; Callable.From(() => Updater.I.Check()).CallDeferred(); return; }
         InputDevice.LogPads();
@@ -91,15 +104,16 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            if (args.Contains("--menu") || args.Contains("--online") || args.Contains("--lobby"))
+            if (args.Contains("--menu") || args.Contains("--online") || args.Contains("--lobby") || args.Contains("--charsel"))
             {
-                if (args.Contains("--online")) ShowOnlineMenu();
+                if (args.Contains("--charsel")) { ShowMainMenu(); _ui.AddChild(new CharacterSelect()); } // v0.26
+                else if (args.Contains("--online")) ShowOnlineMenu();
                 else if (args.Contains("--lobby")) { NetSession.I.HostDirect(NetSmokePort, "Blade", loopbackOnly: true); NetSession.I.SetMyTeam(0); }
                 else ShowMainMenu();
                 GetTree().CreateTimer(1.5).Timeout += () =>
                 {
                     GetViewport().GetTexture().GetImage().SavePng(args[si + 1]);
-                    GetTree().Quit();
+                    GameRoot.QuitClean(this);
                 };
                 return;
             }
@@ -127,10 +141,10 @@ public partial class GameRoot : Node
             SetTestSpeed(2.0f);
             var ns = NetSession.I;
             ns.SmokeNet = true;
-            if (!ns.HostDirect(NetSmokePort, "Host", loopbackOnly: true)) { GD.Print("[NETTEST-HOST] não abriu a porta -> FALHOU"); GetTree().Quit(1); return; }
+            if (!ns.HostDirect(NetSmokePort, "Host", loopbackOnly: true)) { GD.Print("[NETTEST-HOST] não abriu a porta -> FALHOU"); GameRoot.QuitClean(this, 1); return; }
             ns.HostSetSettings(new OnlineSettings { Size = CourtSize.Small, TeamSize = 2, TargetScore = 99, BotDifficulty = 1 });
             ns.LobbyChanged += () => { if (!ns.InMatch && ns.Members.Count >= 2) ns.HostStartMatch(); };
-            GetTree().CreateTimer(60).Timeout += () => { if (!ns.InMatch) { GD.Print("[NETTEST-HOST] o cliente não entrou -> FALHOU"); GetTree().Quit(1); } };
+            GetTree().CreateTimer(60).Timeout += () => { if (!ns.InMatch) { GD.Print("[NETTEST-HOST] o cliente não entrou -> FALHOU"); GameRoot.QuitClean(this, 1); } };
             return;
         }
         if (args.Contains("--net-smoke-client"))
@@ -145,7 +159,7 @@ public partial class GameRoot : Node
             void TryJoin()
             {
                 if (ns.InMatch || (ns.Active && ns.Connected)) return;
-                if (++tries > 20) { GD.Print("[NETTEST-CLIENT] não conectou -> FALHOU"); GetTree().Quit(1); return; }
+                if (++tries > 20) { GD.Print("[NETTEST-CLIENT] não conectou -> FALHOU"); GameRoot.QuitClean(this, 1); return; }
                 ns.JoinDirect("127.0.0.1", NetSmokePort, "Cliente");
                 GetTree().CreateTimer(3).Timeout += TryJoin;
             }
@@ -155,7 +169,7 @@ public partial class GameRoot : Node
         if (args.Contains("--steam-test"))
         {
             GD.Print(SteamService.Initialized ? $"[STEAMTEST] OK: Steam iniciada como {SteamService.LocalName}" : $"[STEAMTEST] Steam indisponível: {SteamService.Error}");
-            GetTree().Quit(0);
+            GameRoot.QuitClean(this, 0);
             return;
         }
         if (args.Contains("--smoke-block"))
@@ -170,6 +184,21 @@ public partial class GameRoot : Node
             int ei = Array.IndexOf(args, "--e3-shot");
             StartMatch(new MatchConfig { SmokeE3 = true, Size = CourtSize.Small, TargetScore = 99, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true,
                 ScreenshotPath = ei >= 0 && ei + 1 < args.Length ? args[ei + 1] : null });
+            return;
+        }
+        int cs = Array.IndexOf(args, "--cut-shot"); // v0.26: prints da cutscene da ultimate (King; --duel = Bolt; --miss = erra)
+        if (cs >= 0 && cs + 1 < args.Length)
+        {
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+            DisplayServer.WindowSetSize(new Vector2I(1600, 900));
+            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : CutKind.KingUlt, CutShotMiss = args.Contains("--miss"),
+                ScreenshotPath = args[cs + 1], Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
+            return;
+        }
+        if (args.Contains("--smoke-abilities"))
+        {
+            SetTestSpeed(2.0f);
+            StartMatch(new MatchConfig { SmokeAbilities = true, Size = CourtSize.Small, TargetScore = 999, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
             return;
         }
         if (args.Contains("--smoke-e2"))

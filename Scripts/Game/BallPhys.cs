@@ -207,30 +207,46 @@ public static class ShotMath
     {
         public Vector3 Pos, Vel;
         public float Distance;   // distância horizontal até cruzar a altura do aro
-        public float Power => Mathf.Clamp(Distance / Mathf.Max(Tuning.I.ShotRangeMax, 0.1f), 0, 1); // "força" = distância usada
+        public float Range;      // alcance máximo deste arremesso (v0.26: Precisão / Olho do Rei)
+        public float Power => Mathf.Clamp(Distance / Mathf.Max(Range > 0 ? Range : Tuning.I.ShotRangeMax, 0.1f), 0, 1); // "força" = distância usada
     }
 
-    /// <summary>Distância pedida pela inclinação da câmera (limitada ao alcance máximo): meio da tela = ShotRangeMin; acima = mais longe; abaixo = mais curto.</summary>
-    public static float PitchDistance(float pitch)
+    static float R(float rangeMax) => rangeMax > 0 ? rangeMax : Tuning.I.ShotRangeMax;
+
+    /// <summary>
+    /// Distância pedida pela inclinação da câmera: meio da tela = ShotRangeMin; acima = mais longe até <paramref name="rangeMax"/>
+    /// (Precisão do personagem); abaixo = mais curto. v0.26: com <paramref name="extendMax"/> (Olho do Rei), subir a câmera ALÉM
+    /// da inclinação do alcance máximo vai até esse alcance maior — a mira normal não muda.
+    /// </summary>
+    public static float PitchDistance(float pitch, float rangeMax = -1, float extendMax = -1)
     {
         var t = Tuning.I;
+        float max = R(rangeMax);
         float deg = Mathf.RadToDeg(pitch);
         if (deg >= t.ShotPitchBaseDeg)
         {
+            if (extendMax > max && deg > t.ShotPitchTopDeg)
+            {
+                float ke = Mathf.Clamp((deg - t.ShotPitchTopDeg) / Mathf.Max(t.CameraPitchMaxDeg - t.ShotPitchTopDeg, 0.1f), 0, 1);
+                return Mathf.Lerp(max, extendMax, ke);
+            }
             float k = Mathf.Clamp((deg - t.ShotPitchBaseDeg) / Mathf.Max(t.ShotPitchTopDeg - t.ShotPitchBaseDeg, 0.1f), 0, 1);
-            return Mathf.Lerp(t.ShotRangeMin, t.ShotRangeMax, k);
+            return Mathf.Lerp(t.ShotRangeMin, max, k);
         }
         float kb = Mathf.Clamp((deg - t.ShotPitchBottomDeg) / Mathf.Max(t.ShotPitchBaseDeg - t.ShotPitchBottomDeg, 0.1f), 0, 1);
         return Mathf.Lerp(t.ShotRangeClosest, t.ShotRangeMin, kb);
     }
 
     /// <summary>Inverso de PitchDistance (usado por bots/piloto).</summary>
-    public static float PitchForDistance(float d)
+    public static float PitchForDistance(float d, float rangeMax = -1, float extendMax = -1)
     {
         var t = Tuning.I;
+        float max = R(rangeMax);
         float deg;
-        if (d >= t.ShotRangeMin)
-            deg = Mathf.Lerp(t.ShotPitchBaseDeg, t.ShotPitchTopDeg, Mathf.Clamp((d - t.ShotRangeMin) / Mathf.Max(t.ShotRangeMax - t.ShotRangeMin, 0.01f), 0, 1));
+        if (extendMax > max && d > max)
+            deg = Mathf.Lerp(t.ShotPitchTopDeg, t.CameraPitchMaxDeg, Mathf.Clamp((d - max) / Mathf.Max(extendMax - max, 0.01f), 0, 1));
+        else if (d >= t.ShotRangeMin)
+            deg = Mathf.Lerp(t.ShotPitchBaseDeg, t.ShotPitchTopDeg, Mathf.Clamp((d - t.ShotRangeMin) / Mathf.Max(max - t.ShotRangeMin, 0.01f), 0, 1));
         else
             deg = Mathf.Lerp(t.ShotPitchBottomDeg, t.ShotPitchBaseDeg, Mathf.Clamp((d - t.ShotRangeClosest) / Mathf.Max(t.ShotRangeMin - t.ShotRangeClosest, 0.01f), 0, 1));
         return Mathf.DegToRad(deg);
@@ -264,18 +280,19 @@ public static class ShotMath
     }
 
     /// <summary>Planeja o arremesso de um jogador (usado no arremesso real, na prévia e pelos bots).</summary>
-    public static ShotPlan Plan(Vector3 feet, int team, float aimYaw, float aimPitch, CourtGeo g)
+    public static ShotPlan Plan(Vector3 feet, int team, float aimYaw, float aimPitch, CourtGeo g, float rangeMax = -1, float extendMax = -1)
     {
         var t = Tuning.I;
+        float max = Mathf.Max(R(rangeMax), extendMax);
         var rim = g.RimCenter[CourtGeo.AttackHoop(team)];
-        var plan = new ShotPlan();
+        var plan = new ShotPlan { Range = max };
 
         float yaw = AssistedYaw(feet, aimYaw, rim);
         plan.Pos = ReleasePos(feet, yaw);
         float dh = rim.Y - plan.Pos.Y;
         float rimDist = new Vector2(rim.X - plan.Pos.X, rim.Z - plan.Pos.Z).Length();
 
-        float d = Mathf.Min(PitchDistance(aimPitch), t.ShotRangeMax);
+        float d = Mathf.Min(PitchDistance(aimPitch, rangeMax, extendMax), max);
         // assistência de distância (altura): só perto do ideal e só mirando a cesta adversária
         float yawErr = Mathf.Abs(WrapAngle(YawOf(new Vector3(rim.X - plan.Pos.X, 0, rim.Z - plan.Pos.Z)) - yaw));
         float delta = rimDist - d;
@@ -283,11 +300,55 @@ public static class ShotMath
         {
             float w = 1f - Mathf.Abs(delta) / t.ShotDistAssistMeters;
             float nd = d + delta * t.ShotDistAssistStrength * w;
-            if (nd <= t.ShotRangeMax) d = nd;
+            if (nd <= max) d = nd;
         }
         plan.Distance = d;
+        // o ângulo segue a distância absoluta (mesma curva para todos os personagens)
         float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
         plan.Vel = Ballistic(yaw, d, dh, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));
+        return plan;
+    }
+
+    /// <summary>
+    /// v0.26: arremesso "perfeito" direto no aro (Arremesso Arriscado do Luck). <paramref name="missOffset"/> &gt; 0 = mira esse
+    /// tanto para o lado do aro (bate e sai).
+    /// </summary>
+    public static ShotPlan Direct(Vector3 feet, int team, CourtGeo g, float missOffset, float side)
+    {
+        var t = Tuning.I;
+        var rim = g.RimCenter[CourtGeo.AttackHoop(team)];
+        var flat = (rim - feet) with { Y = 0 };
+        float yaw = YawOf(flat.LengthSquared() > 1e-4f ? flat : Vector3.Forward);
+        var plan = new ShotPlan { Range = t.ShotRangeMax };
+        plan.Pos = ReleasePos(feet, yaw);
+        var target = rim;
+        if (missOffset > 0)
+        {
+            var dir = ((rim - plan.Pos) with { Y = 0 }).Normalized();
+            target += new Vector3(-dir.Z, 0, dir.X) * (side * missOffset) - dir * (t.RimRadius * 0.4f);
+        }
+        var to = (target - plan.Pos) with { Y = 0 };
+        float d = to.Length();
+        plan.Distance = d;
+        float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
+        plan.Vel = Ballistic(YawOf(to), d, target.Y - plan.Pos.Y, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));
+        return plan;
+    }
+
+    /// <summary>v0.26: desvia um arremesso já planejado para bater no aro e sair (Presença Implacável).</summary>
+    public static ShotPlan Jinx(ShotPlan plan, int team, CourtGeo g, float offset, float side)
+    {
+        var t = Tuning.I;
+        var rim = g.RimCenter[CourtGeo.AttackHoop(team)];
+        var dir = ((rim - plan.Pos) with { Y = 0 });
+        if (dir.LengthSquared() < 1e-4f) return plan;
+        dir = dir.Normalized();
+        var target = rim + new Vector3(-dir.Z, 0, dir.X) * (side * offset) - dir * (t.RimRadius * 0.3f);
+        var to = (target - plan.Pos) with { Y = 0 };
+        float d = to.Length();
+        float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
+        plan.Vel = Ballistic(YawOf(to), d, target.Y - plan.Pos.Y, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));
+        plan.Distance = d;
         return plan;
     }
 }

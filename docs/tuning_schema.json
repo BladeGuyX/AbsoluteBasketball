@@ -7,7 +7,8 @@
     "min": 1,
     "max": 10,
     "step": 0.1,
-    "default": 4
+    "default": 4,
+    "sub": ""
   },
   {
     "key": "RunSpeed",
@@ -17,7 +18,8 @@
     "min": 1,
     "max": 14,
     "step": 0.1,
-    "default": 6.8
+    "default": 6.8,
+    "sub": ""
   },
   {
     "key": "Acceleration",
@@ -27,7 +29,8 @@
     "min": 1,
     "max": 120,
     "step": 1,
-    "default": 28
+    "default": 28,
+    "sub": ""
   },
   {
     "key": "Deceleration",
@@ -37,7 +40,8 @@
     "min": 1,
     "max": 120,
     "step": 1,
-    "default": 34
+    "default": 34,
+    "sub": ""
   },
   {
     "key": "TurnSpeed",
@@ -47,7 +51,8 @@
     "min": 1,
     "max": 40,
     "step": 0.5,
-    "default": 14
+    "default": 14,
+    "sub": ""
   },
   {
     "key": "CarrierSpeedMult",
@@ -57,7 +62,8 @@
     "min": 0.3,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.85
+    "default": 0.85,
+    "sub": ""
   },
   {
     "key": "PlayerGravity",
@@ -67,7 +73,8 @@
     "min": 5,
     "max": 60,
     "step": 0.5,
-    "default": 22
+    "default": 22,
+    "sub": ""
   },
   {
     "key": "StaminaMax",
@@ -77,7 +84,8 @@
     "min": 10,
     "max": 500,
     "step": 1,
-    "default": 150
+    "default": 150,
+    "sub": ""
   },
   {
     "key": "StaminaDrainPerSec",
@@ -87,7 +95,8 @@
     "min": 1,
     "max": 200,
     "step": 1,
-    "default": 28
+    "default": 28,
+    "sub": ""
   },
   {
     "key": "StaminaRegenPerSec",
@@ -97,7 +106,8 @@
     "min": 1,
     "max": 300,
     "step": 1,
-    "default": 35
+    "default": 35,
+    "sub": ""
   },
   {
     "key": "StaminaRegenDelay",
@@ -107,7 +117,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 0.35
+    "default": 0.35,
+    "sub": ""
   },
   {
     "key": "StaminaMinToRun",
@@ -117,7 +128,8 @@
     "min": 0,
     "max": 100,
     "step": 1,
-    "default": 15
+    "default": 15,
+    "sub": ""
   },
   {
     "key": "CameraDistance",
@@ -127,7 +139,8 @@
     "min": 1.5,
     "max": 15,
     "step": 0.1,
-    "default": 5.2
+    "default": 5.2,
+    "sub": ""
   },
   {
     "key": "CameraHeight",
@@ -137,7 +150,8 @@
     "min": 0.5,
     "max": 4,
     "step": 0.05,
-    "default": 2.1
+    "default": 2.1,
+    "sub": ""
   },
   {
     "key": "CameraShoulderOffset",
@@ -147,7 +161,8 @@
     "min": -2,
     "max": 2,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "CameraFov",
@@ -157,7 +172,8 @@
     "min": 40,
     "max": 110,
     "step": 1,
-    "default": 70
+    "default": 70,
+    "sub": ""
   },
   {
     "key": "CameraPitchMinDeg",
@@ -167,7 +183,8 @@
     "min": -89,
     "max": 0,
     "step": 1,
-    "default": -55
+    "default": -55,
+    "sub": ""
   },
   {
     "key": "CameraPitchMaxDeg",
@@ -177,7 +194,8 @@
     "min": 0,
     "max": 89,
     "step": 1,
-    "default": 30
+    "default": 30,
+    "sub": ""
   },
   {
     "key": "CameraFollowSmooth",
@@ -187,7 +205,8 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 18
+    "default": 18,
+    "sub": ""
   },
   {
     "key": "MouseDegPerPixel",
@@ -197,7 +216,8 @@
     "min": 0.01,
     "max": 1,
     "step": 0.01,
-    "default": 0.12
+    "default": 0.12,
+    "sub": ""
   },
   {
     "key": "StickDegPerSec",
@@ -207,7 +227,8 @@
     "min": 30,
     "max": 720,
     "step": 5,
-    "default": 220
+    "default": 220,
+    "sub": ""
   },
   {
     "key": "StickLookExponent",
@@ -217,7 +238,8 @@
     "min": 1,
     "max": 3,
     "step": 0.05,
-    "default": 1.6
+    "default": 1.6,
+    "sub": ""
   },
   {
     "key": "ChargeLookMult",
@@ -227,7 +249,8 @@
     "min": 0.2,
     "max": 1,
     "step": 0.01,
-    "default": 0.65
+    "default": 0.65,
+    "sub": ""
   },
   {
     "key": "BallRadius",
@@ -237,7 +260,8 @@
     "min": 0.08,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.22
+    "default": 0.22,
+    "sub": ""
   },
   {
     "key": "BallGravity",
@@ -247,7 +271,8 @@
     "min": 2,
     "max": 30,
     "step": 0.1,
-    "default": 11
+    "default": 11,
+    "sub": ""
   },
   {
     "key": "FloorBounce",
@@ -257,7 +282,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.72
+    "default": 0.72,
+    "sub": ""
   },
   {
     "key": "RimBounce",
@@ -267,7 +293,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.35
+    "default": 0.35,
+    "sub": ""
   },
   {
     "key": "RimFriendliness",
@@ -277,7 +304,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "BankAssist",
@@ -287,7 +315,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "BoardBounce",
@@ -297,7 +326,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.55
+    "default": 0.55,
+    "sub": ""
   },
   {
     "key": "WallBounce",
@@ -307,7 +337,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.55
+    "default": 0.55,
+    "sub": ""
   },
   {
     "key": "BounceFriction",
@@ -317,7 +348,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.85
+    "default": 0.85,
+    "sub": ""
   },
   {
     "key": "RollDecel",
@@ -327,7 +359,8 @@
     "min": 0,
     "max": 20,
     "step": 0.1,
-    "default": 1.5
+    "default": 1.5,
+    "sub": ""
   },
   {
     "key": "PickupRadius",
@@ -337,7 +370,8 @@
     "min": 0.2,
     "max": 2,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "CatchHeight",
@@ -347,7 +381,8 @@
     "min": 0.5,
     "max": 4,
     "step": 0.05,
-    "default": 2.4
+    "default": 2.4,
+    "sub": ""
   },
   {
     "key": "DribblePeriod",
@@ -357,7 +392,8 @@
     "min": 0.15,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.5
+    "default": 0.5,
+    "sub": ""
   },
   {
     "key": "DribbleHandHeight",
@@ -367,7 +403,8 @@
     "min": 0.4,
     "max": 1.6,
     "step": 0.05,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "HeldBallSpin",
@@ -377,7 +414,8 @@
     "min": 0,
     "max": 1,
     "step": 0.05,
-    "default": 0
+    "default": 0,
+    "sub": ""
   },
   {
     "key": "DribbleSoundDb",
@@ -387,7 +425,8 @@
     "min": -40,
     "max": 0,
     "step": 1,
-    "default": -18
+    "default": -18,
+    "sub": ""
   },
   {
     "key": "ShotRangeMin",
@@ -397,7 +436,8 @@
     "min": 0.5,
     "max": 15,
     "step": 0.1,
-    "default": 3
+    "default": 3,
+    "sub": ""
   },
   {
     "key": "ShotRangeMax",
@@ -407,7 +447,8 @@
     "min": 2,
     "max": 40,
     "step": 0.1,
-    "default": 14
+    "default": 14,
+    "sub": ""
   },
   {
     "key": "ShotAutoReleaseTime",
@@ -417,7 +458,8 @@
     "min": 0.5,
     "max": 10,
     "step": 0.1,
-    "default": 2.5
+    "default": 2.5,
+    "sub": ""
   },
   {
     "key": "ShotPitchBaseDeg",
@@ -427,7 +469,8 @@
     "min": -60,
     "max": 30,
     "step": 1,
-    "default": -12
+    "default": -12,
+    "sub": ""
   },
   {
     "key": "ShotPitchTopDeg",
@@ -437,7 +480,8 @@
     "min": -30,
     "max": 60,
     "step": 1,
-    "default": 22
+    "default": 22,
+    "sub": ""
   },
   {
     "key": "ShotPitchBottomDeg",
@@ -447,7 +491,8 @@
     "min": -89,
     "max": 0,
     "step": 1,
-    "default": -50
+    "default": -50,
+    "sub": ""
   },
   {
     "key": "ShotRangeClosest",
@@ -457,7 +502,8 @@
     "min": 0.2,
     "max": 10,
     "step": 0.1,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "ShotAngleNearDeg",
@@ -467,7 +513,8 @@
     "min": 15,
     "max": 85,
     "step": 0.5,
-    "default": 55
+    "default": 55,
+    "sub": ""
   },
   {
     "key": "ShotAngleFarDeg",
@@ -477,7 +524,8 @@
     "min": 15,
     "max": 85,
     "step": 0.5,
-    "default": 44
+    "default": 44,
+    "sub": ""
   },
   {
     "key": "ShotMinEntryAngleDeg",
@@ -487,7 +535,8 @@
     "min": 10,
     "max": 80,
     "step": 0.5,
-    "default": 42
+    "default": 42,
+    "sub": ""
   },
   {
     "key": "ShotReleaseHeight",
@@ -497,7 +546,8 @@
     "min": 1,
     "max": 4,
     "step": 0.05,
-    "default": 2.35
+    "default": 2.35,
+    "sub": ""
   },
   {
     "key": "ShotChargeMoveMult",
@@ -507,7 +557,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.22
+    "default": 0.22,
+    "sub": ""
   },
   {
     "key": "ShotAimAssist",
@@ -517,7 +568,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.85
+    "default": 0.85,
+    "sub": ""
   },
   {
     "key": "ShotAimAssistMaxAngleDeg",
@@ -527,7 +579,8 @@
     "min": 0,
     "max": 45,
     "step": 0.5,
-    "default": 7
+    "default": 7,
+    "sub": ""
   },
   {
     "key": "ShotDistAssistMeters",
@@ -537,7 +590,8 @@
     "min": 0,
     "max": 5,
     "step": 0.05,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "ShotDistAssistStrength",
@@ -547,7 +601,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.85
+    "default": 0.85,
+    "sub": ""
   },
   {
     "key": "ShotPickupLockout",
@@ -557,7 +612,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.35
+    "default": 0.35,
+    "sub": ""
   },
   {
     "key": "TrajectoryPreviewTime",
@@ -567,7 +623,8 @@
     "min": 0.3,
     "max": 5,
     "step": 0.1,
-    "default": 3
+    "default": 3,
+    "sub": ""
   },
   {
     "key": "HoopHeight",
@@ -577,7 +634,8 @@
     "min": 1.5,
     "max": 7,
     "step": 0.05,
-    "default": 4.3
+    "default": 4.3,
+    "sub": ""
   },
   {
     "key": "RimRadius",
@@ -587,7 +645,8 @@
     "min": 0.15,
     "max": 1.2,
     "step": 0.01,
-    "default": 0.55
+    "default": 0.55,
+    "sub": ""
   },
   {
     "key": "BoardWidth",
@@ -597,7 +656,8 @@
     "min": 0.5,
     "max": 8,
     "step": 0.05,
-    "default": 3.3
+    "default": 3.3,
+    "sub": ""
   },
   {
     "key": "BoardHeight",
@@ -607,7 +667,8 @@
     "min": 0.5,
     "max": 5,
     "step": 0.05,
-    "default": 1.85
+    "default": 1.85,
+    "sub": ""
   },
   {
     "key": "NetSwishStrength",
@@ -617,7 +678,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "RimDunkShake",
@@ -627,7 +689,8 @@
     "min": 0,
     "max": 25,
     "step": 0.5,
-    "default": 9
+    "default": 9,
+    "sub": ""
   },
   {
     "key": "RimHitShake",
@@ -637,7 +700,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "ScoreTolerance",
@@ -647,7 +711,8 @@
     "min": 0,
     "max": 1,
     "step": 0.05,
-    "default": 0.5
+    "default": 0.5,
+    "sub": ""
   },
   {
     "key": "HoopInset",
@@ -657,7 +722,8 @@
     "min": 0.5,
     "max": 5,
     "step": 0.025,
-    "default": 1.575
+    "default": 1.575,
+    "sub": ""
   },
   {
     "key": "CourtSmallLength",
@@ -667,7 +733,8 @@
     "min": 10,
     "max": 150,
     "step": 0.5,
-    "default": 44
+    "default": 44,
+    "sub": ""
   },
   {
     "key": "CourtSmallWidth",
@@ -677,7 +744,8 @@
     "min": 6,
     "max": 100,
     "step": 0.5,
-    "default": 24
+    "default": 24,
+    "sub": ""
   },
   {
     "key": "ThreePtSmall",
@@ -687,7 +755,8 @@
     "min": 2,
     "max": 20,
     "step": 0.1,
-    "default": 8.5
+    "default": 8.5,
+    "sub": ""
   },
   {
     "key": "CourtMediumLength",
@@ -697,7 +766,8 @@
     "min": 10,
     "max": 80,
     "step": 0.5,
-    "default": 58
+    "default": 58,
+    "sub": ""
   },
   {
     "key": "CourtMediumWidth",
@@ -707,7 +777,8 @@
     "min": 6,
     "max": 100,
     "step": 0.5,
-    "default": 32
+    "default": 32,
+    "sub": ""
   },
   {
     "key": "ThreePtMedium",
@@ -717,7 +788,8 @@
     "min": 2,
     "max": 20,
     "step": 0.1,
-    "default": 9.5
+    "default": 9.5,
+    "sub": ""
   },
   {
     "key": "CourtLargeLength",
@@ -727,7 +799,8 @@
     "min": 10,
     "max": 80,
     "step": 0.5,
-    "default": 80
+    "default": 80,
+    "sub": ""
   },
   {
     "key": "CourtLargeWidth",
@@ -737,7 +810,8 @@
     "min": 6,
     "max": 100,
     "step": 0.5,
-    "default": 44
+    "default": 44,
+    "sub": ""
   },
   {
     "key": "ThreePtLarge",
@@ -747,7 +821,8 @@
     "min": 2,
     "max": 20,
     "step": 0.1,
-    "default": 10.5
+    "default": 10.5,
+    "sub": ""
   },
   {
     "key": "BoundsMargin",
@@ -757,7 +832,8 @@
     "min": 0.2,
     "max": 6,
     "step": 0.1,
-    "default": 1.5
+    "default": 1.5,
+    "sub": ""
   },
   {
     "key": "CountdownSeconds",
@@ -767,7 +843,8 @@
     "min": 0,
     "max": 10,
     "step": 0.5,
-    "default": 3
+    "default": 3,
+    "sub": ""
   },
   {
     "key": "PostScoreDelay",
@@ -777,7 +854,8 @@
     "min": 0,
     "max": 6,
     "step": 0.1,
-    "default": 1.6
+    "default": 1.6,
+    "sub": ""
   },
   {
     "key": "PointsInside",
@@ -787,7 +865,8 @@
     "min": 1,
     "max": 10,
     "step": 1,
-    "default": 2
+    "default": 2,
+    "sub": ""
   },
   {
     "key": "PointsOutside",
@@ -797,7 +876,8 @@
     "min": 1,
     "max": 10,
     "step": 1,
-    "default": 3
+    "default": 3,
+    "sub": ""
   },
   {
     "key": "PassRange",
@@ -807,7 +887,8 @@
     "min": 2,
     "max": 60,
     "step": 0.5,
-    "default": 22
+    "default": 22,
+    "sub": ""
   },
   {
     "key": "PassTapTime",
@@ -817,7 +898,8 @@
     "min": 0.05,
     "max": 1,
     "step": 0.01,
-    "default": 0.2
+    "default": 0.2,
+    "sub": ""
   },
   {
     "key": "PassBufferTime",
@@ -827,7 +909,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.25
+    "default": 0.25,
+    "sub": ""
   },
   {
     "key": "PassSpeed",
@@ -837,7 +920,8 @@
     "min": 4,
     "max": 50,
     "step": 0.5,
-    "default": 21
+    "default": 21,
+    "sub": ""
   },
   {
     "key": "PassReceiveHeight",
@@ -847,7 +931,8 @@
     "min": 0.5,
     "max": 2.5,
     "step": 0.05,
-    "default": 1.3
+    "default": 1.3,
+    "sub": ""
   },
   {
     "key": "PassLaneRadius",
@@ -857,7 +942,8 @@
     "min": 0.1,
     "max": 2,
     "step": 0.05,
-    "default": 0.9
+    "default": 0.9,
+    "sub": ""
   },
   {
     "key": "HighPassApex",
@@ -867,7 +953,8 @@
     "min": 3,
     "max": 12,
     "step": 0.1,
-    "default": 5.5
+    "default": 5.5,
+    "sub": ""
   },
   {
     "key": "AimPassSpeed",
@@ -877,7 +964,8 @@
     "min": 4,
     "max": 50,
     "step": 0.5,
-    "default": 18
+    "default": 18,
+    "sub": ""
   },
   {
     "key": "AimPassLiftDeg",
@@ -887,7 +975,8 @@
     "min": -20,
     "max": 45,
     "step": 0.5,
-    "default": 6
+    "default": 6,
+    "sub": ""
   },
   {
     "key": "AimHighPassSpeed",
@@ -897,7 +986,8 @@
     "min": 4,
     "max": 50,
     "step": 0.5,
-    "default": 12.5
+    "default": 12.5,
+    "sub": ""
   },
   {
     "key": "AimHighPassLiftDeg",
@@ -907,7 +997,8 @@
     "min": 0,
     "max": 80,
     "step": 0.5,
-    "default": 32
+    "default": 32,
+    "sub": ""
   },
   {
     "key": "PassAutoReleaseTime",
@@ -917,7 +1008,8 @@
     "min": 0.5,
     "max": 10,
     "step": 0.1,
-    "default": 2.5
+    "default": 2.5,
+    "sub": ""
   },
   {
     "key": "PassChargeMoveMult",
@@ -927,7 +1019,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.22
+    "default": 0.22,
+    "sub": ""
   },
   {
     "key": "PassLockout",
@@ -937,7 +1030,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "JumpVelMin",
@@ -947,7 +1041,8 @@
     "min": 1,
     "max": 20,
     "step": 0.1,
-    "default": 6.5
+    "default": 6.5,
+    "sub": ""
   },
   {
     "key": "JumpVelMax",
@@ -957,7 +1052,8 @@
     "min": 1,
     "max": 20,
     "step": 0.1,
-    "default": 7.8
+    "default": 7.8,
+    "sub": ""
   },
   {
     "key": "JumpChargeTime",
@@ -967,7 +1063,8 @@
     "min": 0.05,
     "max": 2,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "JumpCarry",
@@ -977,7 +1074,8 @@
     "min": 0,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.82
+    "default": 0.82,
+    "sub": ""
   },
   {
     "key": "LandLockTime",
@@ -987,7 +1085,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.4
+    "default": 0.4,
+    "sub": ""
   },
   {
     "key": "BlockRadius",
@@ -997,7 +1096,8 @@
     "min": 0.2,
     "max": 2,
     "step": 0.05,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "BlockReach",
@@ -1007,7 +1107,8 @@
     "min": 1,
     "max": 4,
     "step": 0.05,
-    "default": 2.6
+    "default": 2.6,
+    "sub": ""
   },
   {
     "key": "BlockBounceSpeed",
@@ -1017,7 +1118,8 @@
     "min": 0.5,
     "max": 15,
     "step": 0.1,
-    "default": 3.5
+    "default": 3.5,
+    "sub": ""
   },
   {
     "key": "StealDashSpeed",
@@ -1027,7 +1129,8 @@
     "min": 1,
     "max": 30,
     "step": 0.5,
-    "default": 10
+    "default": 10,
+    "sub": ""
   },
   {
     "key": "StealDashTime",
@@ -1037,7 +1140,8 @@
     "min": 0.05,
     "max": 1,
     "step": 0.01,
-    "default": 0.25
+    "default": 0.25,
+    "sub": ""
   },
   {
     "key": "StealReach",
@@ -1047,7 +1151,8 @@
     "min": 0.3,
     "max": 3,
     "step": 0.05,
-    "default": 1.1
+    "default": 1.1,
+    "sub": ""
   },
   {
     "key": "StealAngleDeg",
@@ -1057,7 +1162,8 @@
     "min": 10,
     "max": 180,
     "step": 1,
-    "default": 70
+    "default": 70,
+    "sub": ""
   },
   {
     "key": "StealFailTime",
@@ -1067,7 +1173,8 @@
     "min": 0,
     "max": 6,
     "step": 0.1,
-    "default": 1.8
+    "default": 1.8,
+    "sub": ""
   },
   {
     "key": "StealFailSpeedMult",
@@ -1077,7 +1184,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.25
+    "default": 0.25,
+    "sub": ""
   },
   {
     "key": "DribbleCharges",
@@ -1087,7 +1195,8 @@
     "min": 1,
     "max": 6,
     "step": 1,
-    "default": 2
+    "default": 2,
+    "sub": ""
   },
   {
     "key": "DribbleDuration",
@@ -1097,7 +1206,8 @@
     "min": 0.2,
     "max": 4,
     "step": 0.05,
-    "default": 0.9
+    "default": 0.9,
+    "sub": ""
   },
   {
     "key": "DribbleSpeedMult",
@@ -1107,7 +1217,8 @@
     "min": 0.1,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.82
+    "default": 0.82,
+    "sub": ""
   },
   {
     "key": "DribbleRecharge",
@@ -1117,7 +1228,8 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 8
+    "default": 8,
+    "sub": ""
   },
   {
     "key": "DribbleBounceMult",
@@ -1127,7 +1239,8 @@
     "min": 1,
     "max": 5,
     "step": 0.1,
-    "default": 2.6
+    "default": 2.6,
+    "sub": ""
   },
   {
     "key": "DribbleCrouch",
@@ -1137,7 +1250,8 @@
     "min": 0,
     "max": 1.3,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "DunkRange",
@@ -1147,7 +1261,8 @@
     "min": 0.5,
     "max": 8,
     "step": 0.1,
-    "default": 7
+    "default": 7,
+    "sub": ""
   },
   {
     "key": "DunkMaxAngleDeg",
@@ -1157,7 +1272,8 @@
     "min": 5,
     "max": 90,
     "step": 1,
-    "default": 45
+    "default": 45,
+    "sub": ""
   },
   {
     "key": "DunkFlightTime",
@@ -1167,7 +1283,8 @@
     "min": 0.3,
     "max": 2,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "DunkWindow",
@@ -1177,7 +1294,8 @@
     "min": 0.03,
     "max": 0.6,
     "step": 0.01,
-    "default": 0.05
+    "default": 0.05,
+    "sub": ""
   },
   {
     "key": "SkillResultHold",
@@ -1187,7 +1305,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 0.75
+    "default": 0.75,
+    "sub": ""
   },
   {
     "key": "DunkFlightJitter",
@@ -1197,7 +1316,8 @@
     "min": 0,
     "max": 0.6,
     "step": 0.01,
-    "default": 0.2
+    "default": 0.2,
+    "sub": ""
   },
   {
     "key": "DunkHandReach",
@@ -1207,7 +1327,8 @@
     "min": 1.5,
     "max": 3.5,
     "step": 0.05,
-    "default": 2.3
+    "default": 2.3,
+    "sub": ""
   },
   {
     "key": "DunkStunTime",
@@ -1217,7 +1338,8 @@
     "min": 0,
     "max": 6,
     "step": 0.1,
-    "default": 2
+    "default": 2,
+    "sub": ""
   },
   {
     "key": "DunkHangTime",
@@ -1227,7 +1349,8 @@
     "min": 0,
     "max": 1.5,
     "step": 0.05,
-    "default": 0.35
+    "default": 0.35,
+    "sub": ""
   },
   {
     "key": "DunkCameraShake",
@@ -1237,7 +1360,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "DunkImpactFx",
@@ -1247,7 +1371,8 @@
     "min": 0,
     "max": 2.5,
     "step": 0.05,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "FoulDelay",
@@ -1257,7 +1382,8 @@
     "min": 0,
     "max": 4,
     "step": 0.1,
-    "default": 1.5
+    "default": 1.5,
+    "sub": ""
   },
   {
     "key": "FreeThrowPoints",
@@ -1267,7 +1393,8 @@
     "min": 1,
     "max": 5,
     "step": 1,
-    "default": 1
+    "default": 1,
+    "sub": ""
   },
   {
     "key": "FreeThrowDistance",
@@ -1277,7 +1404,8 @@
     "min": 2,
     "max": 15,
     "step": 0.1,
-    "default": 5.5
+    "default": 5.5,
+    "sub": ""
   },
   {
     "key": "FreeThrowSkillTime",
@@ -1287,7 +1415,8 @@
     "min": 0.3,
     "max": 3,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "FreeThrowPrep",
@@ -1297,7 +1426,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 0.9
+    "default": 0.9,
+    "sub": ""
   },
   {
     "key": "FreeThrowGap",
@@ -1307,7 +1437,8 @@
     "min": 0,
     "max": 3,
     "step": 0.05,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "FreeThrowFlightTime",
@@ -1317,7 +1448,8 @@
     "min": 0.5,
     "max": 2.5,
     "step": 0.05,
-    "default": 1.15
+    "default": 1.15,
+    "sub": ""
   },
   {
     "key": "CharacterScale",
@@ -1327,7 +1459,8 @@
     "min": 0.6,
     "max": 2,
     "step": 0.05,
-    "default": 1.3
+    "default": 1.3,
+    "sub": ""
   },
   {
     "key": "AnimWalkStride",
@@ -1337,7 +1470,8 @@
     "min": 0.4,
     "max": 3,
     "step": 0.05,
-    "default": 1.5
+    "default": 1.5,
+    "sub": ""
   },
   {
     "key": "AnimRunStride",
@@ -1347,7 +1481,8 @@
     "min": 0.4,
     "max": 4,
     "step": 0.05,
-    "default": 2.3
+    "default": 2.3,
+    "sub": ""
   },
   {
     "key": "AnimBlendSpeed",
@@ -1357,7 +1492,8 @@
     "min": 2,
     "max": 40,
     "step": 0.5,
-    "default": 14
+    "default": 14,
+    "sub": ""
   },
   {
     "key": "HandFollow",
@@ -1367,7 +1503,8 @@
     "min": 4,
     "max": 80,
     "step": 1,
-    "default": 26
+    "default": 26,
+    "sub": ""
   },
   {
     "key": "DribbleHandContact",
@@ -1377,7 +1514,8 @@
     "min": 0,
     "max": 0.3,
     "step": 0.005,
-    "default": 0.06
+    "default": 0.06,
+    "sub": ""
   },
   {
     "key": "ConcedeAngryTime",
@@ -1387,7 +1525,8 @@
     "min": 0,
     "max": 10,
     "step": 0.5,
-    "default": 3
+    "default": 3,
+    "sub": ""
   },
   {
     "key": "EmoteDuration",
@@ -1397,7 +1536,899 @@
     "min": 1,
     "max": 20,
     "step": 0.5,
-    "default": 5
+    "default": 5,
+    "sub": ""
+  },
+  {
+    "key": "StarSpeedStep",
+    "section": "Estrelas (valores)",
+    "label": "Velocidade: % por estrela",
+    "desc": "Quanto cada estrela de Velocidade muda a velocidade andando e correndo (%). Valor final = 1 \u002B (estrelas \u2212 2,5) \u00D7 este %.",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 7,
+    "sub": ""
+  },
+  {
+    "key": "StarAgilityStep",
+    "section": "Estrelas (valores)",
+    "label": "Agilidade: % por estrela",
+    "desc": "Velocidade do bote, penalidade por errar roubo (menor = melhor) e velocidade driblando (%). Cargas de drible: 1\u2605 = \u22121, 2\u20133\u2605 = normal, 4\u20135\u2605 = \u002B1.",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 5.5,
+    "sub": ""
+  },
+  {
+    "key": "StarStaminaStep",
+    "section": "Estrelas (valores)",
+    "label": "Estamina: % por estrela",
+    "desc": "Estamina m\u00E1xima e recarga de estamina (%).",
+    "min": 0,
+    "max": 25,
+    "step": 0.5,
+    "default": 9,
+    "sub": ""
+  },
+  {
+    "key": "StarPrecisionStep",
+    "section": "Estrelas (valores)",
+    "label": "Precis\u00E3o: % por estrela",
+    "desc": "Alcance do arremesso, alcance do passe r\u00E1pido, velocidade do passe e altura do passe alto (%).",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 8,
+    "sub": ""
+  },
+  {
+    "key": "StarJumpStep",
+    "section": "Estrelas (valores)",
+    "label": "Salto: % por estrela",
+    "desc": "Impulso do salto, travamento ao pousar (menor = melhor), tempo de carga do salto (menor = melhor) e dist\u00E2ncia para enterrar (%).",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 6,
+    "sub": ""
+  },
+  {
+    "key": "UltChargeTime",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: tempo para encher sozinha",
+    "desc": "Segundos de jogo para a barra da ultimate encher sem b\u00F4nus nenhum (enche bem devagar). N\u00E3o enche durante cutscenes nem com a pr\u00F3pria ultimate ativa.",
+    "min": 30,
+    "max": 900,
+    "step": 5,
+    "default": 240,
+    "sub": ""
+  },
+  {
+    "key": "UltBonusBlock",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: b\u00F4nus por bloqueio",
+    "desc": "Fra\u00E7\u00E3o da barra ganha ao dar um toco.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.07,
+    "sub": ""
+  },
+  {
+    "key": "UltBonusPass",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: b\u00F4nus por passe",
+    "desc": "Fra\u00E7\u00E3o da barra ganha quando um passe seu chega no aliado.",
+    "min": 0,
+    "max": 1,
+    "step": 0.005,
+    "default": 0.025,
+    "sub": ""
+  },
+  {
+    "key": "UltBonusSteal",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: b\u00F4nus por roubo",
+    "desc": "Fra\u00E7\u00E3o da barra ganha ao roubar a bola.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.08,
+    "sub": ""
+  },
+  {
+    "key": "UltBonusScore",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: b\u00F4nus por cesta",
+    "desc": "Fra\u00E7\u00E3o da barra ganha ao fazer uma cesta (o maior b\u00F4nus).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.16,
+    "sub": ""
+  },
+  {
+    "key": "CutCheckPrep",
+    "section": "Habilidades e ultimate",
+    "label": "Skill check da cutscene: prepara\u00E7\u00E3o",
+    "desc": "Segundos com o anel na tela antes do ponteiro come\u00E7ar a girar nos skill checks das cutscenes.",
+    "min": 0,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.35,
+    "sub": ""
+  },
+  {
+    "key": "KingStarSpeed",
+    "section": "King",
+    "label": "Velocidade",
+    "desc": "Estrelas de Velocidade do King.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 3,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "KingStarAgility",
+    "section": "King",
+    "label": "Agilidade",
+    "desc": "Estrelas de Agilidade do King.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 3,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "KingStarStamina",
+    "section": "King",
+    "label": "Estamina",
+    "desc": "Estrelas de Estamina do King.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "KingStarPrecision",
+    "section": "King",
+    "label": "Precis\u00E3o",
+    "desc": "Estrelas de Precis\u00E3o do King.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 5,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "KingStarJump",
+    "section": "King",
+    "label": "Salto",
+    "desc": "Estrelas de Salto do King.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "KingEyeDuration",
+    "section": "King",
+    "label": "(1) Olho do Rei: dura\u00E7\u00E3o",
+    "desc": "Segundos que o Olho do Rei fica ativo esperando o pr\u00F3ximo passe/arremesso.",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingEyeCooldown",
+    "section": "King",
+    "label": "(1) Olho do Rei: recarga",
+    "desc": "Segundos de recarga do Olho do Rei.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingEyeRangeMult",
+    "section": "King",
+    "label": "(1) Olho do Rei: multiplicador de alcance",
+    "desc": "Multiplica o alcance do arremesso e do passe r\u00E1pido (e a velocidade do passe carregado) quando o efeito \u00E9 gasto.",
+    "min": 1,
+    "max": 4,
+    "step": 0.05,
+    "default": 2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingPresenceDuration",
+    "section": "King",
+    "label": "(2) Presen\u00E7a Implac\u00E1vel: dura\u00E7\u00E3o",
+    "desc": "Segundos que a Presen\u00E7a Implac\u00E1vel fica ativa.",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingPresenceRadius",
+    "section": "King",
+    "label": "(2) Presen\u00E7a Implac\u00E1vel: raio",
+    "desc": "Advers\u00E1rio a at\u00E9 esta dist\u00E2ncia (m) do King que soltar um arremesso erra com certeza.",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingPresenceCooldown",
+    "section": "King",
+    "label": "(2) Presen\u00E7a Implac\u00E1vel: recarga",
+    "desc": "Segundos de recarga da Presen\u00E7a Implac\u00E1vel.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 25,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingDribbleExtra",
+    "section": "King",
+    "label": "(3) Drible Perfeito: dura\u00E7\u00E3o extra",
+    "desc": "Segundos a mais que o drible normal.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingDribbleStun",
+    "section": "King",
+    "label": "(3) Drible Perfeito: atordoamento",
+    "desc": "Segundos atordoado (ca\u00EDdo) de quem tentar roubar durante o Drible Perfeito.",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 4,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingDribbleCooldown",
+    "section": "King",
+    "label": "(3) Drible Perfeito: recarga",
+    "desc": "Segundos de recarga do Drible Perfeito.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltPoints",
+    "section": "King",
+    "label": "Ult: pontos da cesta",
+    "desc": "Pontos da cesta da ultimate Sua Derrota \u00E9 Absoluta.",
+    "min": 1,
+    "max": 20,
+    "step": 1,
+    "default": 7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheck1Time",
+    "section": "King",
+    "label": "Ult: 1\u00BA skill check (dura\u00E7\u00E3o)",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no 1\u00BA skill check (drible).",
+    "min": 0.3,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.95,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheck1Window",
+    "section": "King",
+    "label": "Ult: 1\u00BA skill check (janela)",
+    "desc": "Janela certa (s) do 1\u00BA skill check.",
+    "min": 0.02,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.1,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheck2Time",
+    "section": "King",
+    "label": "Ult: 2\u00BA skill check (dura\u00E7\u00E3o)",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no 2\u00BA skill check (arremesso). Menor = mais r\u00E1pido.",
+    "min": 0.3,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheck2Window",
+    "section": "King",
+    "label": "Ult: 2\u00BA skill check (janela)",
+    "desc": "Janela certa (s) do 2\u00BA skill check (um pouco mais dif\u00EDcil que o 1\u00BA).",
+    "min": 0.02,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.07,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingPresenceFlash",
+    "section": "King",
+    "label": "Presen\u00E7a: aviso na tela",
+    "desc": "Segundos que a borda da tela de quem teve o arremesso afetado fica vermelha.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.7,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "KingPresenceMissOffset",
+    "section": "King",
+    "label": "Presen\u00E7a: desvio do arremesso",
+    "desc": "Quanto (m) o arremesso afetado \u00E9 desviado para bater no aro e sair.",
+    "min": 0.2,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.75,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "LuckStarSpeed",
+    "section": "Luck",
+    "label": "Velocidade",
+    "desc": "Estrelas de Velocidade do Luck.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 4,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "LuckStarAgility",
+    "section": "Luck",
+    "label": "Agilidade",
+    "desc": "Estrelas de Agilidade do Luck.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "LuckStarStamina",
+    "section": "Luck",
+    "label": "Estamina",
+    "desc": "Estrelas de Estamina do Luck.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 5,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "LuckStarPrecision",
+    "section": "Luck",
+    "label": "Precis\u00E3o",
+    "desc": "Estrelas de Precis\u00E3o do Luck.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "LuckStarJump",
+    "section": "Luck",
+    "label": "Salto",
+    "desc": "Estrelas de Salto do Luck.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 2,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "LuckRiskyMissChance",
+    "section": "Luck",
+    "label": "(1) Arremesso Arriscado: chance de errar",
+    "desc": "Chance (0\u20131) do Arremesso Arriscado errar.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckRiskyCooldown",
+    "section": "Luck",
+    "label": "(1) Arremesso Arriscado: recarga",
+    "desc": "Segundos de recarga do Arremesso Arriscado.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckBetDuration",
+    "section": "Luck",
+    "label": "(2) N\u00E3o me Decepciona: dura\u00E7\u00E3o",
+    "desc": "Segundos em que a cesta do advers\u00E1rio escolhido conta para o time do Luck.",
+    "min": 1,
+    "max": 60,
+    "step": 0.5,
+    "default": 20,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckBetCooldown",
+    "section": "Luck",
+    "label": "(2) N\u00E3o me Decepciona: recarga",
+    "desc": "Segundos de recarga do N\u00E3o me Decepciona.",
+    "min": 1,
+    "max": 120,
+    "step": 0.5,
+    "default": 30,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckDashChance",
+    "section": "Luck",
+    "label": "(3) Impulso Descuidado: chance de dar certo",
+    "desc": "Chance (0\u20131) de dar o impulso. Se n\u00E3o der, o Luck trope\u00E7a.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.75,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckTripStun",
+    "section": "Luck",
+    "label": "(3) Impulso Descuidado: atordoamento do trope\u00E7o",
+    "desc": "Segundos atordoado quando o Luck trope\u00E7a.",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckDashCooldown",
+    "section": "Luck",
+    "label": "(3) Impulso Descuidado: recarga",
+    "desc": "Segundos de recarga do Impulso Descuidado.",
+    "min": 1,
+    "max": 60,
+    "step": 0.5,
+    "default": 7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckModeDuration",
+    "section": "Luck",
+    "label": "Ult: dura\u00E7\u00E3o",
+    "desc": "Segundos do modo apostador (Sorte Infinita).",
+    "min": 2,
+    "max": 40,
+    "step": 0.5,
+    "default": 10,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckModeBonus",
+    "section": "Luck",
+    "label": "Ult: b\u00F4nus nos atributos",
+    "desc": "B\u00F4nus (fra\u00E7\u00E3o) em todos os valores dos atributos de estrela no modo apostador. 0,15 = \u002B15%.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckModePoints",
+    "section": "Luck",
+    "label": "Ult: pontos a mais por cesta",
+    "desc": "Pontos a mais em cada cesta do Luck no modo apostador (cada aposta ganha soma mais este valor).",
+    "min": 0,
+    "max": 5,
+    "step": 1,
+    "default": 1,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckGambleLoseChance",
+    "section": "Luck",
+    "label": "Ult: chance de perder a 1\u00AA aposta",
+    "desc": "Chance (0\u20131) de perder ao apostar (apertar a ultimate de novo) pela 1\u00AA vez.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckGambleLoseStep",
+    "section": "Luck",
+    "label": "Ult: aumento da chance de perder",
+    "desc": "Quanto a chance de perder sobe a cada aposta depois da 1\u00AA.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckGambleLoseMax",
+    "section": "Luck",
+    "label": "Ult: chance m\u00E1xima de perder",
+    "desc": "A chance de perder nunca passa disso.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.95,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckGambleExtraTime",
+    "section": "Luck",
+    "label": "Ult: tempo ganho na aposta",
+    "desc": "Segundos somados \u00E0 dura\u00E7\u00E3o do modo a cada aposta ganha.",
+    "min": 0,
+    "max": 15,
+    "step": 0.5,
+    "default": 3,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckGambleStun",
+    "section": "Luck",
+    "label": "Ult: atordoamento ao perder",
+    "desc": "Segundos atordoado quando perde a aposta (o modo acaba na hora).",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 4,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckDashSpeed",
+    "section": "Luck",
+    "label": "Impulso: velocidade",
+    "desc": "Velocidade (m/s) do Impulso Descuidado.",
+    "min": 5,
+    "max": 40,
+    "step": 0.5,
+    "default": 17,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "LuckDashTime",
+    "section": "Luck",
+    "label": "Impulso: dura\u00E7\u00E3o",
+    "desc": "Dura\u00E7\u00E3o (s) do Impulso Descuidado.",
+    "min": 0.05,
+    "max": 1.5,
+    "step": 0.01,
+    "default": 0.32,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "LuckDashStealReach",
+    "section": "Luck",
+    "label": "Impulso: alcance do roubo",
+    "desc": "Dist\u00E2ncia (m) at\u00E9 quem tem a bola para roubar passando por ele no impulso.",
+    "min": 0.3,
+    "max": 3,
+    "step": 0.05,
+    "default": 1.2,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "LuckModeBonusMax",
+    "section": "Luck",
+    "label": "Ult: b\u00F4nus m\u00E1ximo",
+    "desc": "O b\u00F4nus nos atributos dobra a cada aposta ganha, mas nunca passa disso (1 = \u002B100%).",
+    "min": 0.1,
+    "max": 3,
+    "step": 0.05,
+    "default": 1,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "LuckRiskyMissOffset",
+    "section": "Luck",
+    "label": "Arriscado: desvio quando erra",
+    "desc": "Quanto (m) o Arremesso Arriscado \u00E9 desviado quando erra.",
+    "min": 0.2,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.75,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "BoltStarSpeed",
+    "section": "Bolt",
+    "label": "Velocidade",
+    "desc": "Estrelas de Velocidade do Bolt.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 5,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "BoltStarAgility",
+    "section": "Bolt",
+    "label": "Agilidade",
+    "desc": "Estrelas de Agilidade do Bolt.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 4,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "BoltStarStamina",
+    "section": "Bolt",
+    "label": "Estamina",
+    "desc": "Estrelas de Estamina do Bolt.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 4,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "BoltStarPrecision",
+    "section": "Bolt",
+    "label": "Precis\u00E3o",
+    "desc": "Estrelas de Precis\u00E3o do Bolt.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 1,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "BoltStarJump",
+    "section": "Bolt",
+    "label": "Salto",
+    "desc": "Estrelas de Salto do Bolt.",
+    "min": 1,
+    "max": 5,
+    "step": 1,
+    "default": 3,
+    "sub": "Estrelas"
+  },
+  {
+    "key": "BoltDribbleRange",
+    "section": "Bolt",
+    "label": "(1) Drible Rel\u00E2mpago: alcance",
+    "desc": "Dist\u00E2ncia m\u00E1xima (m) at\u00E9 o advers\u00E1rio que o Bolt est\u00E1 olhando.",
+    "min": 1,
+    "max": 15,
+    "step": 0.5,
+    "default": 5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDribbleAhead",
+    "section": "Bolt",
+    "label": "(1) Drible Rel\u00E2mpago: dist\u00E2ncia na frente",
+    "desc": "Quantos metros o Bolt sai na frente do advers\u00E1rio driblado.",
+    "min": 0.5,
+    "max": 10,
+    "step": 0.25,
+    "default": 3,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDribbleStun",
+    "section": "Bolt",
+    "label": "(1) Drible Rel\u00E2mpago: atordoamento",
+    "desc": "Segundos que o advers\u00E1rio driblado fica atordoado.",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDribbleCooldown",
+    "section": "Bolt",
+    "label": "(1) Drible Rel\u00E2mpago: recarga",
+    "desc": "Segundos de recarga do Drible Rel\u00E2mpago.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 15,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltSwapCooldown",
+    "section": "Bolt",
+    "label": "(2) Swap: recarga",
+    "desc": "Segundos de recarga do Swap.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 20,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltSkyJumpVel",
+    "section": "Bolt",
+    "label": "(3) Arranha-C\u00E9u: impulso",
+    "desc": "Velocidade vertical (m/s) do pulo. Altura \u2248 v\u00B2/(2\u00B7gravidade dos jogadores).",
+    "min": 5,
+    "max": 40,
+    "step": 0.5,
+    "default": 16.5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltSkyStunRadius",
+    "section": "Bolt",
+    "label": "(3) Arranha-C\u00E9u: raio do atordoamento",
+    "desc": "Advers\u00E1rios a at\u00E9 esta dist\u00E2ncia (m) quando ele pula ficam atordoados.",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 3,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltSkyStun",
+    "section": "Bolt",
+    "label": "(3) Arranha-C\u00E9u: atordoamento",
+    "desc": "Segundos atordoado de quem estava perto.",
+    "min": 0,
+    "max": 10,
+    "step": 0.25,
+    "default": 2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltSkyCooldown",
+    "section": "Bolt",
+    "label": "(3) Arranha-C\u00E9u: recarga",
+    "desc": "Segundos de recarga do Arranha-C\u00E9u.",
+    "min": 1,
+    "max": 90,
+    "step": 0.5,
+    "default": 25,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelPoints",
+    "section": "Bolt",
+    "label": "Ult: pontos da cesta",
+    "desc": "Pontos da cesta quando o Bolt vence o Duelo.",
+    "min": 1,
+    "max": 20,
+    "step": 1,
+    "default": 7,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelStartTime",
+    "section": "Bolt",
+    "label": "Ult: 1\u00BA skill check (dura\u00E7\u00E3o)",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no 1\u00BA skill check do Duelo.",
+    "min": 0.2,
+    "max": 3,
+    "step": 0.05,
+    "default": 1,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelSpeedup",
+    "section": "Bolt",
+    "label": "Ult: acelera\u00E7\u00E3o por segundo",
+    "desc": "Quanto os skill checks ficam mais r\u00E1pidos a cada segundo de duelo (0,18 = 18% por segundo).",
+    "min": 0,
+    "max": 2,
+    "step": 0.01,
+    "default": 0.18,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelMinTime",
+    "section": "Bolt",
+    "label": "Ult: dura\u00E7\u00E3o m\u00EDnima do skill check",
+    "desc": "O skill check do Duelo nunca fica mais r\u00E1pido que isso (s).",
+    "min": 0.1,
+    "max": 2,
+    "step": 0.01,
+    "default": 0.28,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelWindow",
+    "section": "Bolt",
+    "label": "Ult: janela do skill check",
+    "desc": "Janela certa (s) dos skill checks do Duelo (vale para os dois jogadores).",
+    "min": 0.02,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.085,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDribbleAngle",
+    "section": "Bolt",
+    "label": "Drible Rel\u00E2mpago: \u00E2ngulo do olhar",
+    "desc": "O advers\u00E1rio precisa estar a at\u00E9 este \u00E2ngulo (graus) de onde o Bolt olha (c\u00E2mera).",
+    "min": 5,
+    "max": 90,
+    "step": 1,
+    "default": 35,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "BoltDribbleTime",
+    "section": "Bolt",
+    "label": "Drible Rel\u00E2mpago: dura\u00E7\u00E3o do impulso",
+    "desc": "Segundos do impulso do Drible Rel\u00E2mpago.",
+    "min": 0.05,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.2,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "BoltSwapAngle",
+    "section": "Bolt",
+    "label": "Swap: \u00E2ngulo do olhar",
+    "desc": "Jogador a at\u00E9 este \u00E2ngulo (graus) de onde o Bolt olha pode ser trocado (o mais perto do centro).",
+    "min": 5,
+    "max": 90,
+    "step": 1,
+    "default": 25,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "BoltSwapRange",
+    "section": "Bolt",
+    "label": "Swap: alcance",
+    "desc": "Dist\u00E2ncia m\u00E1xima (m) do Swap.",
+    "min": 3,
+    "max": 120,
+    "step": 1,
+    "default": 45,
+    "sub": "Avan\u00E7ado"
+  },
+  {
+    "key": "BoltSkyBlockRadius",
+    "section": "Bolt",
+    "label": "Arranha-C\u00E9u: raio do bloqueio",
+    "desc": "Alcance horizontal (m) do bloqueio no Arranha-C\u00E9u (o normal \u00E9 o Raio do bloqueio).",
+    "min": 0.3,
+    "max": 5,
+    "step": 0.05,
+    "default": 1.7,
+    "sub": "Avan\u00E7ado"
   },
   {
     "key": "BotAimErrorDeg",
@@ -1407,7 +2438,8 @@
     "min": 0,
     "max": 20,
     "step": 0.1,
-    "default": 4
+    "default": 4,
+    "sub": ""
   },
   {
     "key": "BotDistErrorM",
@@ -1417,7 +2449,8 @@
     "min": 0,
     "max": 5,
     "step": 0.05,
-    "default": 1.3
+    "default": 1.3,
+    "sub": ""
   },
   {
     "key": "BotDunkTimingError",
@@ -1427,7 +2460,8 @@
     "min": 0,
     "max": 0.3,
     "step": 0.005,
-    "default": 0.05
+    "default": 0.05,
+    "sub": ""
   },
   {
     "key": "BotReactionTime",
@@ -1437,7 +2471,8 @@
     "min": 0,
     "max": 2,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "BotEasyMult",
@@ -1447,7 +2482,8 @@
     "min": 1,
     "max": 4,
     "step": 0.05,
-    "default": 1.8
+    "default": 1.8,
+    "sub": ""
   },
   {
     "key": "BotHardMult",
@@ -1457,7 +2493,8 @@
     "min": 0.1,
     "max": 1,
     "step": 0.05,
-    "default": 0.55
+    "default": 0.55,
+    "sub": ""
   },
   {
     "key": "BotShootRange",
@@ -1467,7 +2504,8 @@
     "min": 2,
     "max": 20,
     "step": 0.5,
-    "default": 9
+    "default": 9,
+    "sub": ""
   },
   {
     "key": "BotOpenDistance",
@@ -1477,7 +2515,8 @@
     "min": 0.5,
     "max": 8,
     "step": 0.1,
-    "default": 2.6
+    "default": 2.6,
+    "sub": ""
   },
   {
     "key": "BotDunkChance",
@@ -1487,7 +2526,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.45
+    "default": 0.45,
+    "sub": ""
   },
   {
     "key": "BotPassChance",
@@ -1497,7 +2537,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.5
+    "default": 0.5,
+    "sub": ""
   },
   {
     "key": "BotMaxHoldTime",
@@ -1507,7 +2548,8 @@
     "min": 1,
     "max": 20,
     "step": 0.5,
-    "default": 4
+    "default": 4,
+    "sub": ""
   },
   {
     "key": "BotContestedShotChance",
@@ -1517,7 +2559,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.06
+    "default": 0.06,
+    "sub": ""
   },
   {
     "key": "BotStealChancePerSec",
@@ -1527,7 +2570,8 @@
     "min": 0,
     "max": 5,
     "step": 0.05,
-    "default": 0.2
+    "default": 0.2,
+    "sub": ""
   },
   {
     "key": "BotDribbleBaitChance",
@@ -1537,7 +2581,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "BotBlockChance",
@@ -1547,7 +2592,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.45
+    "default": 0.45,
+    "sub": ""
   },
   {
     "key": "BotBlockReaction",
@@ -1557,7 +2603,8 @@
     "min": 0,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.03
+    "default": 0.03,
+    "sub": ""
   },
   {
     "key": "BotBlockPosError",
@@ -1567,7 +2614,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.35
+    "default": 0.35,
+    "sub": ""
   },
   {
     "key": "BotRoamInterval",
@@ -1577,7 +2625,8 @@
     "min": 0.5,
     "max": 15,
     "step": 0.1,
-    "default": 3.5
+    "default": 3.5,
+    "sub": ""
   },
   {
     "key": "BotMarkDistance",
@@ -1587,7 +2636,8 @@
     "min": 0.5,
     "max": 5,
     "step": 0.1,
-    "default": 1.4
+    "default": 1.4,
+    "sub": ""
   },
   {
     "key": "RumbleLight",
@@ -1597,7 +2647,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "RumbleLightTime",
@@ -1607,7 +2658,8 @@
     "min": 0.02,
     "max": 1,
     "step": 0.01,
-    "default": 0.08
+    "default": 0.08,
+    "sub": ""
   },
   {
     "key": "RumbleMedium",
@@ -1617,7 +2669,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.55
+    "default": 0.55,
+    "sub": ""
   },
   {
     "key": "RumbleMediumTime",
@@ -1627,7 +2680,8 @@
     "min": 0.02,
     "max": 1,
     "step": 0.01,
-    "default": 0.18
+    "default": 0.18,
+    "sub": ""
   },
   {
     "key": "RumbleStrong",
@@ -1637,7 +2691,8 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.9
+    "default": 0.9,
+    "sub": ""
   },
   {
     "key": "RumbleStrongTime",
@@ -1647,7 +2702,8 @@
     "min": 0.02,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "DummyReactionTime",
@@ -1657,7 +2713,8 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.3
+    "default": 0.3,
+    "sub": ""
   },
   {
     "key": "DummyJumpRange",
@@ -1667,7 +2724,8 @@
     "min": 0.5,
     "max": 10,
     "step": 0.1,
-    "default": 4
+    "default": 4,
+    "sub": ""
   },
   {
     "key": "DummyPassBackDelay",
@@ -1677,7 +2735,8 @@
     "min": 0,
     "max": 5,
     "step": 0.1,
-    "default": 0.8
+    "default": 0.8,
+    "sub": ""
   },
   {
     "key": "DummySpeedMult",
@@ -1687,7 +2746,8 @@
     "min": 0,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.6
+    "default": 0.6,
+    "sub": ""
   },
   {
     "key": "DummyGuardRange",
@@ -1697,7 +2757,8 @@
     "min": 0,
     "max": 20,
     "step": 0.5,
-    "default": 7
+    "default": 7,
+    "sub": ""
   },
   {
     "key": "DummyWanderRadius",
@@ -1707,6 +2768,7 @@
     "min": 0,
     "max": 8,
     "step": 0.1,
-    "default": 2.2
+    "default": 2.2,
+    "sub": ""
   }
 ]

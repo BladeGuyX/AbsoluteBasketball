@@ -13,6 +13,8 @@ public partial class Hud : CanvasLayer
     Label _endTitle, _endScore;
     Button _rematchBtn;
     float _countT, _msgT;
+    Control _top, _bottom, _cross, _abilityBar;
+    JinxBorder _jinx;
 
     public override void _Ready()
     {
@@ -23,6 +25,7 @@ public partial class Hud : CanvasLayer
         // ---- placar ----
         var top = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
         UiKit.Anchor(top, 0.5f, 0, 0.5f, 0, -330, 18, 330, 102);
+        _top = top;
         top.Alignment = BoxContainer.AlignmentMode.Center;
         top.AddThemeConstantOverride("separation", 0);
         root.AddChild(top);
@@ -46,11 +49,16 @@ public partial class Hud : CanvasLayer
         var cross = new ColorRect { Color = new Color(1, 1, 1, 0.8f), Size = new Vector2(6, 6), MouseFilter = Control.MouseFilterEnum.Ignore };
         UiKit.Anchor(cross, 0.5f, 0.5f, 0.5f, 0.5f, -3, -3, 3, 3);
         root.AddChild(cross);
+        _cross = cross;
+        // v0.26: borda vermelha quando a Presença Implacável estragou o seu arremesso
+        _jinx = UiKit.FullRect(new JinxBorder { M = M });
+        root.AddChild(_jinx);
         root.AddChild(UiKit.FullRect(new AimIndicator { M = M }));
 
         // ---- barras ----
         var bottom = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(420, 0) };
-        UiKit.Anchor(bottom, 0.5f, 1, 0.5f, 1, -210, -130, 210, -30);
+        UiKit.Anchor(bottom, 0.5f, 1, 0.5f, 1, -210, -205, 210, -105);
+        _bottom = bottom;
         bottom.AddThemeConstantOverride("separation", 8);
         root.AddChild(bottom);
         _powerBox = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Visible = false };
@@ -67,10 +75,10 @@ public partial class Hud : CanvasLayer
         row.AddChild(_dribblePips);
         bottom.AddChild(row);
 
-        // dicas com ícones de tecla/botão (trocam entre teclado e controle — Etapa 6)
-        var hint = new HintBar { Name = "HintBar" };
-        UiKit.Anchor(hint, 0, 1, 0, 1, 16, -34, 1200, -10);
-        root.AddChild(hint);
+        // v0.26: os controles não ficam mais na tela (estão em Configurações → Informações). No rodapé: as habilidades.
+        _abilityBar = new AbilityBar { M = M, Name = "AbilityBar" };
+        UiKit.Anchor(_abilityBar, 0.5f, 1, 0.5f, 1, -260, -100, 260, -6);
+        root.AddChild(_abilityBar);
 
         // ---- fim de jogo ----
         _endPanel = UiKit.FullRect(new CenterContainer { Visible = false });
@@ -121,7 +129,7 @@ public partial class Hud : CanvasLayer
 
     void UpdateDribblePips(Player p)
     {
-        int max = Mathf.RoundToInt(Tuning.I.DribbleCharges);
+        int max = p.St.DribbleCharges;
         while (_dribblePips.GetChildCount() < max)
         {
             var pip = new Panel { CustomMinimumSize = new Vector2(18, 18), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -132,7 +140,9 @@ public partial class Hud : CanvasLayer
             var pip = _dribblePips.GetChild<Panel>(i);
             pip.Visible = i < max;
             bool full = i < p.DribbleCharges;
-            var sb = UiKit.Box(full ? new Color("ffb020") : new Color(0.1f, 0.12f, 0.18f, 0.7f), 9, 0, 0);
+            var sb = pip.GetThemeStylebox("panel") as StyleBoxFlat;
+            if (sb == null || !pip.HasThemeStyleboxOverride("panel")) { sb = UiKit.Box(Colors.White, 9, 0, 0); pip.AddThemeStyleboxOverride("panel", sb); }
+            sb.BgColor = full ? new Color("ffb020") : new Color(0.1f, 0.12f, 0.18f, 0.7f);
             if (!full && i == p.DribbleCharges)
             {
                 float k = p.DribbleRecharge / Mathf.Max(Tuning.I.DribbleRecharge, 0.1f);
@@ -180,6 +190,9 @@ public partial class Hud : CanvasLayer
     {
         float dt = (float)delta;
         if (M == null) return;
+        bool cut = M.Cut != null && M.Cut.Active; // v0.26: na cutscene só fica a cena (e o skill check)
+        _top.Visible = !cut; _bottom.Visible = !cut; _cross.Visible = !cut;
+        if (!M.AbilitiesOn) { _bottom.OffsetTop = -130; _bottom.OffsetBottom = -30; } // sem habilidades: barras no lugar de antes
         _scoreA.Text = M.Score[0].ToString();
         _scoreB.Text = M.Score[1].ToString();
         if (M.Cfg.Mode == WinMode.Time)
@@ -192,7 +205,7 @@ public partial class Hud : CanvasLayer
         var p = M.LocalPlayer;
         if (p != null)
         {
-            _stamina.Value = p.Stamina / Mathf.Max(Tuning.I.StaminaMax, 1);
+            _stamina.Value = p.Stamina / Mathf.Max(p.St.StaminaMax, 1);
             _powerBox.Visible = p.ChargingShot;
             _power.Value = p.GetShotPlan(out var plan) ? plan.Power : 0; // força = distância usada (sem texto)
             UpdateDribblePips(p);

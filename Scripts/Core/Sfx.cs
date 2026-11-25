@@ -109,6 +109,41 @@ public static class Sfx
             + Noise() * Mathf.Exp(-t * 35) * 0.35f);
         // v0.23: roubo barrado pelo drible — "tsk" curto e agudo (raspão), baixinho
         Streams["parry"] = Make(0.16f, t => (Noise() * 0.5f + Mathf.Sin(Tau * (1900 - 3000 * t) * t) * 0.5f) * Mathf.Exp(-t * 32) * Mathf.Min(1f, t / 0.003f) * 0.55f);
+        // ---- v0.26: habilidades e cutscenes ----
+        Streams["zap"] = Make(0.28f, t => (Mathf.Sign(Mathf.Sin(Tau * (900 + 1400 * Mathf.Sin(Tau * 31 * t)) * t)) * 0.35f + Noise() * 0.45f)
+            * Mathf.Exp(-t * 11) * Mathf.Min(1f, t / 0.004f) * 0.5f);
+        float tl = 0;
+        Streams["thunder"] = Make(1.4f, t =>
+        {
+            float n = Noise();
+            tl += (n - tl) * 0.06f;
+            float crack = Noise() * Mathf.Exp(-t * 30) * 0.9f;
+            float rumble = tl * 3.2f * Mathf.Exp(-t * 2.4f) * (0.7f + 0.3f * Mathf.Sin(Tau * 7 * t));
+            return Mathf.Clamp(crack + rumble + Mathf.Sin(Tau * (55 - 20 * t) * t) * Mathf.Exp(-t * 3) * 0.5f, -1, 1) * 0.8f;
+        });
+        float wl = 0;
+        Streams["whoosh"] = Make(0.45f, t =>
+        {
+            wl += (Noise() - wl) * (0.04f + 0.25f * Mathf.Sin(Mathf.Pi * Mathf.Clamp(t / 0.45f, 0, 1)));
+            return wl * Mathf.Sin(Mathf.Pi * Mathf.Clamp(t / 0.45f, 0, 1)) * 1.8f;
+        });
+        Streams["chime"] = Make(0.9f, t => (Bell(t, 1046.5f) + Bell(t - 0.06f, 1318.5f) * 0.8f + Bell(t - 0.12f, 1568f) * 0.7f) * 0.22f);
+        Streams["fail"] = Make(0.6f, t => (Mathf.Sin(Tau * (330 - 160 * t) * t) + 0.5f * Mathf.Sin(Tau * (220 - 100 * t) * t)) * Mathf.Exp(-t * 4) * Mathf.Min(1f, t / 0.01f) * 0.35f);
+        Streams["aura"] = Make(0.6f, t => (Mathf.Sin(Tau * 110 * t) * 0.6f + Mathf.Sin(Tau * 165 * t) * 0.4f + Noise() * 0.15f)
+            * Mathf.Sin(Mathf.Pi * Mathf.Clamp(t / 0.6f, 0, 1)) * 0.45f);
+        Streams["dice"] = Make(0.35f, t =>
+        {
+            float v = 0;
+            for (int i = 0; i < 4; i++) { float tt = t - i * 0.07f; if (tt > 0) v += Noise() * Mathf.Exp(-tt * 120) * 0.8f + Mathf.Sin(Tau * 2200 * tt) * Mathf.Exp(-tt * 80) * 0.3f; }
+            return v * 0.6f;
+        });
+        // cutscenes: entrada (subida + impacto), golpe, chicote de vento, choque elétrico, trovão
+        Streams["cut_start"] = Make(0.9f, t => (Mathf.Sin(Tau * (120 + 500 * t * t) * t) * 0.3f * Mathf.Min(1f, t / 0.5f) * (t < 0.6f ? 1f : 0f))
+            + (t > 0.6f ? (Mathf.Sin(Tau * 60 * t) * 0.9f + Noise() * 0.5f) * Mathf.Exp(-(t - 0.6f) * 9) : 0f));
+        Streams["cut_hit"] = Make(0.5f, t => (Mathf.Sin(Tau * (90 - 60 * t) * t) * 0.9f + Noise() * Mathf.Exp(-t * 40) * 0.6f) * Mathf.Exp(-t * 7));
+        Streams["cut_whoosh"] = Streams["whoosh"];
+        Streams["cut_zap"] = Streams["zap"];
+        Streams["cut_thunder"] = Streams["thunder"];
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);
     }
 

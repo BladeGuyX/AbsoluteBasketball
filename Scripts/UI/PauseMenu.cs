@@ -35,7 +35,11 @@ public partial class PauseMenu : Control
 
     void OpenSettings()
     {
-        _settings = new SettingsMenu { OnClosed = () => { _settings = null; _first.GrabFocus(); } };
+        _settings = new SettingsMenu
+        {
+            OnClosed = () => { _settings = null; _first.GrabFocus(); },
+            CharacterId = M?.LocalPlayer?.CharacterId ?? -1, AbilitiesOn = M == null || M.AbilitiesOn,
+        };
         AddChild(_settings);
     }
 

@@ -29,7 +29,7 @@ public partial class CameraRig : Node3D
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (!LookEnabled || EmoteWheel.IsOpen || Input.MouseMode != Input.MouseModeEnum.Captured) return;
+        if (!LookEnabled || EmoteWheel.IsOpen || TargetPicker.IsOpen || Input.MouseMode != Input.MouseModeEnum.Captured) return;
         if (e is InputEventMouseMotion mm)
         {
             if (Time.GetTicksMsec() < IgnoreMouseUntilMs || mm.ScreenRelative.Length() > 400f) return;
@@ -101,8 +101,9 @@ public sealed class LocalInputReader
 
         var mv = Input.GetVector(Act.MoveL, Act.MoveR, Act.MoveF, Act.MoveB);
         // roda de expressões aberta no controle: o analógico esquerdo escolhe a expressão (não anda)
-        if (EmoteWheel.IsOpen && InputDevice.Gamepad) mv = Vector2.Zero;
+        if ((EmoteWheel.IsOpen || TargetPicker.IsOpen) && InputDevice.Gamepad) mv = Vector2.Zero;
         inp.Emote = EmoteWheel.TakeChosen();
+        inp.Target = TargetPicker.TakeChosen(out inp.TargetSlot); // v0.26: menu de escolher adversário
         float y = cam.Yaw;
         var right = new Vector3(Mathf.Cos(y), 0, -Mathf.Sin(y));
         var back = new Vector3(Mathf.Sin(y), 0, Mathf.Cos(y));
@@ -115,7 +116,11 @@ public sealed class LocalInputReader
             if (Input.IsActionPressed(action)) inp.Held |= b;
             if (Input.IsActionJustPressed(action)) inp.Pressed |= b;
         }
-        B(Act.Shoot, Btn.Shoot); B(Act.Pass, Btn.Pass); B(Act.Jump, Btn.Jump);
+        if (!TargetPicker.Blocking)
+        {
+            B(Act.Shoot, Btn.Shoot); B(Act.Pass, Btn.Pass); B(Act.Jump, Btn.Jump);
+            B(Act.Ab1, Btn.Ab1); B(Act.Ab2, Btn.Ab2); B(Act.Ab3, Btn.Ab3); B(Act.Ult, Btn.Ult);
+        }
         B(Act.Dribble, Btn.Dribble); B(Act.Steal, Btn.Steal); B(Act.Variation, Btn.Variation);
 
         // corrida: segurar ou alternar

@@ -3,6 +3,43 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+
+## v0.26 — personagens com atributos, habilidades e ultimates
+
+**Menus**
+1. Menu principal → "Personagens (...)": abre a tela de escolha. Troque entre King / Luck / Bolt: a prévia 3D muda, as estrelas e as 4 habilidades com a tecla de cada uma aparecem. "Escolher" salva.
+2. Jogar (local) → aparece a opção **Habilidades: Com / Sem**. "Escolher personagem e jogar" abre a escolha antes de começar.
+3. Configurações → aba **Informações**: lista de controles com o que cada um faz + habilidades completas do personagem escolhido (na pausa: do personagem da partida). Aba Controles: dá para remapear Habilidade 1/2/3 e Ultimate.
+4. Na partida **não** aparece mais o rodapé de controles. No rodapé: 4 ícones pequenos (1, 2, 3, 4 / ←↑→↓ no controle). Usou uma habilidade: o ícone escurece com o número de segundos e uma rodela vai enchendo. A ultimate tem um anel dourado que enche bem devagar e brilha quando está cheia.
+5. Modo **Sem habilidades**: os ícones somem e as teclas 1–4 não fazem nada; os atributos (ex.: Bolt mais rápido) continuam.
+
+**King** (comece a partida com ele)
+6. (1) Olho do Rei: brilho vermelho na cabeça. Arremesse subindo a câmera além do normal → vai mais longe (até ~2×); a bola deixa rastro vermelho. Passe rápido para aliado bem longe também funciona.
+7. (2) Presença: partículas vermelhas por 5 s. Um adversário a menos de 7 m que arremessar erra (bate no aro); se for você do outro lado (online), a borda da tela fica vermelha.
+8. (3) Drible Perfeito com a bola: drible com aura vermelha na bola, não gasta carga; quem tentar roubar cai com estrelinhas ~4 s.
+9. (4) Ultimate com a bola e a barra cheia (para testar rápido: ajuste "Ultimate: tempo para encher sozinha" para 30 no artifact): cutscene com barras de cinema e título. Skill check do drible (botão de arremesso): acertou → passa, corre, o defensor pula, o King gira em volta e arremessa (2º skill check, mais rápido). Acertou = **+7**. Errou qualquer um = rodada reinicia com a bola do adversário. Depois: todos voltam para onde estavam / round novo; o relógio não andou.
+
+**Luck**
+10. (1) No campo adversário com a bola: arremessa sozinho direto na cesta (às vezes erra). No próprio campo não faz nada.
+11. (2) Abre um menu em cima: mouse para os lados (ou analógico / ←→) escolhe, arremesso/salto confirma, passe cancela. O escolhido ganha um trevo verde; se ele fizer cesta em 20 s, os pontos vão para o seu time.
+12. (3) Impulso para onde a câmera olha; passando por quem tem a bola, rouba. Às vezes tropeça (atordoado 2 s).
+13. (4) Ultimate: partículas verdes, mais rápido, cestas +1. Aperte 4 de novo para apostar: ganhou = efeito dourado, mais tempo e mais bônus; perdeu = modo acaba e fica atordoado 4 s.
+
+**Bolt**
+14. (1) Com a bola, olhando para um adversário perto: passa como raio, sai ~3 m na frente; o adversário fica atordoado.
+15. (2) Segure 2 olhando para alguém: anel ciano no pé de quem vai trocar; solte = trocam de lugar com raios.
+16. (3) Sem a bola: pulo altíssimo com trovão; adversários perto ficam atordoados; no ar bloqueia muito.
+17. (4) Ultimate com a bola: menu de escolher adversário → cutscene do Duelo (closes nos rostos, raio entre os olhos). Skill checks seguidos e cada vez mais rápidos. Você errou = ele fica com a bola onde estava e o jogo continua; ele errou = Bolt enterra com trovão, **+7**.
+
+**Online (2 PCs)**
+18. No lobby: "Escolher personagem" muda o nome do personagem ao lado do seu nome para todos; o host escolhe Com/Sem habilidades.
+19. Cutscene de qualquer jogador aparece para todos; no Duelo contra você, o skill check aparece na SUA tela e vale o que você viu.
+
+**Bots**: usam as habilidades e as ultimates (mais no Difícil) e fazem os skill checks das cutscenes.
+
+Testes automáticos novos: `--smoke-abilities` (14 verificações) e prints `--cut-shot <png> [--duel] [--miss]`.
+
+---
 ## v0.25 — 3º personagem (Raio, nome provisório) e pele do Rei
 
 **Atualizar:** menu principal → "Atualizar para v0.25".

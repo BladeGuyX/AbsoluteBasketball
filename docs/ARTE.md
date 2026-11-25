@@ -141,6 +141,8 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - Pele do Rei: `#DFAA84` desde a v0.25 (antes `#F5E6D3`, pálida demais no toon). O toon clareia bastante: escolha a pele uns tons mais escura do que quer ver.
 - Ametista: casaco aberto (`FRONT_OPEN`), camiseta, quadril de calça por baixo, barra dobrada, tênis; cabelo = mechas Bézier (`strand`) + volume do topete; rostos: Serio = "Relaxado", SorrisoFrio = "Sorriso convencido", Feliz = "Rindo".
 
+- **v0.26:** personagem novo também precisa de estrelas no Tuning (`<Nome>Star*`, seção com `Sub = "Estrelas"` — vira aba no artifact), 4 `AbilityDef` em `Characters.cs` e a lógica em `PlayerAbilities` (+ bots em `BotBrain`). Nomes atuais: King (rei.glb), Luck (ametista.glb), Bolt (raio.glb).
+
 ## Integração na Godot (fazer quando o 1º modelo chegar)
 - **Bola:** ✅ feito na v0.14 (ver "Modelos prontos").
 - **Cesta:** ✅ feito na v0.17 (ver "Modelos prontos"). Texto antigo: `CourtBuilder.BuildHoop` cria as peças por código. Trocar por `hoop.glb`, posicionando cada peça pelo nome conforme `CourtGeo` (`RimCenter`, `Board`, `PoleBase`). As colisões continuam as do código.

@@ -70,6 +70,12 @@ public static class InputDevice
             };
         if (b.Kind == "joyaxis")
             return (JoyAxis)b.Code switch { JoyAxis.TriggerLeft => "LT", JoyAxis.TriggerRight => "RT", _ => InputSetup.Describe(b) };
+        if (b.Kind == "joybutton")
+            return (JoyButton)b.Code switch
+            {
+                JoyButton.DpadLeft => "←", JoyButton.DpadUp => "↑", JoyButton.DpadRight => "→", JoyButton.DpadDown => "↓",
+                _ => InputSetup.Describe(b),
+            };
         if (b.Kind == "key")
             return (Key)b.Code switch { Key.Space => "Espaço", Key.Shift => "Shift", Key.Ctrl => "Ctrl", Key.Alt => "Alt", Key.Tab => "Tab", _ => InputSetup.Describe(b) };
         return InputSetup.Describe(b);

@@ -83,6 +83,14 @@ public partial class Player : CharacterBody3D
     float _releaseT, _passReleaseT;
     float _passBuffer; // aperto de passe guardado (Tuning.PassBufferTime)
 
+    // ---- v0.26: personagens com atributos e habilidades ----
+    /// <summary>Atributos de estrela já aplicados (velocidade, estamina...). Atualizado a cada tick.</summary>
+    public PlayerStats St = PlayerStats.Neutral;
+    public PlayerAbilities Ab;
+    // movimento roteirizado curto (Drible Relâmpago do Bolt): ignora a física até chegar
+    Vector3 _moveFrom, _moveTo; float _moveT, _moveDur, _moveBulge;
+    public bool InScriptedMove => _moveDur > 0;
+
     public bool HasBall => M?.Ball?.Holder == this;
     public bool IsDribbling => DribbleActive > 0;
     public bool CanCatch => true;
@@ -93,6 +101,8 @@ public partial class Player : CharacterBody3D
 
     public override void _Ready()
     {
+        Ab ??= new PlayerAbilities(this);
+        UpdateStats();
         CollisionLayer = 2;
         CollisionMask = 1 | 2;
         FloorSnapLength = 0.2f;
@@ -119,9 +129,13 @@ public partial class Player : CharacterBody3D
                 new Vector3(Mathf.Cos(a) * 0.3f, 0, Mathf.Sin(a) * 0.3f), false));
         }
         AddChild(_stars);
-        Stamina = Tuning.I.StaminaMax;
-        DribbleCharges = Mathf.RoundToInt(Tuning.I.DribbleCharges);
+        Stamina = St.StaminaMax;
+        DribbleCharges = St.DribbleCharges;
+        AddChild(new AbilityAura { P = this, Name = "AbilityAura" });
     }
+
+    /// <summary>Atributos de estrela (+ bônus do modo apostador do Luck). Testes antigos jogam com tudo neutro.</summary>
+    public void UpdateStats() => St = PlayerStats.For(CharacterId, Ab?.ModeBonus ?? 0f, M == null || M.UseStars);
 
     // =====================================================================
     /// <summary>Simulação autoritativa de um tick.</summary>
@@ -129,6 +143,7 @@ public partial class Player : CharacterBody3D
     {
         var t = Tuning.I;
         LastInput = inp;
+        UpdateStats();
         TickTimers(dt);
         if (SkillFlash > 0) SkillFlash -= dt;
         // guarda o aperto do passe por um instante (sai assim que der: pegando a bola, pousando, fim do drible...)
@@ -137,6 +152,7 @@ public partial class Player : CharacterBody3D
         // expressões (v0.21): valem a qualquer momento
         if (inp.Emote > 0 && inp.Emote <= Expressions.Count) { Emote = inp.Emote; EmoteT = t.EmoteDuration; }
         else if (EmoteT > 0) { EmoteT -= dt; if (EmoteT <= 0) Emote = 0; }
+        Ab.Tick(inp, dt);
 
         if (RimHang > 0)
         {
@@ -152,6 +168,13 @@ public partial class Player : CharacterBody3D
         if (Flight != FlightKind.None)
         {
             FlightTick(inp, dt);
+            ApplyPose(dt, 0);
+            return;
+        }
+
+        if (_moveDur > 0)
+        {
+            ScriptedMoveTick(dt);
             ApplyPose(dt, 0);
             return;
         }
@@ -202,7 +225,7 @@ public partial class Player : CharacterBody3D
         }
 
         // ---------- corrida / estamina ----------
-        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && !IsDribbling && StealFail <= 0 && !Airborne;
+        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && !IsDribbling && StealFail <= 0 && !Airborne && Ab.DashT <= 0;
         Running = wantRun && Stamina > 0 && (Running || Stamina >= t.StaminaMinToRun);
         if (Running)
         {
@@ -211,14 +234,15 @@ public partial class Player : CharacterBody3D
             if (Stamina <= 0) Running = false;
         }
         else if (_regenDelay > 0) _regenDelay -= dt;
-        else Stamina = Mathf.Min(t.StaminaMax, Stamina + t.StaminaRegenPerSec * dt);
+        else Stamina = Mathf.Min(St.StaminaMax, Stamina + St.StaminaRegen * dt);
+        if (Stamina > St.StaminaMax) Stamina = St.StaminaMax;
 
         // ---------- movimento ----------
-        float speed = Running ? t.RunSpeed : t.WalkSpeed;
+        float speed = Running ? St.RunSpeed : St.WalkSpeed;
         if (HasBall) speed *= t.CarrierSpeedMult;
         if (ChargingShot) speed *= t.ShotChargeMoveMult;
         if (ChargingPass) speed *= t.PassChargeMoveMult;
-        if (IsDribbling) speed = t.WalkSpeed * t.DribbleSpeedMult; // driblando: fração da velocidade andando
+        if (IsDribbling) speed = St.WalkSpeed * St.DribbleSpeedMult; // driblando: fração da velocidade andando
         if (StealFail > 0) speed *= t.StealFailSpeedMult;
         if (IsDummy) speed *= t.DummySpeedMult;
         if (ChargingJump) speed = 0;
@@ -226,7 +250,8 @@ public partial class Player : CharacterBody3D
         var v = Velocity;
         Vector3 hv;
         if (Airborne) hv = new Vector3(_jumpVel.X, 0, _jumpVel.Z);
-        else if (StealDash > 0) hv = Forward * t.StealDashSpeed;
+        else if (Ab.DashT > 0) hv = Forward * t.LuckDashSpeed;
+        else if (StealDash > 0) hv = Forward * St.StealDashSpeed;
         else
         {
             hv = new Vector3(v.X, 0, v.Z);
@@ -249,7 +274,8 @@ public partial class Player : CharacterBody3D
                 Airborne = false;
                 if (HasBall && ChargingShot) ReleaseShot(); // pulou carregando e não soltou: arremessa ao tocar o chão
                 if (_stunOnLand) { _stunOnLand = false; Stun = t.DunkStunTime; }
-                else LandLock = t.LandLockTime;
+                else LandLock = St.LandLockTime;
+                Ab.SkyJump = false;
                 _jumpVel = Vector3.Zero;
                 M.OnLanded(this);
             }
@@ -257,16 +283,17 @@ public partial class Player : CharacterBody3D
 
         // ---------- roubo: acertou alguém? ----------
         if (StealDash > 0) CheckStealHit();
+        if (Ab.DashT > 0) Ab.CheckDashSteal();
 
         // ---------- rotação ----------
         float targetYaw = Yaw;
         if (ChargingShot || ChargingPass || ChargingJump) targetYaw = inp.AimYaw;
-        else if (moving && !Airborne && StealDash <= 0 && LandLock <= 0) targetYaw = ShotMath.YawOf(wish);
+        else if (moving && !Airborne && StealDash <= 0 && Ab.DashT <= 0 && LandLock <= 0) targetYaw = ShotMath.YawOf(wish);
         Yaw = Mathf.LerpAngle(Yaw, targetYaw, 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
         UpdateDribble(dt);
         _shotPlanValid = ChargingShot;
-        if (ChargingShot) _shotPlan = ShotMath.Plan(GlobalPosition, Team, inp.AimYaw, inp.AimPitch, M.Geo);
+        if (ChargingShot) _shotPlan = PlanShot(inp.AimYaw, inp.AimPitch);
         ApplyPose(dt, new Vector2(Velocity.X, Velocity.Z).Length());
     }
 
@@ -309,9 +336,11 @@ public partial class Player : CharacterBody3D
     public void ResetForRound()
     {
         var t = Tuning.I;
-        Stamina = t.StaminaMax;
+        UpdateStats();
+        Stamina = St.StaminaMax;
         _regenDelay = 0;
-        DribbleCharges = Mathf.RoundToInt(t.DribbleCharges);
+        DribbleCharges = St.DribbleCharges;
+        Ab.OnRoundReset(); // v0.26: recargas das habilidades e a carga da ultimate NÃO voltam
         DribbleRecharge = 0;
         DribbleActive = 0;
         StealFail = 0;
@@ -333,7 +362,8 @@ public partial class Player : CharacterBody3D
         if (Stun > 0 && !Airborne) Stun -= dt;
         if (StealFail > 0) StealFail -= dt;
         if (DribbleActive > 0) DribbleActive -= dt;
-        int max = Mathf.RoundToInt(t.DribbleCharges);
+        int max = St.DribbleCharges;
+        if (DribbleCharges > max) DribbleCharges = max;
         if (DribbleCharges < max)
         {
             DribbleRecharge += dt;
@@ -356,6 +386,7 @@ public partial class Player : CharacterBody3D
         {
             ChargingShot = true;
             ShotCharge = 0;
+            Ab.ArmEyeIfActive(); // Olho do Rei: gasto neste arremesso
         }
         if (!ChargingShot) return;
         ShotCharge += dt;
@@ -368,6 +399,7 @@ public partial class Player : CharacterBody3D
         if (!ChargingShot) return;
         ChargingShot = false;
         ShotCharge = 0;
+        Ab.EyeArmed = false;
     }
 
     /// <summary>Plano mostrado na prévia (calculado no fim do último tick). O arremesso usa exatamente este plano.</summary>
@@ -375,10 +407,18 @@ public partial class Player : CharacterBody3D
     {
         plan = default;
         if (!ChargingShot) return false;
-        if (!_shotPlanValid) _shotPlan = ShotMath.Plan(GlobalPosition, Team, LastInput.AimYaw, LastInput.AimPitch, M.Geo);
+        if (!_shotPlanValid) _shotPlan = PlanShot(LastInput.AimYaw, LastInput.AimPitch);
         _shotPlanValid = true;
         plan = _shotPlan;
         return true;
+    }
+
+    /// <summary>Plano do arremesso com o alcance deste jogador (Precisão) e o Olho do Rei (alcance extra subindo a câmera).</summary>
+    public ShotMath.ShotPlan PlanShot(float yaw, float pitch)
+    {
+        float range = St.ShotRangeMax;
+        float ext = Ab.EyeArmed ? range * Ab.EyeMult : -1f;
+        return ShotMath.Plan(GlobalPosition, Team, yaw, pitch, M.Geo, range, ext);
     }
 
     void ReleaseShot()
@@ -389,7 +429,25 @@ public partial class Player : CharacterBody3D
         _shotPlanValid = false;
         BallLockoutTimer = Tuning.I.ShotPickupLockout;
         _releaseT = ReleaseAnimTime;
+        // v0.26: Presença Implacável de um King adversário por perto -> erra com certeza
+        bool jinx = M.PresenceJinx(this);
+        if (jinx) plan = ShotMath.Jinx(plan, Team, M.Geo, Tuning.I.KingPresenceMissOffset, M.Rng.Randf() < 0.5f ? -1f : 1f);
         M.Ball.Throw(this, plan.Pos, plan.Vel, BallState.Shot);
+        if (jinx) { M.Ball.NoScore = true; Ab.JinxFlash = Tuning.I.KingPresenceFlash; Sfx.Play3D(M, "fx_jinx", plan.Pos); M.LogEvent("JINX", this); }
+        if (Ab.EyeArmed) { M.Ball.Aura = 1; Ab.EyeArmed = false; }
+        M.LogEvent("SHOT", this);
+    }
+
+    /// <summary>v0.26 (Luck 1): arremesso na hora, direto na cesta adversária. missOffset &gt; 0 = erra (bate no aro e sai).</summary>
+    public void ThrowDirectShot(float missOffset)
+    {
+        CancelShot(false); CancelPass(); DribbleActive = 0;
+        var plan = ShotMath.Direct(GlobalPosition, Team, M.Geo, missOffset, M.Rng.Randf() < 0.5f ? -1f : 1f);
+        Yaw = ShotMath.YawOf((M.Geo.RimCenter[CourtGeo.AttackHoop(Team)] - GlobalPosition) with { Y = 0 });
+        BallLockoutTimer = Tuning.I.ShotPickupLockout;
+        _releaseT = ReleaseAnimTime;
+        M.Ball.Throw(this, plan.Pos, plan.Vel, BallState.Shot);
+        if (missOffset > 0) M.Ball.NoScore = true;
         M.LogEvent("SHOT", this);
     }
 
@@ -404,6 +462,7 @@ public partial class Player : CharacterBody3D
             _passBuffer = 0;
             ChargingPass = true;
             PassCharge = 0;
+            Ab.ArmEyeIfActive(); // Olho do Rei: gasto neste passe
             PassHigh = false;
             PassTarget = null;
         }
@@ -419,8 +478,8 @@ public partial class Player : CharacterBody3D
         if (tap)
         {
             // passe rápido: aliado livre mais próximo (se não houver, não passa)
-            var target = Passing.Nearest(this, PassHigh);
-            if (target == null) return;
+            var target = Passing.Nearest(this, PassHigh, Ab.EyeMult);
+            if (target == null) { Ab.EyeArmed = false; return; }
             var vel = Passing.Velocity(this, target, PassHigh, out var pos);
             Yaw = ShotMath.YawOf(target.GlobalPosition - GlobalPosition);
             ThrowPass(pos, vel, state, target);
@@ -428,7 +487,7 @@ public partial class Player : CharacterBody3D
         else
         {
             // passe carregado: lança na direção da câmera, sem alvo e sem assistência
-            var vel = Passing.AimedVelocity(inp.AimYaw, inp.AimPitch, PassHigh);
+            var vel = Passing.AimedVelocity(inp.AimYaw, inp.AimPitch, PassHigh, St.AimPassSpeedMult * Mathf.Sqrt(Ab.EyeMult));
             Yaw = inp.AimYaw;
             ThrowPass(Passing.ReleasePos(this, GlobalPosition + ShotMath.Dir(inp.AimYaw)), vel, state, null);
         }
@@ -439,11 +498,13 @@ public partial class Player : CharacterBody3D
         BallLockoutTimer = Tuning.I.PassLockout;
         _passReleaseT = 0.3f;
         M.Ball.Throw(this, pos, vel, state, target);
+        if (Ab.EyeArmed) { M.Ball.Aura = 1; Ab.EyeArmed = false; }
         M.LogEvent(state == BallState.HighPass ? "HIGHPASS" : "PASS", this, target);
     }
 
     public void CancelPass()
     {
+        if (ChargingPass && Ab != null) Ab.EyeArmed = false;
         ChargingPass = false;
         PassTarget = null;
     }
@@ -462,14 +523,15 @@ public partial class Player : CharacterBody3D
             _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0;
         }
         if (!ChargingJump) return;
-        JumpCharge = Mathf.Min(JumpCharge + dt, t.JumpChargeTime);
+        float chargeTime = St.JumpChargeTime;
+        JumpCharge = Mathf.Min(JumpCharge + dt, chargeTime);
         if (wish.LengthSquared() > 0.01f) { _jumpWish = wish; _jumpRun = inp.IsHeld(Btn.Sprint) && Stamina > 0; }
         if (inp.IsHeld(Btn.Jump)) return; // pula só ao soltar (segurando, fica carregado até soltar)
 
         // pula: direção vem do movimento antes de pular, quase sem controle no ar
-        float k = t.JumpChargeTime > 0 ? JumpCharge / t.JumpChargeTime : 1f;
-        float vy = Mathf.Lerp(t.JumpVelMin, t.JumpVelMax, k);
-        float hs = (_jumpRun ? t.RunSpeed : t.WalkSpeed) * t.JumpCarry;
+        float k = chargeTime > 0 ? JumpCharge / chargeTime : 1f;
+        float vy = Mathf.Lerp(St.JumpVelMin, St.JumpVelMax, k);
+        float hs = (_jumpRun ? St.RunSpeed : St.WalkSpeed) * t.JumpCarry;
         var h = _jumpWish * hs;
         var cur = new Vector3(Velocity.X, 0, Velocity.Z);
         if (cur.Length() > h.Length()) h = cur * t.JumpCarry;
@@ -510,6 +572,7 @@ public partial class Player : CharacterBody3D
         float ang = Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(rel) - Yaw));
         if (ang > Mathf.DegToRad(t.StealAngleDeg)) return;
         StealDash = 0;
+        if (holder.Ab.PerfectDribble && holder.IsDribbling) { holder.Ab.PunishStealer(this); return; } // v0.26: Drible Perfeito
         if (holder.CanBeStolen)
         {
             holder.CancelShot(false);
@@ -523,17 +586,18 @@ public partial class Player : CharacterBody3D
     void FailSteal(Player immuneTarget = null)
     {
         StealDash = 0;
-        StealFail = Tuning.I.StealFailTime;
+        StealFail = St.StealFailTime;
         M.OnStealFailed(this, immuneTarget);
     }
 
     // =====================================================================
     // Drible especial
 
-    void StartDribble()
+    /// <summary>Drible especial. free = não gasta carga (Drible Perfeito do King, com duração extra).</summary>
+    public void StartDribble(bool free = false, float extra = 0f)
     {
-        DribbleCharges--;
-        DribbleActive = Tuning.I.DribbleDuration;
+        if (!free) DribbleCharges--;
+        DribbleActive = Tuning.I.DribbleDuration + extra;
         M.LogEvent("DRIBBLE", this);
         Sfx.Play3D(M, "dribble", GlobalPosition, Tuning.I.DribbleSoundDb + 6, 1.2f);
     }
@@ -581,9 +645,9 @@ public partial class Player : CharacterBody3D
         if (_passReleaseT > 0) _passReleaseT -= dt;
         var st = new RigState
         {
-            Yaw = Yaw, Speed = Airborne || StealDash > 0 ? 0 : hspeed, HasBall = HasBall, Charging = ChargingShot, Charge = ShotCharge,
+            Yaw = Yaw, Speed = Airborne || StealDash > 0 || Ab.DashT > 0 ? 0 : hspeed, HasBall = HasBall, Charging = ChargingShot, Charge = ShotCharge,
             Release = _releaseT / ReleaseAnimTime, PassCharging = ChargingPass, PassRelease = _passReleaseT / 0.3f,
-            JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0, Slowed = StealFail > 0,
+            JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0 || Ab.DashT > 0 || _moveDur > 0 || _netScripted, Slowed = StealFail > 0,
             Landing = LandLock > 0, BallSide = BallSide, Dribbling = IsDribbling,
             Dunking = Flight != FlightKind.None, Stunned = Stun > 0 || _stunOnLand,
             VelY = Velocity.Y, PassHigh = PassHigh, Hanging = RimHang > 0, Emote = Emote,
@@ -626,9 +690,70 @@ public partial class Player : CharacterBody3D
         StealDash = 0; StealFail = 0; DribbleActive = 0;
         Flight = FlightKind.None; Stun = 0; _stunOnLand = false; SkillFlash = 0; _shotPlanValid = false; RimHang = 0;
         Running = false;
+        _moveDur = 0;
+        Ab?.OnRoundReset();
         _releaseT = 0; _passReleaseT = 0; _passBuffer = 0;
         _visual.Rotation = new Vector3(0, Yaw, 0);
         ResetPhysicsInterpolation();
+    }
+
+    // =====================================================================
+    // v0.26: movimentos das habilidades
+
+    /// <summary>Movimento curto roteirizado (Drible Relâmpago): de <paramref name="from"/> a <paramref name="to"/> em dur s,
+    /// com uma curva para o lado (bulge, m) para passar ao lado do adversário.</summary>
+    public void StartScriptedMove(Vector3 from, Vector3 to, float dur, float bulge)
+    {
+        CancelShot(false); CancelPass(); ChargingJump = false; StealDash = 0;
+        _moveFrom = from; _moveTo = to; _moveT = 0; _moveDur = Mathf.Max(dur, 0.02f); _moveBulge = bulge;
+        Velocity = Vector3.Zero;
+    }
+
+    void ScriptedMoveTick(float dt)
+    {
+        _moveT += dt;
+        float k = Mathf.Clamp(_moveT / _moveDur, 0, 1);
+        var d = (_moveTo - _moveFrom) with { Y = 0 };
+        var side = d.LengthSquared() > 1e-4f ? new Vector3(-d.Z, 0, d.X).Normalized() : Vector3.Zero;
+        var p = _moveFrom.Lerp(_moveTo, Mathf.SmoothStep(0, 1, k)) + side * (_moveBulge * Mathf.Sin(k * Mathf.Pi));
+        GlobalPosition = p;
+        Velocity = Vector3.Zero;
+        if (d.LengthSquared() > 1e-4f) Yaw = ShotMath.YawOf(d);
+        if (k >= 1f) { _moveDur = 0; if (d.LengthSquared() > 1e-4f) Velocity = d.Normalized() * St.RunSpeed * 0.6f; }
+    }
+
+    Vector3? _queuedReloc;
+
+    /// <summary>Swap: a troca acontece no fim do tick (Match), senão os dois corpos se sobrepõem no meio da física.</summary>
+    public void QueueRelocate(Vector3 pos) => _queuedReloc = pos;
+
+    public void ApplyQueuedRelocate()
+    {
+        if (!_queuedReloc.HasValue) return;
+        var p = _queuedReloc.Value;
+        _queuedReloc = null;
+        Relocate(p);
+    }
+
+    /// <summary>Teleporte que mantém o estado (Swap do Bolt).</summary>
+    public void Relocate(Vector3 pos)
+    {
+        GlobalPosition = pos;
+        Velocity = Vector3.Zero;
+        _moveDur = 0;
+        CancelShot(false); CancelPass(); ChargingJump = false; StealDash = 0;
+        ResetPhysicsInterpolation();
+    }
+
+    /// <summary>Pulo reto para cima, sem carga (Arranha-Céu do Bolt).</summary>
+    public void SkyJumpNow(float vy)
+    {
+        CancelShot(false); CancelPass(); ChargingJump = false; StealDash = 0;
+        _jumpVel = new Vector3(0, vy, 0);
+        Velocity = Vector3.Zero;
+        Airborne = true;
+        _airTime = 0;
+        M.LogEvent("JUMP", this);
     }
 
     // =====================================================================
@@ -647,7 +772,7 @@ public partial class Player : CharacterBody3D
         if (IsDribbling || ChargingShot || ChargingPass || M == null || !M.CanAct) return false;
         int hoop = CourtGeo.AttackHoop(Team);
         var to = FlatToRim(hoop);
-        if (to.Length() > t.DunkRange) return false;
+        if (to.Length() > St.DunkRange) return false;
         if (to.Length() < 0.3f) return true;
         var hv = new Vector3(Velocity.X, 0, Velocity.Z);
         var dir = hv.Length() >= 0.6f ? hv : Forward;
@@ -783,17 +908,19 @@ public partial class Player : CharacterBody3D
         public float Stamina, ShotCharge, PassCharge, Stun, StealFail, StealDash, DribbleActive, LandLock, DribblePhase,
             ReleaseT, PassReleaseT, FlightT, FlightDur, DunkPressT, SkillFlash, DribbleRecharge, RimHang;
         public byte DribbleCharges, Emote;
+        public PlayerAbilities.NetData Ab;   // v0.26
     }
 
     [System.Flags]
     enum NF : ushort
     {
         Running = 1, ChargingShot = 2, ChargingPass = 4, PassHigh = 8, ChargingJump = 16, Airborne = 32, Dunk = 64,
-        DunkPressed = 128, SkillFlashOk = 256, StunOnLand = 512, DunkReady = 1024,
+        DunkPressed = 128, SkillFlashOk = 256, StunOnLand = 512, DunkReady = 1024, Scripted = 2048,
     }
 
     /// <summary>Cliente: "pode enterrar" calculado no host (o boneco do cliente não tem física de chão).</summary>
     public bool NetDunkReady;
+    bool _netScripted;
     /// <summary>Setinhas de "pode enterrar" (host: calcula; cliente: o que o host mandou).</summary>
     public bool DunkReadyVisual => M != null && M.IsClient ? NetDunkReady : CanDunk();
 
@@ -811,13 +938,14 @@ public partial class Player : CharacterBody3D
         if (SkillFlashOk) f |= NF.SkillFlashOk;
         if (_stunOnLand) f |= NF.StunOnLand;
         if (IsLocalHuman || !IsBot) { if (CanDunk()) f |= NF.DunkReady; }
+        if (_moveDur > 0) f |= NF.Scripted;
         return new NetState
         {
             Pos = GlobalPosition, Vel = Velocity, Yaw = Yaw, Flags = (ushort)f,
             Stamina = Stamina, ShotCharge = ShotCharge, PassCharge = PassCharge, Stun = Stun, StealFail = StealFail, StealDash = StealDash,
             DribbleActive = DribbleActive, LandLock = LandLock, DribblePhase = DribblePhase, ReleaseT = _releaseT, PassReleaseT = _passReleaseT,
             FlightT = FlightT, FlightDur = FlightDur, DunkPressT = DunkPressT, SkillFlash = SkillFlash, DribbleRecharge = DribbleRecharge,
-            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255), RimHang = RimHang, Emote = Emote,
+            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255), RimHang = RimHang, Emote = Emote, Ab = Ab.Capture(),
         };
     }
 
@@ -827,6 +955,7 @@ public partial class Player : CharacterBody3D
         w.F(s.Stamina); w.F(s.ShotCharge); w.F(s.PassCharge); w.F(s.Stun); w.F(s.StealFail); w.F(s.StealDash); w.F(s.DribbleActive);
         w.F(s.LandLock); w.F(s.DribblePhase); w.F(s.ReleaseT); w.F(s.PassReleaseT); w.F(s.FlightT); w.F(s.FlightDur); w.F(s.DunkPressT);
         w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges); w.F(s.RimHang); w.U8(s.Emote);
+        PlayerAbilities.Write(w, s.Ab);
     }
 
     public static NetState ReadNet(NetReader r) => new()
@@ -835,6 +964,7 @@ public partial class Player : CharacterBody3D
         Stamina = r.F(), ShotCharge = r.F(), PassCharge = r.F(), Stun = r.F(), StealFail = r.F(), StealDash = r.F(), DribbleActive = r.F(),
         LandLock = r.F(), DribblePhase = r.F(), ReleaseT = r.F(), PassReleaseT = r.F(), FlightT = r.F(), FlightDur = r.F(), DunkPressT = r.F(),
         SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(), RimHang = r.F(), Emote = r.U8(),
+        Ab = PlayerAbilities.Read(r),
     };
 
     /// <summary>Cliente: aplica o estado (já interpolado) e anima. Não simula nada.</summary>
@@ -862,6 +992,9 @@ public partial class Player : CharacterBody3D
         FlightT = s.FlightT; FlightDur = s.FlightDur; DunkPressT = s.DunkPressT; SkillFlash = s.SkillFlash; DribbleRecharge = s.DribbleRecharge;
         DribbleCharges = s.DribbleCharges;
         RimHang = s.RimHang; Emote = s.Emote;
+        Ab.Apply(s.Ab);
+        _netScripted = (f & NF.Scripted) != 0;
+        UpdateStats();
         _shotPlanValid = false;
         ApplyPose(dt, new Vector2(s.Vel.X, s.Vel.Z).Length());
     }
@@ -876,6 +1009,27 @@ public partial class Player : CharacterBody3D
         s.DribblePhase = Mathf.Lerp(a.DribblePhase, b.DribblePhase, k);
         s.FlightT = Mathf.Lerp(a.FlightT, b.FlightT, k);
         return s;
+    }
+
+    /// <summary>Teste (--smoke-abilities): arremesso certinho na cesta adversária, pelo caminho normal (passa pela Presença).</summary>
+    public void TestShot()
+    {
+        var rim = M.Geo.RimCenter[CourtGeo.AttackHoop(Team)];
+        float yaw = ShotMath.YawOf((rim - GlobalPosition) with { Y = 0 });
+        var rel = ShotMath.ReleasePos(GlobalPosition, yaw);
+        float d = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
+        LastInput = new PlayerInput { AimYaw = yaw, AimPitch = ShotMath.PitchForDistance(d, St.ShotRangeMax), SkillT = -1 };
+        Yaw = yaw;
+        ChargingShot = true;
+        _shotPlanValid = false;
+        ReleaseShot();
+    }
+
+    /// <summary>Teste: bote do roubo na direção de alguém.</summary>
+    public void TestSteal(Player target)
+    {
+        Yaw = ShotMath.YawOf((target.GlobalPosition - GlobalPosition) with { Y = 0 });
+        StealDash = Tuning.I.StealDashTime;
     }
 
     /// <summary>Animação de soltar o arremesso (usada no lance livre automático).</summary>

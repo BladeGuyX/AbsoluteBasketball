@@ -4,7 +4,7 @@ using Godot;
 
 namespace AB;
 
-public enum MatchPhase { Countdown, Playing, Scored, FreeThrow, Ended }
+public enum MatchPhase { Countdown, Playing, Scored, FreeThrow, Ended, Cutscene }
 public enum WinMode { Points, Time }
 
 public sealed class MatchConfig
@@ -22,6 +22,11 @@ public sealed class MatchConfig
     public bool SmokeE2;             // --smoke-e2 (passe, drible, bloqueio, roubo)
     public bool SmokeE3;             // --smoke-e3 (enterrada, skill check, falta)
     public bool SmokeBlock;          // --smoke-block (bot bloqueando arremessos)
+    public bool SmokeAbilities;      // --smoke-abilities (v0.26: habilidades, ultimates e cutscenes)
+    public CutKind CutShot;          // --cut-shot <png> [--duel] [--miss]: prints da cutscene (v0.26)
+    public bool CutShotMiss;
+    /// <summary>v0.26: false = modo sem habilidades (ainda escolhe personagem, mas nenhuma habilidade nem ultimate funciona).</summary>
+    public bool Abilities = true;
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
     // ---- online (Etapa 5) ----
@@ -67,6 +72,7 @@ public partial class Match : Node3D
     ScenarioPilot _scenario;
     DunkScenario _dunkScenario;
     BlockScenario _blockScenario;
+    AbilityScenario _abilScenario;
     int _lastCountShown = -1;
     float _stuckTimer;
     float _smokeTime;
@@ -92,7 +98,12 @@ public partial class Match : Node3D
     public bool CanMove => Phase is MatchPhase.Playing or MatchPhase.Scored;
     public bool CanAct => Phase == MatchPhase.Playing;
     public bool InputBlocked => (_pause != null && _pause.IsOpen) || Phase == MatchPhase.Ended;
-    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.SmokeBlock || Cfg.SmokeNet || Cfg.AutoPilotLocal;
+    public bool Automated => Cfg.SmokeTest || Cfg.SmokeE2 || Cfg.SmokeE3 || Cfg.SmokeE4 || Cfg.SmokeBlock || Cfg.SmokeNet || Cfg.AutoPilotLocal || Cfg.SmokeAbilities || Cfg.CutShot != CutKind.None;
+    /// <summary>v0.26: atributos de estrela valem (os testes antigos jogam com tudo neutro, como antes dos personagens).</summary>
+    public bool UseStars => !Automated || Cfg.SmokeAbilities || Cfg.CutShot != CutKind.None;
+    /// <summary>v0.26: habilidades e ultimates ligadas nesta partida.</summary>
+    public bool AbilitiesOn => Cfg.Abilities && (!Automated || Cfg.SmokeAbilities || Cfg.SmokeNet || Cfg.CutShot != CutKind.None);
+    public Cutscene Cut;
     public bool IsOnline => Cfg.Net != NetRole.None;
     public bool IsHost => Cfg.Net == NetRole.Host;
     public bool IsClient => Cfg.Net == NetRole.Client;
@@ -132,11 +143,14 @@ public partial class Match : Node3D
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
         AddChild(new ImpactFx { M = this, Name = "ImpactFx" });
+        Cut = new Cutscene { M = this, Name = "Cutscene" };
+        AddChild(Cut);
         if (LocalPlayer != null && !Automated)
         {
             var layer = new CanvasLayer { Layer = 6, Name = "EmoteLayer" };
             AddChild(layer);
             layer.AddChild(new EmoteWheel { M = this, Name = "EmoteWheel" });
+            layer.AddChild(new TargetPicker { M = this, Name = "TargetPicker" });
         }
         _pause = new PauseMenu { M = this, Name = "Pause" };
         AddChild(_pause);
@@ -146,6 +160,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeE2) _scenario = new ScenarioPilot(this, LocalPlayer);
         if (Cfg.SmokeE3) _dunkScenario = new DunkScenario(this, LocalPlayer);
         if (Cfg.SmokeBlock) _blockScenario = new BlockScenario(this, LocalPlayer);
+        if (Cfg.SmokeAbilities) _abilScenario = new AbilityScenario(this, LocalPlayer);
         if (IsOnline) NetSession.I?.RegisterMatch(this);
         if (IsClient)
         {
@@ -325,6 +340,8 @@ public partial class Match : Node3D
                     if (Clock <= 0) OnTimeUp();
                 }
                 break;
+            case MatchPhase.Cutscene:
+                break;
             case MatchPhase.Scored:
                 PhaseTimer -= dt;
                 if (PhaseTimer <= 0)
@@ -337,6 +354,8 @@ public partial class Match : Node3D
                 break;
         }
 
+        bool cut = Phase == MatchPhase.Cutscene;
+        if (cut) _cutInputs.Clear();
         foreach (var p in Players)
         {
             PlayerInput inp = default;
@@ -346,16 +365,28 @@ public partial class Match : Node3D
                 else if (_scenario != null) inp = _scenario.Build(dt);
                 else if (_dunkScenario != null) inp = _dunkScenario.Build(dt);
                 else if (_blockScenario != null) inp = _blockScenario.Build(dt);
+                else if (_abilScenario != null) inp = _abilScenario.Build(dt);
+                else if (Cfg.CutShot != CutKind.None) inp = CutShotInput(p);
                 else if (_smoke != null) inp = _smoke.Build(dt);
                 else inp = _reader.Build(Cam, !InputBlocked);
             }
-            else if (_dummies.TryGetValue(p, out var brain)) inp = brain.Build(dt);
+            else if (_dummies.TryGetValue(p, out var brain)) inp = Cfg.SmokeAbilities || Cfg.CutShot != CutKind.None ? default : brain.Build(dt); // testes das habilidades: bonecos parados
             else if (_bots.TryGetValue(p, out var bot)) inp = bot.Build(dt);
             else if (_remote.TryGetValue(p, out int netId)) inp = NetSession.I.TakeInput(netId);
             if (!_remote.ContainsKey(p)) inp.SkillT = -1; // local e bots: o host julga pelo próprio tempo
             p.SkillGrace = _remote.TryGetValue(p, out int gid) ? NetSession.I.SkillGrace(gid) : 0f;
             if (p == FtShooter) _ftInput = inp;
+            if (cut) { _cutInputs[p] = inp; continue; } // v0.26: na cutscene ninguém é simulado (fica parado onde estava)
             p.ServerTick(inp, dt);
+        }
+        foreach (var p in Players) p.ApplyQueuedRelocate(); // Swap do Bolt
+        if (cut)
+        {
+            Cut.HostTick(dt, q => _cutInputs.TryGetValue(q, out var ci) ? ci : default);
+            if (Cfg.SmokeAbilities) SmokeAbilitiesTick(dt);
+            if (Cfg.SmokeNet) SmokeNetHostTick(dt);
+            if (IsHost) NetSession.I?.HostAfterTick(this);
+            return;
         }
         if (FtFlash > 0) FtFlash -= dt;
         if (Phase == MatchPhase.FreeThrow) FreeThrowTick(dt);
@@ -372,6 +403,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeE3) SmokeE3Tick(dt);
         if (Cfg.SmokeE4) SmokeE4Tick(dt);
         if (Cfg.SmokeBlock) SmokeBlockTick(dt);
+        if (Cfg.SmokeAbilities) SmokeAbilitiesTick(dt);
         if (Cfg.SmokeNet) SmokeNetHostTick(dt);
         if (IsHost) NetSession.I?.HostAfterTick(this);
     }
@@ -397,6 +429,23 @@ public partial class Match : Node3D
         bool freeThrow = Ball.FreeThrow;
         bool three = !freeThrow && Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotOrigin, hoop);
         int pts = Mathf.RoundToInt(freeThrow ? t.FreeThrowPoints : three ? t.PointsOutside : t.PointsInside);
+        var thrower = Ball.LastThrower;
+        if (AbilitiesOn && thrower != null && team == thrower.Team)
+        {
+            // Luck (modo apostador): as cestas dele valem mais
+            if (thrower.CharacterId == Characters.Luck) pts += thrower.Ab.ModePoints;
+            thrower.Ab.AddUlt(t.UltBonusScore);
+            // Luck "Não me Decepciona": a cesta do adversário marcado vai para o time do Luck
+            foreach (var q in Players)
+            {
+                if (q.Team == thrower.Team || q.CharacterId != Characters.Luck || q.Ab.BetT <= 0 || q.Ab.BetTarget != thrower.Id) continue;
+                team = q.Team;
+                q.Ab.BetT = 0; q.Ab.BetTarget = 0;
+                LogEvent("BET_WIN", q, thrower);
+                Sfx.Play3D(this, "fx_luckwin", thrower.GlobalPosition + Vector3.Up * 2f);
+                break;
+            }
+        }
         Ball.FreeThrow = false;
         Score[team] += pts;
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
@@ -451,11 +500,14 @@ public partial class Match : Node3D
             if (!p.Airborne || p.Team == Ball.ThrowTeam) continue;
             var rel = Ball.GlobalPosition - p.GlobalPosition;
             float hd = new Vector2(rel.X, rel.Z).Length();
-            if (hd > t.BlockRadius + t.BallRadius || rel.Y < 0.8f || rel.Y > t.BlockReach + t.BallRadius) continue;
+            bool sky = p.Ab.SkyJump; // v0.26: Arranha-Céu do Bolt = área de bloqueio bem maior
+            float br = sky ? t.BoltSkyBlockRadius : t.BlockRadius;
+            if (hd > br + t.BallRadius || rel.Y < (sky ? -1.2f : 0.8f) || rel.Y > t.BlockReach + t.BallRadius + (sky ? 0.6f : 0f)) continue;
             var away = new Vector3(rel.X, 0, rel.Z);
             away = away.LengthSquared() > 1e-4f ? away.Normalized() : -p.Forward;
             Ball.Drop(Ball.GlobalPosition, away * t.BlockBounceSpeed + Vector3.Up * 1.2f);
             p.BallLockoutTimer = 0.5f; // o bloqueador não pega a bola
+            p.Ab.AddUlt(t.UltBonusBlock);
             Sfx.Play3D(this, "board", Ball.GlobalPosition, -2, 0.8f);
             LogEvent("BLOCK", p);
             return;
@@ -684,6 +736,9 @@ public partial class Match : Node3D
         }
         if (best == null) return;
         bool intercepted = Ball.State == BallState.Pass && Ball.ThrowTeam != best.Team;
+        var passer = Ball.LastThrower;
+        if (Ball.State is BallState.Pass or BallState.HighPass && passer != null && passer != best && passer.Team == best.Team)
+            passer.Ab.AddUlt(Tuning.I.UltBonusPass); // v0.26: passe que chegou no aliado
         Ball.GiveTo(best);
         Sfx.Play3D(this, "catch", Ball.GlobalPosition, -4);
         LogEvent(intercepted ? "INTERCEPT" : "CATCH", best);
@@ -692,6 +747,7 @@ public partial class Match : Node3D
 
     public void OnSteal(Player thief, Player victim)
     {
+        thief.Ab.AddUlt(Tuning.I.UltBonusSteal);
         Sfx.Play3D(this, "catch", thief.GlobalPosition + Vector3.Up, 0, 1.3f);
         LogEvent("STEAL", thief, victim);
     }
@@ -705,6 +761,67 @@ public partial class Match : Node3D
 
     public void OnLanded(Player p) => LogEvent("LAND", p);
 
+    // ------------------------------------------------------------------ v0.26: habilidades e cutscenes
+
+    readonly Dictionary<Player, PlayerInput> _cutInputs = new();
+
+    /// <summary>Presença Implacável: algum King adversário com ela ativa a até o raio do arremessador?</summary>
+    public bool PresenceJinx(Player shooter)
+    {
+        if (!AbilitiesOn) return false;
+        float r = Tuning.I.KingPresenceRadius;
+        foreach (var p in Players)
+        {
+            if (p.Team == shooter.Team || p.CharacterId != Characters.King || p.Ab.PresenceT <= 0) continue;
+            var d = (p.GlobalPosition - shooter.GlobalPosition) with { Y = 0 };
+            if (d.Length() <= r) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Começa a cutscene de uma ultimate (só a autoridade). A partida fica parada até ela acabar.</summary>
+    public bool StartCutscene(CutKind kind, Player owner, Player target)
+    {
+        if (IsClient || Phase != MatchPhase.Playing || Cut == null) return false;
+        if (!Cut.Begin(kind, owner, target)) return false;
+        foreach (var p in Players) { p.CancelShot(false); p.CancelPass(); }
+        Phase = MatchPhase.Cutscene;
+        return true;
+    }
+
+    /// <summary>Fim da cutscene: cesta de N pontos, rodada reiniciando com a bola do adversário, ou a bola com o adversário.</summary>
+    public void OnCutsceneEnd(CutKind kind, bool success, Player owner, Player target, int team)
+    {
+        var t = Tuning.I;
+        Phase = MatchPhase.Playing;
+        if (success)
+        {
+            int pts = Mathf.RoundToInt(kind == CutKind.KingUlt ? t.KingUltPoints : t.BoltDuelPoints);
+            Score[team] += pts;
+            Sfx.Play2D(this, "score_t" + team, -7);
+            UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.8f, Palette.Team[team]);
+            LogEvent("SCORE_ULT", owner);
+            GD.Print($"[SCORE] time {team} +{pts} (ultimate) placar {Score[0]} x {Score[1]}");
+            bool wins = (Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime);
+            _nextPossession = 1 - team;
+            Phase = MatchPhase.Scored;
+            PhaseTimer = t.PostScoreDelay;
+            if (wins) Winner = team;
+        }
+        else if (kind == CutKind.KingUlt)
+        {
+            LogEvent("ULT_FAIL", owner);
+            StartRound(1 - team, null, countdown: false);
+        }
+        else
+        {
+            // Duelo perdido: o adversário fica com a bola onde ele estava, e o jogo continua
+            LogEvent("ULT_FAIL", owner, target);
+            if (target != null && IsInstanceValid(target)) { Ball.GiveTo(target); target.Ab.AddUlt(t.UltBonusSteal); Sfx.Play3D(this, "catch", target.GlobalPosition + Vector3.Up, 0, 1.3f); }
+        }
+        if (LocalPlayer != null) Cam.SnapBehind(LocalPlayer.Yaw);
+    }
+
     public void LogEvent(string kind, Player a, Player b = null)
     {
         EventCount[kind] = EventCount.GetValueOrDefault(kind) + 1;
@@ -713,6 +830,7 @@ public partial class Match : Node3D
         _scenario?.OnEvent(kind, a, b);
         _dunkScenario?.OnEvent(kind, a, b);
         _blockScenario?.OnEvent(kind, a, b);
+        _abilScenario?.OnEvent(kind, a, b);
     }
 
     void CheckStuckBall(float dt)
@@ -734,6 +852,7 @@ public partial class Match : Node3D
         _preview.UpdateFor(lp != null && lp.ChargingShot && !Cfg.SmokeTest ? lp : null, Geo);
         if (!Automated) (_rumble ??= new Rumble(this)).Tick();
 
+        if (Cfg.CutShot != CutKind.None && Cfg.ScreenshotPath != null) { CutShotTick((float)delta); return; }
         if (Cfg.ScreenshotPath != null && !Cfg.SmokeE3 && !Cfg.SmokeNet) ScreenshotTick((float)delta);
         // teste de rede com --net-shot: prints do cliente aos 20 s e 40 s de jogo
         if (Cfg.SmokeNet && IsClient && Cfg.ScreenshotPath != null)
@@ -796,7 +915,7 @@ public partial class Match : Node3D
         GetViewport().GetTexture().GetImage().SavePng(path);
         GD.Print("[SHOT] salvo " + path);
         _shotIdx++;
-        if (_shotIdx >= 4 || _shotT > 40f) { Cfg.ScreenshotPath = null; GetTree().Quit(); }
+        if (_shotIdx >= 4 || _shotT > 40f) { Cfg.ScreenshotPath = null; GameRoot.QuitClean(this); }
     }
 
     /// <summary>Janela perdeu o foco (alt-tab): pausa a partida offline.</summary>
@@ -820,7 +939,7 @@ public partial class Match : Node3D
         {
             bool ok = total > 0;
             GD.Print($"[SMOKE] fim: arremessos={_smoke.Shots} placar={Score[0]}x{Score[1]} tempo={_smokeTime:0.0}s -> {(ok ? "OK" : "FALHOU")}");
-            GetTree().Quit(ok ? 0 : 1);
+            GameRoot.QuitClean(this, ok ? 0 : 1);
             Cfg.SmokeTest = false;
         }
     }
@@ -850,7 +969,7 @@ public partial class Match : Node3D
         GD.Print($"[E4] placar={Score[0]}x{Score[1]} arremessos={C("SCORE_SHOT")}/{C("SHOT")} passes={C("PASS")}+{C("HIGHPASS")} enterradas={C("DUNK_OK")}/{C("DUNK")} (erros {C("DUNK_FAIL")}) " +
                  $"faltas={C("FOUL")} lances_livres={C("SCORE_FT")}/{C("FT_OK") + C("FT_MISS")} roubos={C("STEAL")}/{C("STEAL_TRY")} tocos={C("BLOCK")} dribles={C("DRIBBLE")} pulos={C("JUMP")} " +
                  $"trocas_de_posse={_possChanges} -> {(ok ? "OK" : "FALHOU")}");
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
         Cfg.SmokeE4 = false;
     }
 
@@ -864,8 +983,61 @@ public partial class Match : Node3D
                   && s.Dribbles >= BlockScenario.DribbleCount && s.Baited >= 3 && s.StolenDuringDribble == 0 && s.OnTopTested && s.SlidOff;
         GD.Print($"[BLOCKTEST] tentativas={s.Trials} tocos={s.Blocks} pulos={s.Jumps} pulos_inuteis={s.UselessJumps} " +
                  $"dribles={s.Dribbles} bot_caiu_no_drible={s.Baited} roubou_driblando={s.StolenDuringDribble} -> {(ok ? "OK" : "FALHOU")}");
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
         Cfg.SmokeBlock = false;
+    }
+
+    // ---- --cut-shot: dispara a ultimate e salva um print a cada 0,3 s da cutscene ----
+    float _cutShotT, _cutShotNext;
+    int _cutShotIdx;
+    bool _cutShotStarted;
+
+    PlayerInput CutShotInput(Player p)
+    {
+        var inp = new PlayerInput { AimYaw = p.Yaw, SkillT = -1 };
+        if (!_cutShotStarted && Phase == MatchPhase.Playing && (_cutShotT += 1f / 60f) > 0.6f)
+        {
+            p.CharacterId = Cfg.CutShot == CutKind.KingUlt ? Characters.King : Characters.Bolt;
+            if (Ball.Holder != p) Ball.GiveTo(p);
+            p.Ab.Ult = 1f;
+            var opp = Players.FirstOrDefault(q => q.Team != p.Team);
+            if (Cfg.CutShot == CutKind.KingUlt) inp.Pressed |= Btn.Ult;
+            else if (opp != null) { inp.Target = (byte)opp.Id; inp.TargetSlot = 3; }
+            _cutShotStarted = true;
+        }
+        var c = Cut.CheckFor(p);
+        if (c != null && c.Active && !c.Pressed && c.T >= 0)
+        {
+            float at = Cfg.CutShotMiss ? c.Dur * 0.4f : c.Dur - 1f / 120f;
+            if (c.T + 1f / 60f >= at) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; }
+        }
+        return inp;
+    }
+
+    void CutShotTick(float dt)
+    {
+        if (!_cutShotStarted) return;
+        if (Cut.Active)
+        {
+            _cutShotNext -= dt;
+            if (_cutShotNext > 0) return;
+            _cutShotNext = 0.3f;
+            string path = Cfg.ScreenshotPath.Replace(".png", $"_{_cutShotIdx++:00}_s{Cut.Stage}.png");
+            GetViewport().GetTexture().GetImage().SavePng(path);
+            GD.Print("[SHOT] salvo " + path);
+        }
+        else if (_cutShotIdx > 0) { Cfg.ScreenshotPath = null; Cfg.CutShot = CutKind.None; GameRoot.QuitClean(this); }
+    }
+
+    void SmokeAbilitiesTick(float dt)
+    {
+        _smokeTime += dt;
+        if (!_abilScenario.Done && _smokeTime < 300f) return;
+        var r = _abilScenario.Results;
+        bool ok = _abilScenario.Done && r.Count >= 14 && r.All(x => x.Ok);
+        GD.Print($"[ABILITIES] {string.Join(" ", r.Select(x => x.Name + "=" + x.Ok))} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
+        Cfg.SmokeAbilities = false;
+        GameRoot.QuitClean(this, ok ? 0 : 1);
     }
 
     void SmokeE3Tick(float dt)
@@ -876,7 +1048,7 @@ public partial class Match : Node3D
         bool ok = s.DunkOk && s.DunkFailOk && s.StunOk && s.WalkDunkOk && s.SpaceIgnoredOk && s.FoulOk && s.FtPointOk && s.FtLiveOk;
         GD.Print($"[E3] enterrada={s.DunkOk} erro={s.DunkFailOk} atordoado={s.StunOk} enterrada_andando={s.WalkDunkOk} espaço_ignorado={s.SpaceIgnoredOk} falta={s.FoulOk} " +
                  $"lance_livre_+1={s.FtPointOk} 2º_errado_bola_viva={s.FtLiveOk} placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
         Cfg.SmokeE3 = false;
     }
 
@@ -888,7 +1060,7 @@ public partial class Match : Node3D
         bool ok = s.PassOk && s.ReturnOk && s.AimPassOk && s.DribbleOk && s.JumpOk && s.StealOk && s.JumpShotLandOk && s.JumpShotAirOk && s.PassBufferOk && s.MovingLaneOk;
         GD.Print($"[E2] passe={s.PassOk} devolução={s.ReturnOk} passe_carregado={s.AimPassOk} drible={s.DribbleOk} boneco_pulou={s.JumpOk} toco={s.BlockOk} " +
                  $"roubo_falhou(imune)={s.StealFailOk} roubo={s.StealOk} pulo_arremesso_pouso={s.JumpShotLandOk} pulo_arremesso_ar={s.JumpShotAirOk} passe_guardado={s.PassBufferOk} passe_aliado_andando={s.MovingLaneOk} -> {(ok ? "OK" : "FALHOU")}");
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
         Cfg.SmokeE2 = false;
     }
 
@@ -900,7 +1072,9 @@ public partial class Match : Node3D
     BotBrain _clientBot;
     /// <summary>Cliente: apertou no skill check → mostra o resultado na hora, com o ponteiro onde estava na tela dele
     /// (sem esperar o host). Depois, <see cref="ClientSkillMuteT"/> evita repetir o resultado que o host manda atrasado.</summary>
-    public float ClientSkillHold, ClientSkillT, ClientSkillDur, ClientSkillMuteT;
+    public float ClientSkillHold, ClientSkillT, ClientSkillDur, ClientSkillMuteT, ClientSkillWindow = 0.05f;
+    /// <summary>v0.26: de qual skill check da cutscene é o resultado mostrado (−1 = enterrada/lance livre).</summary>
+    public int ClientSkillSeq = -1;
     public bool ClientSkillOk;
     public int ClientSnapshotsApplied;
 
@@ -932,14 +1106,18 @@ public partial class Match : Node3D
         inp.SkillT = -1;
         if (inp.WasPressed(Btn.Shoot) && LocalPlayer != null)
         {
-            float dur = -1;
+            float dur = -1, window = Tuning.I.DunkWindow;
+            int seq = -1;
+            var cc = Cut.CheckFor(LocalPlayer);
             if (LocalPlayer.Flight == FlightKind.Dunk) { inp.SkillT = LocalPlayer.FlightT; dur = LocalPlayer.FlightDur; }
             else if (FtChecking && FtShooter == LocalPlayer && FtT >= 0) { inp.SkillT = Mathf.Max(FtT, 0f); dur = FtDur; }
+            else if (cc != null && cc.Active && !cc.Pressed && cc.T >= 0 && cc.Seq != ClientSkillSeq)
+            { inp.SkillT = cc.T; dur = cc.Dur; window = cc.Window; seq = cc.Seq; } // v0.26: skill check da cutscene
             // resultado na tela dele na hora (o host julga pelo mesmo SkillT, então dá o mesmo veredito)
-            if (dur > 0 && ClientSkillHold <= 0)
+            if (dur > 0 && (ClientSkillHold <= 0 || seq >= 0))
             {
-                ClientSkillT = inp.SkillT; ClientSkillDur = dur;
-                ClientSkillOk = Mathf.Abs(inp.SkillT - dur) <= Tuning.I.DunkWindow * 0.5f;
+                ClientSkillT = inp.SkillT; ClientSkillDur = dur; ClientSkillWindow = window; ClientSkillSeq = seq;
+                ClientSkillOk = Mathf.Abs(inp.SkillT - dur) <= window * 0.5f;
                 ClientSkillHold = Mathf.Max(Tuning.I.SkillResultHold, 0.001f);
             }
         }
@@ -967,7 +1145,7 @@ public partial class Match : Node3D
         if (Cfg.SmokeNet) SmokeNetClientTick(dt);
     }
 
-    Player ById(int id)
+    public Player ById(int id)
     {
         if (id <= 0) return null;
         if (id - 1 < Players.Count && Players[id - 1].Id == id) return Players[id - 1];
@@ -993,7 +1171,7 @@ public partial class Match : Node3D
             p.ClientApply(Player.Lerp(sa, sb, k), dt);
         }
         Ball.ClientApply(b.BallState, ById(b.BallHolder), b.BallThrowTeam, ById(b.BallLastThrower), ById(b.BallPassTarget),
-            a.BallPos.Lerp(b.BallPos, k), b.BallVel, b.BallFlightTime);
+            a.BallPos.Lerp(b.BallPos, k), b.BallVel, b.BallFlightTime, b.BallAura);
 
         // câmera atrás do jogador quando um round/lance livre recomeça com ele teleportado
         var lp = LocalPlayer;
@@ -1046,7 +1224,7 @@ public partial class Match : Node3D
         GD.Print($"[NETTEST-HOST] remoto={rp?.PlayerName ?? _netLeftName + " (já saiu)"} pacotes_de_input={packets} andou={_netDist:0}m acoes_do_remoto={acts} " +
                  $"({string.Join(" ", RemoteEvents.Select(kv => kv.Key + "=" + kv.Value))}) placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         Cfg.SmokeNet = false;
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
     }
 
     void SmokeNetClientTick(float dt)
@@ -1061,6 +1239,6 @@ public partial class Match : Node3D
         GD.Print($"[NETTEST-CLIENT] snapshots={ns.SnapshotsReceived} inputs_enviados={ns.InputsSent} andou={_netDist:0}m viu_jogo={_netSawPlaying} " +
                  $"placar_visto={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         Cfg.SmokeNet = false;
-        GetTree().Quit(ok ? 0 : 1);
+        GameRoot.QuitClean(this, ok ? 0 : 1);
     }
 }

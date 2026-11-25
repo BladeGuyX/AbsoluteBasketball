@@ -36,6 +36,9 @@ try {
         Write-Host "== smoke test etapa 4 (partida so de bots) ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-e4 2>&1 | Select-String "\[E4\]|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test etapa 4 falhou" }
+        Write-Host "== smoke test habilidades (v0.26) ==" -ForegroundColor Cyan
+        & $godot --headless --path . -- --smoke-abilities 2>&1 | Select-String "\[ABIL|ERROR" | Out-Host
+        if ($LASTEXITCODE -ne 0) { throw "smoke test de habilidades falhou" }
         Write-Host "== smoke test etapa 5 (rede: host + cliente por IP local) ==" -ForegroundColor Cyan
         $hostLog = Join-Path $env:TEMP "ab_net_host.log"
         $hostProc = Start-Process -FilePath $godot -ArgumentList "--headless", "--path", ".", "--", "--net-smoke-host", "--net-lag", "60" -PassThru -NoNewWindow -RedirectStandardOutput $hostLog

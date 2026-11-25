@@ -119,7 +119,7 @@ public sealed class DummyBrain
             return inp;
         }
 
-        float shootDist = Mathf.Min(8f, t.ShotRangeMax - 1f);
+        float shootDist = Mathf.Min(8f, P.St.ShotRangeMax - 1f);
         if (!P.ChargingShot && toRim.Length() > shootDist)
         {
             var d = toRim.Normalized();
@@ -130,7 +130,7 @@ public sealed class DummyBrain
 
         var rel = ShotMath.ReleasePos(P.GlobalPosition, yaw);
         float dist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
-        inp.AimPitch = ShotMath.PitchForDistance(dist);
+        inp.AimPitch = ShotMath.PitchForDistance(dist, P.St.ShotRangeMax);
         const float need = 0.35f; // segurar não muda a distância: mira e solta
         if (!P.ChargingShot) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; return inp; }
         if (P.ShotCharge + dt < need) inp.Held |= Btn.Shoot;

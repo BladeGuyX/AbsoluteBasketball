@@ -64,9 +64,9 @@ public partial class Updater : Node
         Changed?.Invoke();
         if (!Auto) return;
         GD.Print($"[UPDATE-TEST] estado={s} atual=v{GameVersion.Number} última=v{Latest} {err}");
-        if (s == St.Available && !CanInstall) GetTree().Quit(1);
+        if (s == St.Available && !CanInstall) GameRoot.QuitClean(this, 1);
         else if (s == St.Available) Callable.From(Activate).CallDeferred();
-        else if (s is St.UpToDate or St.Failed) GetTree().Quit(s == St.Failed ? 1 : 0);
+        else if (s is St.UpToDate or St.Failed) GameRoot.QuitClean(this, s == St.Failed ? 1 : 0);
     }
 
     public bool Busy => State is St.Checking or St.Downloading or St.Installing;
@@ -172,7 +172,7 @@ public partial class Updater : Node
                 "-ExeArgs", Auto ? "--print-version" : "",
             });
             if (child <= 0) { Set(St.Failed, "não consegui iniciar o instalador"); return; }
-            GetTree().Quit();
+            GameRoot.QuitClean(this);
         }
         catch (Exception e) { Set(St.Failed, e.Message); }
     }

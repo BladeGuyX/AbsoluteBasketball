@@ -224,3 +224,70 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   sem outras ações.
 - **Por tempo empatado:** prorrogação "próxima cesta vence".
 - Cesta 0 fica em −X, cesta 1 em +X. Time 0 (AZUL) ataca a cesta 1; time 1 (LARANJA) ataca a cesta 0.
+
+## Revisões do usuário (v0.26) — personagens com atributos, habilidades e ultimates
+
+**Pedido do usuário (resumo fiel):** antes da partida cada jogador escolhe um personagem. Há um modo **sem habilidades**
+(ainda escolhe personagem, mas nenhuma habilidade nem ultimate funciona). Cada personagem tem atributos em **estrelas
+(1 a 5, mostradas na seleção)**, 3 habilidades e uma ultimate. Botões: teclado **1, 2, 3** e **4** (ultimate); controle
+**← ↑ →** e **↓** (ultimate). Barra da ultimate enche bem devagar com o tempo; **toco, passe, roubo e principalmente cesta**
+dão bônus na hora. Algumas ultimates são **cutscenes** (às vezes interativas) mostradas para todos, que **não contam no
+relógio nem na carga de outras ultimates**; os jogadores são posicionados onde convém para a cena sem mudar a posição real;
+faltando jogadores, entram **bonecos com visual de personagem aleatório** só na cutscene. Inspiração: animações e vibe das
+cutscenes do Basketball Zero (Roblox), não os gráficos. **Recargas não voltam no começo de um round.** Os controles **não
+ficam mais na tela**: vão para Configurações → **Informações**, junto com a descrição completa das habilidades do personagem
+atual; no rodapé ficam só os ícones das habilidades com o botão, pequenos, e uma **rodela que enche** durante a recarga.
+Artifact: **uma aba por personagem** — estrelas no topo, depois valores das habilidades, por último avançados.
+
+**Atributos (estrela → valor):** cada atributo vale `1 + (estrelas − 2,5) × passo%` (Tuning "Estrelas (valores)"). O jogo
+antigo fica entre 2 e 3 estrelas. Passos padrão: Velocidade 7%, Agilidade 5,5% (um pouco menos), Estamina 9% (um pouco
+mais), Precisão 8%, Salto 6%. Valores em que menos é melhor são divididos.
+- Velocidade: velocidade andando e correndo.
+- Agilidade: velocidade do bote, penalidade do roubo errado, velocidade driblando; cargas de drible 1★ = −1, 2–3★ = 0, 4–5★ = +1.
+- Estamina: estamina máxima e recarga.
+- Precisão: alcance do arremesso, alcance do passe rápido, velocidade do passe, altura do passe alto.
+- Salto: impulso do salto, travamento ao pousar, tempo de carga, distância para enterrar.
+
+**King** (era o Rei) — Vel 3, Agi 3, Est 2, Prec 5, Salto 2.
+1. Olho do Rei: 7 s ativo; o próximo passe/arremesso (inclusive passe rápido) gasta o efeito e tem 2× o alcance; bola com
+   rastro vermelho sutil. Recarga 15 s. *Implementação:* no arremesso a mira normal não muda — subir a câmera ALÉM da
+   inclinação do alcance máximo leva até o alcance dobrado (`ShotMath.PitchDistance(extendMax)`); passe carregado sai √2 mais rápido.
+2. Presença Implacável: 5 s; adversário a até 7 m que **soltar** um arremesso erra com certeza (trajetória desviada para o
+   aro + a bola não pode virar cesta até tocar o chão). Partículas vermelhas no King; borda vermelha na tela de quem foi afetado. Recarga 25 s.
+3. Drible Perfeito: só com a bola; drible na hora, +0,5 s, não gasta carga, aura vermelha na bola; quem tentar roubar
+   (bote ou impulso do Luck) cai atordoado 4 s. Recarga 15 s.
+- Ult "Sua Derrota é Absoluta" (só com a bola): cutscene — drible no meio da quadra (skill check; errou = adversário rouba,
+  rodada reinicia com a bola dele) → corre para a linha de 3 → outro adversário pula para bloquear → o King dá a volta e
+  arremessa pelo lado da cesta (skill check mais difícil). Acertou = 7 pontos; errou = bola bate no aro e sai, rodada
+  reinicia com a bola do adversário.
+
+**Luck** (era a Ametista) — Vel 4, Agi 2, Est 5, Prec 2, Salto 2.
+1. Arremesso Arriscado: com a bola e no lado adversário; arremessa na hora direto na cesta; pode ser bloqueado; 20% de errar. Recarga 15 s.
+2. Não me Decepciona: menu para escolher um adversário; se ele fizer cesta em 20 s, os pontos vão para o time do Luck. Recarga 30 s.
+3. Impulso Descuidado: 75% de impulso para onde está olhando (sem a bola, passar por quem tem a bola rouba); senão tropeça,
+   atordoado 2 s. Recarga 7 s. *(O pedido dizia "Se der os 20%"; foi usado 25%, o complemento de 75% — ajustável no Tuning.)*
+- Ult "Sorte Infinita": 10 s de modo apostador: +15% em todos os valores de estrela, cestas dele +1 ponto, partículas verdes.
+  Apertando de novo durante o modo = aposta: 1ª vez 50% de ganhar (dobra o bônus dos atributos, +3 s, +1 ponto por cesta,
+  efeito especial) ou perder (modo acaba, atordoado 4 s); cada aposta seguinte +15% de chance de perder (máx. 95%).
+  *Implementação:* o bônus dobra a cada vitória até o teto `LuckModeBonusMax` (+100%) para não virar absurdo.
+
+**Bolt** (era o Raio) — Vel 5, Agi 4, Est 4, Prec 1, Salto 3.
+1. Drible Relâmpago: com a bola, olhando para um adversário a até 5 m; impulso de raio que passa pelo alvo e sai 3 m na
+   frente; alvo atordoado 2 s. Recarga 15 s.
+2. Swap: troca de lugar com o jogador (aliado ou adversário) mais perto de onde olha; segurar destaca quem vai trocar e a
+   troca acontece ao soltar; partículas de raio nos dois. Recarga 20 s.
+3. Arranha-Céu: sem a bola; pulo reto altíssimo com trovão; área de bloqueio bem maior; quem estava a até 3 m fica atordoado
+   2 s (*implementação: só adversários*). Recarga 25 s.
+- Ult "Duelo" (com a bola): escolhe um adversário; cutscene com os dois se encarando (raio saindo dos olhos); skill checks
+  em sequência para os dois, cada vez mais rápidos. Bolt erra primeiro (ou os dois erram juntos) = o adversário rouba e o
+  jogo volta com a bola na mão dele, onde ele estava. Adversário erra = Bolt passa como trovão e faz cesta de 7 pontos.
+
+**Decisões de implementação (v0.26):**
+- Modo sem habilidades: opção "Habilidades" na Nova partida e no lobby (host). Os atributos de estrela continuam valendo.
+- Seleção: "Escolher personagem e jogar" na Nova partida; "Escolher personagem" no lobby (vai para o host, `Msg.SetCharacter`).
+  Bots: personagem alternado pela vaga e usam as habilidades (chance por dificuldade).
+- Cutscene: fase `MatchPhase.Cutscene`; ninguém é simulado; bonecos visuais em `Cutscene.cs`; skill checks em `SkillCheckState`
+  (online: mesmo esquema da enterrada — SkillT do cliente + atraso medido). Título da ultimate aparece na entrada da cena
+  (faz parte da cutscene; se não quiser, é só pedir para tirar).
+- Ult: barra em `PlayerAbilities.Ult` (0–1), passiva `UltChargeTime` (240 s), bônus `UltBonus*`; não enche durante a própria ult ativa.
+- Testes antigos jogam com atributos neutros e sem habilidades (resultado igual ao de antes); `--smoke-abilities` testa tudo novo.

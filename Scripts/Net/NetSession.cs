@@ -271,6 +271,13 @@ public partial class NetSession : Node
                 BroadcastLobby();
                 break;
             }
+            case Msg.SetCharacter:
+            {
+                int chr = Characters.Clamp(r.U8());
+                var mem = Members.FirstOrDefault(x => x.NetId == peer);
+                if (mem != null && !InMatch) { mem.Character = chr; BroadcastLobby(); }
+                break;
+            }
             case Msg.SetTeam:
             {
                 int team = r.U8() == 1 ? 1 : 0;
@@ -288,6 +295,7 @@ public partial class NetSession : Node
                 float skillT = r.F();
                 int renderTick = r.I32();
                 byte emoteSeq = r.U8(), emoteId = r.U8();
+                byte targetSeq = r.U8(), targetId = r.U8(), targetSlot = r.U8();
                 if (seq <= ri.LastSeq) break;
                 if (renderTick > 0)
                 {
@@ -300,6 +308,7 @@ public partial class NetSession : Node
                 Array.Copy(counters, ri.Counters, counters.Length);
                 ri.ShootSkillT = skillT;
                 ri.EmoteSeq = emoteSeq; ri.EmoteId = emoteId;
+                ri.TargetSeq = targetSeq; ri.TargetId = targetId; ri.TargetSlot = targetSlot;
                 ri.Packets++;
                 break;
             }
@@ -375,6 +384,22 @@ public partial class NetSession : Node
         }
     }
 
+    /// <summary>v0.26: troca de personagem no lobby (host: direto; cliente: pede ao host).</summary>
+    public void SetMyCharacter(int chr)
+    {
+        chr = Characters.Clamp(chr);
+        if (IsHost)
+        {
+            var me = Members.FirstOrDefault(x => x.NetId == 0);
+            if (me != null) { me.Character = chr; BroadcastLobby(); }
+        }
+        else if (IsClient)
+        {
+            _w.Begin(Msg.SetCharacter); _w.U8((byte)chr);
+            SendToHost(true);
+        }
+    }
+
     /// <summary>Escalação: humanos de cada time + bots até completar o tamanho do time (limitado pela quadra).</summary>
     List<RosterEntry> BuildRoster()
     {
@@ -415,6 +440,7 @@ public partial class NetSession : Node
     {
         Size = Settings.Size, Mode = Settings.Mode, TargetScore = Settings.TargetScore, TimeMinutes = Settings.TimeMinutes,
         BotDifficulty = Settings.BotDifficulty, Net = role, Roster = _roster, MyNetId = MyNetId, SmokeNet = SmokeNet, ScreenshotPath = SmokeShot,
+        Abilities = Settings.Abilities,
     };
 
     /// <summary>Host: volta todos para o lobby (fim da partida).</summary>
@@ -455,9 +481,10 @@ public partial class NetSession : Node
         w.Bool(m.FtFlashOk); w.U8(Id(m.FtFlashPlayer)); w.Bool(m.FtChecking);
         var b = m.Ball;
         w.U8((byte)b.State); w.U8(Id(b.Holder)); w.U8((byte)(b.ThrowTeam + 1)); w.U8(Id(b.LastThrower)); w.U8(Id(b.PassTarget));
-        w.V3(b.GlobalPosition); w.V3(b.Vel); w.F(b.FlightTime);
+        w.V3(b.GlobalPosition); w.V3(b.Vel); w.F(b.FlightTime); w.U8(b.Aura);
         w.U8((byte)m.Players.Count);
         foreach (var p in m.Players) { w.U8((byte)p.Id); Player.WriteNet(w, p.CaptureNet()); }
+        m.Cut.Write(w); // v0.26: estado da cutscene (o cliente desenha a mesma cena)
         w.U8((byte)_sounds.Count);
         foreach (var s in _sounds) { w.Str(s.Name); w.V3(s.Pos); w.F(s.Db); w.F(s.Pitch); w.Bool(s.Is3D); }
         _sounds.Clear();
@@ -543,10 +570,11 @@ public partial class NetSession : Node
             FtShooter = r.U8(), FtAttempt = r.U8(), FtT = r.F(), FtDur = r.F(), FtPressed = r.Bool(), FtPressT = r.F(), FtFlash = r.F(),
             FtFlashOk = r.Bool(), FtFlashPlayer = r.U8(), FtChecking = r.Bool(),
             BallState = (BallState)r.U8(), BallHolder = r.U8(), BallThrowTeam = r.U8() - 1, BallLastThrower = r.U8(), BallPassTarget = r.U8(),
-            BallPos = r.V3(), BallVel = r.V3(), BallFlightTime = r.F(),
+            BallPos = r.V3(), BallVel = r.V3(), BallFlightTime = r.F(), BallAura = r.U8(),
         };
         int n = r.U8();
         for (int i = 0; i < n; i++) { int id = r.U8(); s.Players.Add((id, Player.ReadNet(r))); }
+        _match.Cut.Read(r);
         int ns = r.U8();
         for (int i = 0; i < ns; i++)
         {
@@ -572,6 +600,8 @@ public partial class NetSession : Node
         _w.I32(ClientRenderTick);
         if (inp.Emote > 0) { _emoteSeq++; _emoteId = inp.Emote; }
         _w.U8(_emoteSeq); _w.U8(_emoteId);
+        if (inp.Target > 0) { _targetSeq++; _targetId = inp.Target; _targetSlot = inp.TargetSlot; }
+        _w.U8(_targetSeq); _w.U8(_targetId); _w.U8(_targetSlot);
         SendToHost(false);
         InputsSent++;
     }
@@ -579,6 +609,7 @@ public partial class NetSession : Node
     public int PingToHost() => _t?.Ping(0) ?? -1;
     float _lastSkillT = -1;
     byte _emoteSeq, _emoteId;
+    byte _targetSeq, _targetId, _targetSlot;
     /// <summary>Cliente: tick do host que está sendo desenhado agora (o Match atualiza).</summary>
     public int ClientRenderTick;
 

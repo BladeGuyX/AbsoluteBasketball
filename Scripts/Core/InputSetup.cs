@@ -9,6 +9,7 @@ public static class Act
     public const string LookL = "look_left", LookR = "look_right", LookU = "look_up", LookD = "look_down";
     public const string Sprint = "sprint", Shoot = "shoot", Pass = "pass", Jump = "jump";
     public const string Dribble = "dribble", Steal = "steal", Variation = "variation", Emote = "emote";
+    public const string Ab1 = "ability_1", Ab2 = "ability_2", Ab3 = "ability_3", Ult = "ultimate"; // v0.26
     public const string Pause = "pause", ReloadTuning = "reload_tuning";
 
     /// <summary>Ações exibidas na tela de controles (ordem de exibição).</summary>
@@ -19,6 +20,25 @@ public static class Act
         (Sprint, "Correr", true), (Shoot, "Arremesso", true), (Pass, "Passe", true),
         (Jump, "Salto", true), (Dribble, "Drible", true), (Steal, "Roubar", true),
         (Variation, "Variação", true), (Emote, "Expressões (segurar)", true),
+        (Ab1, "Habilidade 1", true), (Ab2, "Habilidade 2", true), (Ab3, "Habilidade 3", true), (Ult, "Ultimate", true),
+    };
+
+    /// <summary>v0.26: o que cada ação faz (aba Informações das configurações).</summary>
+    public static readonly (string Action, string Desc)[] Info =
+    {
+        (MoveF, "Andar (frente / trás / lados). A câmera é o mouse ou o analógico direito."),
+        (Sprint, "Correr (gasta estamina). Pode ser alternar em vez de segurar (aba Controles)."),
+        (Shoot, "Com a bola: segure para mirar e solte para arremessar (a distância vem da altura da câmera; arremessa sozinho depois de um tempo). Também é o botão dos skill checks (enterrada, lances livres e cutscenes)."),
+        (Pass, "Com a bola: toque = passe rápido para o aliado livre mais perto; segure = passe na direção da câmera."),
+        (Variation, "Durante o passe: troca entre passe normal e passe alto."),
+        (Jump, "Pula ao soltar (segure para pular mais alto). No ar bloqueia arremessos e passes altos. Perto da cesta adversária com a bola: enterrada. Carregando o arremesso: arremesso no pulo."),
+        (Dribble, "Com a bola: drible especial (imune a roubo, gasta 1 carga). Sem a bola: roubo (bote para frente; errar deixa você lento)."),
+        (Emote, "Segure para abrir a roda de expressões; aponte e solte para escolher."),
+        (Ab1, "Habilidade 1 do personagem."),
+        (Ab2, "Habilidade 2 do personagem."),
+        (Ab3, "Habilidade 3 do personagem."),
+        (Ult, "Ultimate (quando a barra dourada estiver cheia)."),
+        (Pause, "Pausa (offline). Online o jogo continua."),
     };
 }
 
@@ -37,6 +57,8 @@ public static class InputSetup
         [Act.Steal] = new("key", (int)Key.E),
         [Act.Variation] = new("key", (int)Key.R),
         [Act.Emote] = new("key", (int)Key.Q),
+        [Act.Ab1] = new("key", (int)Key.Key1), [Act.Ab2] = new("key", (int)Key.Key2),
+        [Act.Ab3] = new("key", (int)Key.Key3), [Act.Ult] = new("key", (int)Key.Key4),
     };
 
     static readonly Dictionary<string, Bind> DefaultPad = new()
@@ -51,6 +73,9 @@ public static class InputSetup
         [Act.Steal] = new("joybutton", (int)JoyButton.X),
         [Act.Variation] = new("joybutton", (int)JoyButton.Y),
         [Act.Emote] = new("joybutton", (int)JoyButton.B),   // v0.21: roda de expressões
+        // v0.26: setinhas = habilidades (← 1, ↑ 2, → 3, ↓ ultimate)
+        [Act.Ab1] = new("joybutton", (int)JoyButton.DpadLeft), [Act.Ab2] = new("joybutton", (int)JoyButton.DpadUp),
+        [Act.Ab3] = new("joybutton", (int)JoyButton.DpadRight), [Act.Ult] = new("joybutton", (int)JoyButton.DpadDown),
     };
 
     public static Bind GetKb(string action) =>

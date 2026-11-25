@@ -37,6 +37,10 @@ public sealed class BotBrain
     Vector3 _roam; float _roamT; bool _cut; float _sway;
     // lance livre
     float _ftPressAt = -1; int _ftAttempt;
+    // v0.26: habilidades e cutscenes
+    float _abThink, _cutPressAt = -1, _swapYaw;
+    int _cutSeq = -1, _cutPressedSeq = -1;
+    bool _swapRelease;
 
     public BotBrain(Match m, Player p, ulong seed) { M = m; P = p; R.Seed = seed; }
 
@@ -56,6 +60,14 @@ public sealed class BotBrain
     // =====================================================================
     public PlayerInput Build(float dt)
     {
+        var inp = BuildInner(dt);
+        if (_swapRelease) { _swapRelease = false; inp.AimYaw = _swapYaw; inp.Held &= ~Btn.Ab2; } // Swap: solta o botão mirando
+        else if (M.AbilitiesOn && M.CanAct && !P.HasBall && P.Flight == FlightKind.None) AbilitiesOffBall(ref inp, dt);
+        return inp;
+    }
+
+    PlayerInput BuildInner(float dt)
+    {
         var inp = new PlayerInput { AimYaw = P.Yaw, AimPitch = ShotMath.PitchForDistance(T.ShotRangeMin) };
         if (_stealCd > 0) _stealCd -= dt;
         if (_dribbleCd > 0) _dribbleCd -= dt;
@@ -67,6 +79,7 @@ public sealed class BotBrain
             ResetActions(); _hold = 0; _threat = null;
             return inp;
         }
+        if (M.Phase == MatchPhase.Cutscene) { CutsceneSkill(ref inp, dt); ResetActions(); _hold = 0; return inp; }
         if (!M.CanAct) { ResetActions(); _hold = 0; return inp; }
 
         if (P.Flight == FlightKind.Dunk) { DunkSkill(ref inp, dt); return inp; }
@@ -136,6 +149,7 @@ public sealed class BotBrain
     /// <summary>Escolhe a ação. true = já preencheu o input deste tick.</summary>
     bool Decide(ref PlayerInput inp, Vector3 rim, Vector3 me, float d, float open)
     {
+        if (AbilitiesWithBall(ref inp, rim, me, d, open)) return true;
         bool contested = open < 1.7f;
         // sob pressão: drible especial
         if (contested && P.DribbleCharges > 0 && _dribbleCd <= 0 && R.Randf() < 0.55f)
@@ -160,7 +174,7 @@ public sealed class BotBrain
         bool impatient = _hold > T.BotMaxHoldTime;
         if (d <= ShootRange() && (open >= T.BotOpenDistance || impatient || d < 4f || R.Randf() < T.BotContestedShotChance))
         { StartShot(ref inp); return true; }
-        if (impatient && d <= Mathf.Min(ShootRange() + 1.5f, T.ShotRangeMax - 0.5f)) { StartShot(ref inp); return true; }
+        if (impatient && d <= Mathf.Min(ShootRange() + 1.5f, P.St.ShotRangeMax - 0.5f)) { StartShot(ref inp); return true; }
         return false;
     }
 
@@ -221,7 +235,109 @@ public sealed class BotBrain
         var rel = ShotMath.ReleasePos(P.GlobalPosition, yaw);
         float dist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
         inp.AimYaw = yaw + _yawErr;
-        inp.AimPitch = ShotMath.PitchForDistance(Mathf.Max(0.5f, dist + _distErr));
+        float range = P.St.ShotRangeMax;
+        float ext = P.Ab.EyeArmed || P.Ab.EyeT > 0 ? range * Mathf.Max(T.KingEyeRangeMult, 1f) : -1f; // Olho do Rei: mira além
+        inp.AimPitch = ShotMath.PitchForDistance(Mathf.Max(0.5f, dist + _distErr), range, ext);
+    }
+
+    // =====================================================================
+    // v0.26: habilidades
+
+    float AbChance => M.Cfg.BotDifficulty switch { 0 => 0.3f, 2 => 0.85f, _ => 0.55f };
+    float GambleChance => M.Cfg.BotDifficulty switch { 0 => 0.25f, 2 => 0.06f, _ => 0.12f };
+
+    /// <summary>Com a bola: ultimates, Olho do Rei, Drible Perfeito, Arremesso Arriscado, Drible Relâmpago.</summary>
+    bool AbilitiesWithBall(ref PlayerInput inp, Vector3 rim, Vector3 me, float d, float open)
+    {
+        if (!M.AbilitiesOn || P.Stun > 0) return false;
+        var a = P.Ab;
+        bool Roll() => R.Randf() < AbChance;
+        if (a.Ult >= 0.999f && Roll())
+        {
+            if (P.CharacterId == Characters.Bolt)
+            {
+                var o = Opps.OrderBy(q => Flat(q.GlobalPosition - me).Length()).FirstOrDefault();
+                if (o != null) { inp.Target = (byte)o.Id; inp.TargetSlot = 3; return true; }
+            }
+            else { inp.Pressed |= Btn.Ult; return true; }
+        }
+        switch (P.CharacterId)
+        {
+            case Characters.King:
+            {
+                float far = P.St.ShotRangeMax * Mathf.Max(T.KingEyeRangeMult, 1f) * 0.8f;
+                if (a.Cd[2] <= 0 && open < 1.8f && Roll()) { inp.Pressed |= Btn.Ab3; return true; }
+                if (a.EyeT > 0 && d < far) { StartShot(ref inp); return true; }
+                if (a.Cd[0] <= 0 && d > ShootRange() + 1.5f && d < far && open >= T.BotOpenDistance && Roll()) { inp.Pressed |= Btn.Ab1; return true; }
+                break;
+            }
+            case Characters.Luck:
+                if (a.Cd[0] <= 0 && me.X * CourtGeo.HoopSign(AttackHoop) > 0 && d > 3f && d < 15f && Roll()) { inp.Pressed |= Btn.Ab1; return true; }
+                if (a.ModeT > 0 && a.ModeT < 3f && R.Randf() < GambleChance) { inp.Pressed |= Btn.Ult; return true; }
+                break;
+            case Characters.Bolt:
+                if (a.Cd[0] <= 0)
+                {
+                    var tg = PlayerAbilities.DribbleCandidate(P, ShotMath.YawOf(rim - me));
+                    if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab1; return true; }
+                }
+                break;
+        }
+        return false;
+    }
+
+    /// <summary>Sem a bola: Presença, Não me Decepciona, Impulso, Arranha-Céu, Swap e a ult do Luck.</summary>
+    void AbilitiesOffBall(ref PlayerInput inp, float dt)
+    {
+        if (P.Stun > 0) return;
+        _abThink -= dt;
+        if (_abThink > 0) return;
+        _abThink = 0.35f + R.Randf() * 0.2f;
+        var a = P.Ab;
+        bool roll = R.Randf() < AbChance;
+        if (P.CharacterId == Characters.Luck)
+        {
+            if (a.ModeT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
+            if (a.ModeT > 0 && a.ModeT < 3f && R.Randf() < GambleChance) { inp.Pressed |= Btn.Ult; return; }
+        }
+        var h = M.Ball.Holder;
+        if (h == null || h.Team == P.Team || M.Ball.State != BallState.Held) return;
+        var rel = Flat(h.GlobalPosition - P.GlobalPosition);
+        float dist = rel.Length();
+        float toRim = Flat(h.GlobalPosition - M.Geo.RimCenter[DefendHoop]).Length();
+        switch (P.CharacterId)
+        {
+            case Characters.King:
+                if (a.Cd[1] <= 0 && dist < T.KingPresenceRadius * 0.8f && (h.ChargingShot || toRim < 11f) && roll) inp.Pressed |= Btn.Ab2;
+                break;
+            case Characters.Luck:
+                if (a.Cd[1] <= 0 && toRim < 13f && roll) { inp.Target = (byte)h.Id; inp.TargetSlot = 1; }
+                else if (a.Cd[2] <= 0 && dist > 1f && dist < 4.5f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
+                break;
+            case Characters.Bolt:
+                if (a.Cd[2] <= 0 && dist < T.BoltSkyStunRadius * 0.9f && P.IsOnFloor() && roll) inp.Pressed |= Btn.Ab3;
+                else if (a.Cd[1] <= 0 && toRim < 7f && dist > 14f && dist < T.BoltSwapRange && roll)
+                {
+                    // troca de lugar com quem vai pontuar (ele vai parar longe da cesta)
+                    _swapYaw = ShotMath.YawOf(rel);
+                    inp.AimYaw = _swapYaw; inp.Pressed |= Btn.Ab2; inp.Held |= Btn.Ab2;
+                    _swapRelease = true;
+                }
+                break;
+        }
+    }
+
+    /// <summary>Skill checks das cutscenes (dono da ult ou alvo do duelo): aperta com o mesmo erro da enterrada.</summary>
+    void CutsceneSkill(ref PlayerInput inp, float dt)
+    {
+        var c = M.Cut.CheckFor(P);
+        if (c == null || !c.Active || c.Pressed || _cutPressedSeq == c.Seq) return;
+        if (c.Seq != _cutSeq) { _cutSeq = c.Seq; _cutPressAt = c.Dur + Noise(T.BotDunkTimingError * Mult); }
+        if (c.T >= 0 && c.T + dt * 1.5f >= _cutPressAt)
+        {
+            inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot;
+            _cutPressedSeq = c.Seq;
+        }
     }
 
     void ContinueShot(ref PlayerInput inp, float dt)
@@ -274,7 +390,7 @@ public sealed class BotBrain
     {
         if (_passTo == null) return;
         var me = Flat(P.GlobalPosition);
-        float v = _passHigh ? T.AimHighPassSpeed : T.AimPassSpeed;
+        float v = (_passHigh ? T.AimHighPassSpeed : T.AimPassSpeed) * P.St.AimPassSpeedMult;
         float g = T.BallGravity;
         // antecipa o movimento de quem recebe
         var target = Flat(_passTo.GlobalPosition);
@@ -591,10 +707,10 @@ public sealed class BotBrain
     bool JumpCanReach(Vector3 bp, Vector3 bv, Vector3 move)
     {
         var me = P.GlobalPosition;
-        var h = move * T.WalkSpeed * T.JumpCarry;
+        var h = move * P.St.WalkSpeed * T.JumpCarry;
         var cur = Flat(P.Velocity);
         if (cur.Length() > h.Length()) h = cur * T.JumpCarry;
-        float vy = T.JumpVelMin, g = T.PlayerGravity, gb = T.BallGravity;
+        float vy = P.St.JumpVelMin, g = T.PlayerGravity, gb = T.BallGravity;
         float rad = T.BlockRadius + T.BallRadius;
         const float step = 1f / 60f;
         for (float tau = step; tau <= 0.45f; tau += step)

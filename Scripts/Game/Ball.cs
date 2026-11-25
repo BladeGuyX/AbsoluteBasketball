@@ -21,6 +21,11 @@ public partial class Ball : Node3D
     public float FlightTime;
     public bool FreeThrow;         // lance livre: se entrar vale FreeThrowPoints (some ao tocar o chão / ser pega)
     int _noScoreHoop = -1;         // passou subindo pelo aro: a descida não vale cesta
+    /// <summary>v0.26: este arremesso não pode virar cesta (Presença Implacável / Arremesso Arriscado que erra). Some ao tocar o chão.</summary>
+    public bool NoScore;
+    /// <summary>v0.26: efeito na bola: 1 = rastro vermelho do Olho do Rei (some ao ser pega/tocar o chão).</summary>
+    public byte Aura;
+    BallTrail _trail;
 
     Node3D _mesh;   // visual (gira ao rolar): modelo do Blender ou a esfera placeholder
 
@@ -39,6 +44,7 @@ public partial class Ball : Node3D
             // toon do jogo com a cor do .glb; contorno só no couro (as costuras ficam por cima)
             Mat.ApplyToon(model, name => name == "Borracha" ? 0.012f : 0f);
             AddChild(_mesh);
+            AddTrail();
             return;
         }
         var sphere = Mat.MeshNode(new SphereMesh { Radius = r, Height = r * 2f, RadialSegments = 24, Rings = 12 },
@@ -50,6 +56,13 @@ public partial class Ball : Node3D
         var t2 = Mat.MeshNode(new TorusMesh { InnerRadius = r * 0.985f, OuterRadius = r * 1.03f, Rings = 24, RingSegments = 4 }, seam, Vector3.Zero, false);
         t2.RotationDegrees = new Vector3(90, 0, 0);
         _mesh.AddChild(t2);
+        AddTrail();
+    }
+
+    void AddTrail()
+    {
+        _trail = new BallTrail { B = this, Name = "Trail" };
+        AddChild(_trail);
     }
 
     public void GiveTo(Player p)
@@ -60,6 +73,8 @@ public partial class Ball : Node3D
         PassTarget = null;
         _noScoreHoop = -1;
         FreeThrow = false;
+        NoScore = false;
+        Aura = 0;
         GlobalPosition = p.HeldBallPosition();
         ResetPhysicsInterpolation();
     }
@@ -74,6 +89,8 @@ public partial class Ball : Node3D
         ShotOrigin = by.GlobalPosition;
         _noScoreHoop = -1;
         FreeThrow = false;
+        NoScore = false;
+        Aura = 0;
         PassTarget = target;
         FlightTime = 0;
         GlobalPosition = pos;
@@ -87,6 +104,7 @@ public partial class Ball : Node3D
         State = BallState.Loose;
         PassTarget = null;
         FreeThrow = false;
+        Aura = 0;
         GlobalPosition = pos;
         Vel = vel;
         ResetPhysicsInterpolation();
@@ -109,6 +127,7 @@ public partial class Ball : Node3D
         int assist = State == BallState.Shot && ThrowTeam >= 0 ? CourtGeo.AttackHoop(ThrowTeam) : -1;
         var hit = BallPhys.Simulate(ref p, ref Vel, dt, M.Geo, assist);
         if (hit.UpThroughHoop >= 0) _noScoreHoop = hit.UpThroughHoop;
+        if (NoScore) hit.ScoredHoop = -1;
         if (_noScoreHoop >= 0)
         {
             if (hit.ScoredHoop == _noScoreHoop) hit.ScoredHoop = -1;
@@ -129,13 +148,14 @@ public partial class Ball : Node3D
         GlobalPosition = p;
         FlightTime += dt;
         if (hit.Floor && State != BallState.Loose) { State = BallState.Loose; PassTarget = null; }
-        if (hit.Floor) FreeThrow = false;
+        if (hit.Floor) { FreeThrow = false; NoScore = false; Aura = 0; }
         return hit;
     }
 
     /// <summary>Online (cliente): aplica o estado vindo do host. Na mão, a bola segue a mão do dono (calculada aqui).</summary>
-    public void ClientApply(BallState st, Player holder, int throwTeam, Player lastThrower, Player passTarget, Vector3 pos, Vector3 vel, float flightTime)
+    public void ClientApply(BallState st, Player holder, int throwTeam, Player lastThrower, Player passTarget, Vector3 pos, Vector3 vel, float flightTime, byte aura = 0)
     {
+        Aura = aura;
         State = st;
         Holder = st == BallState.Held ? holder : null;
         ThrowTeam = throwTeam;
