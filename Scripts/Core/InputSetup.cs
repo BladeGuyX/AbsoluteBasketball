@@ -8,7 +8,7 @@ public static class Act
     public const string MoveF = "move_forward", MoveB = "move_back", MoveL = "move_left", MoveR = "move_right";
     public const string LookL = "look_left", LookR = "look_right", LookU = "look_up", LookD = "look_down";
     public const string Sprint = "sprint", Shoot = "shoot", Pass = "pass", Jump = "jump";
-    public const string Dribble = "dribble", Steal = "steal", Variation = "variation";
+    public const string Dribble = "dribble", Steal = "steal", Variation = "variation", Emote = "emote";
     public const string Pause = "pause", ReloadTuning = "reload_tuning";
 
     /// <summary>Ações exibidas na tela de controles (ordem de exibição).</summary>
@@ -18,7 +18,7 @@ public static class Act
         (MoveL, "Mover para a esquerda", false), (MoveR, "Mover para a direita", false),
         (Sprint, "Correr", true), (Shoot, "Arremesso", true), (Pass, "Passe", true),
         (Jump, "Salto", true), (Dribble, "Drible", true), (Steal, "Roubar", true),
-        (Variation, "Variação", true),
+        (Variation, "Variação", true), (Emote, "Expressões (segurar)", true),
     };
 }
 
@@ -36,6 +36,7 @@ public static class InputSetup
         [Act.Dribble] = new("key", (int)Key.E), // mesmo do roubo: drible só com a bola, roubo só sem
         [Act.Steal] = new("key", (int)Key.E),
         [Act.Variation] = new("key", (int)Key.R),
+        [Act.Emote] = new("key", (int)Key.Q),
     };
 
     static readonly Dictionary<string, Bind> DefaultPad = new()
@@ -46,9 +47,10 @@ public static class InputSetup
         [Act.Shoot] = new("joyaxis", (int)JoyAxis.TriggerRight, 1),
         [Act.Pass] = new("joybutton", (int)JoyButton.RightShoulder),
         [Act.Jump] = new("joybutton", (int)JoyButton.A),
-        [Act.Dribble] = new("joybutton", (int)JoyButton.B),
+        [Act.Dribble] = new("joybutton", (int)JoyButton.X), // v0.21: drible e roubo no mesmo botão (como no teclado)
         [Act.Steal] = new("joybutton", (int)JoyButton.X),
         [Act.Variation] = new("joybutton", (int)JoyButton.Y),
+        [Act.Emote] = new("joybutton", (int)JoyButton.B),   // v0.21: roda de expressões
     };
 
     public static Bind GetKb(string action) =>

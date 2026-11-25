@@ -3,6 +3,51 @@
 Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo.
 
 ---
+## v0.21 — O Rei (1º personagem), animações novas, roda de expressões
+
+**Atualizar:** menu principal → "Atualizar para v0.21".
+
+**Personagem e mãos**
+1. Comece um treino: todos os jogadores são o **Rei** (casaco preto com forro vermelho, coroa com brilho vermelho, olhos vermelhos). O time de cada um aparece no **anel colorido no chão** (azul/laranja) e na cor do nome.
+2. As **mãos flutuam** (sem braços). Parado sem bola elas balançam de leve; andando/correndo elas vão e voltam no ritmo dos passos.
+3. Tamanho: o Rei tem a altura da colisão (~1,8 m). Se quiser maior/menor: artifact → "Personagem (visual)" → **Tamanho do personagem**, salve o tuning.json, F5.
+
+**Locomoção e quique**
+4. Ande e corra (Shift): passos mais longos andando, corpo inclinado e passos rápidos correndo, quadril sobe e desce. Ajustes: **Passada andando / Passada correndo**.
+5. Com a bola parado: a mão **encontra a bola no alto, empurra para baixo e volta a esperar** (sincronizado com o som do quique). Andando/correndo com a bola: o mesmo, com a outra mão na frente protegendo.
+6. **Drible especial** (E no teclado / **X no controle**): bem agachado, tronco protegendo, a bola troca de mão de um lado para o outro e a outra mão fica na frente como escudo.
+
+**Arremesso, passe, salto**
+7. Segure o arremesso: agacha conforme carrega, bola acima da coroa com a mão direita embaixo e a esquerda do lado, olhando para cima. Solte: o corpo **estica na ponta dos pés** com um pulinho, a mão de arremesso segue para a frente e para cima.
+8. Segure o passe: corpo arma para trás, as duas mãos dos lados da bola. Solte: as mãos **empurram para a frente** (passe alto: para cima).
+9. Segure o pulo: agachamento fundo com as mãos para trás. No ar subindo: **mãos para cima** (toco) e um joelho dobrado; descendo, as pernas esticam; ao pousar: amassa e a poeirinha sobe do chão.
+10. Arremesso no pulo: pernas no ar, parte de cima igual ao arremesso.
+
+**Roubo, marcação, atordoado, comemoração**
+11. Sem bola, perto de quem tem a bola adversária: **postura de marcação** (baixo, mãos abertas).
+12. Roubo (E / X sem bola): **bote** com o corpo inclinado e uma mão esticada. Errou: fica **curvado, ofegante**, mãos baixas, cara brava.
+13. Erre uma enterrada: atordoado, cambaleando, cabeça mole, mãos girando, cara de surpreso.
+14. Seu time pontua: o Rei **comemora** pulando com as mãos alternando para cima (cara feliz). Fim da partida: quem ganhou comemora, quem perdeu fica cabisbaixo.
+
+**Enterrada (impacto)**
+15. Enterre (Espaço / A perto da cesta com a bola): sai do chão com um joelho alto, a bola **sobe e arma atrás da cabeça**, e no fim o corpo fecha e a bola **desce por cima do aro** (cara brava).
+16. Acertando o skill check: **clarão**, **onda** saindo do aro e outra no chão, **faíscas**, **pancada grave** no som, aro tremendo e **câmera tremendo** (mais forte perto). O Rei **fica pendurado no aro** ~0,35 s balançando as pernas e depois cai (com poeira).
+17. Ajustes (artifact, seção Enterrada): **Pendurado no aro**, **Tremor da câmera na enterrada**, **Efeito de impacto** (0 = desliga).
+
+**Controles novos**
+18. Controle: **X = drible (com a bola) e roubo (sem a bola)**. O **B** não faz mais drible.
+19. Enterrada: só pelo **pulo** (A / Espaço) — o X com a bola agora é o drible.
+20. **Roda de expressões**: segure **B** (controle) ou **Q** (teclado). Aparece uma roda com 6 carinhas (Sério, Focado, Sorriso frio, Bravo, Feliz, Surpreso). Aponte com o **analógico esquerdo** ou o **mouse** e **solte o botão**: o Rei fica com a expressão por **5 s** (ou até escolher outra). Soltar sem apontar não muda nada.
+21. Com a roda aberta: o mouse não gira a câmera e, no controle, o analógico esquerdo não anda.
+22. Sem expressão escolhida, o rosto muda sozinho: focado carregando o arremesso/driblando, bravo enterrando ou depois de errar o roubo, feliz comemorando, surpreso atordoado.
+23. Configurações → Controles: aparece **"Expressões (segurar)"** para remapear. O rodapé mostra "Q expressões" / "B expressões".
+24. Duração da expressão: artifact → "Personagem (visual)" → **Duração da expressão**.
+
+**Online (com um amigo)**
+25. Escolha uma expressão: o amigo vê no seu personagem (e você vê a dele). Enterrada certa: os dois veem o efeito, o tremor e o Rei pendurado no aro.
+26. Os dois precisam estar na v0.21 (o protocolo mudou).
+
+---
 ## v0.20 — Skill check mais simples
 
 **Atualizar:** menu principal → "Atualizar para v0.20".

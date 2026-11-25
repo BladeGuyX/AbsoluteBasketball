@@ -23,15 +23,31 @@ public struct RigState
     public bool Dribbling;     // drible especial (agachado, quique rápido)
     public bool Dunking;       // voo da enterrada/tapinha (braços esticados para cima)
     public bool Stunned;       // atordoado depois de errar a enterrada
+    // v0.21 (modelo do Blender)
+    public float VelY;         // velocidade vertical (sobe/desce no ar)
+    public bool PassHigh;
+    public bool Hanging;       // pendurado no aro depois da enterrada
+    public float FlightK;      // 0 → 1 ao longo do voo da enterrada
+    public Vector3 RimPos;     // centro do aro que este jogador ataca
+    public bool Defending;     // marcando de perto quem tem a bola
+    public int Mood;           // 1 = comemorando, 2 = triste (perdeu)
+    public byte Emote;         // expressão da roda (0 = automática)
+}
+
+/// <summary>Visual do jogador: o placeholder (<see cref="PlayerRig"/>) ou o modelo do Blender (<see cref="CharacterVisual"/>).</summary>
+public interface IPlayerVisual
+{
+    Node3D Root { get; }
+    void Animate(in RigState s, float dt);
 }
 
 /// <summary>
 /// Boneco placeholder com animação procedural (passada, balanço, braços com IK simples até a bola,
 /// agachamento na carga, pulinho no arremesso). Será trocado pelo modelo animado do Blender (Etapa 7).
 /// </summary>
-public sealed class PlayerRig
+public sealed class PlayerRig : IPlayerVisual
 {
-    public readonly Node3D Root;
+    public Node3D Root { get; }
     readonly Node3D _upper, _legL, _legR, _armL, _armR;
     float _stride;
     float _crouch;

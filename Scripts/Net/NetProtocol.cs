@@ -63,7 +63,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 3;
+    public const int Version = 4; // v0.21: expressão no input e no estado do jogador; pendurado no aro
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>
@@ -114,6 +114,8 @@ public sealed class RemoteInput
     public int Packets;
     public int LastSeq = -1;
     public float ShootSkillT = -1;   // SkillT do último aperto de arremesso
+    public byte EmoteSeq, EmoteId;   // v0.21: expressão (contador: pacote perdido não perde a escolha)
+    byte _emoteConsumed;
     public float Lateness = 0.25f;   // quanto (s) o cliente está atrás do host: tick que ele desenha → chegada aqui
 
     /// <summary>Input deste tick: apertos = contadores que mudaram desde o último tick.</summary>
@@ -122,6 +124,7 @@ public sealed class RemoteInput
         var inp = new PlayerInput { Move = Move, AimYaw = AimYaw, AimPitch = AimPitch, Held = Held, SkillT = ShootSkillT };
         for (int i = 0; i < Counters.Length; i++)
             if (Counters[i] != _consumed[i]) { inp.Pressed |= NetInputCounter.Buttons[i]; _consumed[i] = Counters[i]; }
+        if (EmoteSeq != _emoteConsumed) { _emoteConsumed = EmoteSeq; inp.Emote = EmoteId; }
         return inp;
     }
 }

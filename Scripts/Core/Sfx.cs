@@ -94,6 +94,10 @@ public static class Sfx
             * Mathf.Min(1f, t / 0.02f) * Mathf.Min(1f, (0.55f - t) / 0.05f) * 0.22f);
         Streams["beep"] = Make(0.14f, t => Mathf.Sin(Tau * 660 * t) * Mathf.Min(1, (0.14f - t) * 30) * Mathf.Min(1, t / 0.005f) * 0.45f);
         Streams["go"] = Make(0.4f, t => Bell(t, 880f) * 0.5f + Bell(t - 0.06f, 1318.5f) * 0.35f);
+        // enterrada (v0.21): pancada grave + estalo de metal + chiado curto
+        Streams["slam"] = Make(0.7f, t => Mathf.Sin(Tau * (70 - 40 * t) * t) * Mathf.Exp(-t * 7) * 0.9f
+            + (Mathf.Sin(Tau * 410 * t) + 0.5f * Mathf.Sin(Tau * 1130 * t)) * Mathf.Exp(-t * 14) * 0.25f
+            + Noise() * Mathf.Exp(-t * 35) * 0.35f);
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);
     }
 

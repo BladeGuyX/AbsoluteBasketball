@@ -46,7 +46,7 @@ public partial class GameRoot : Node
         if (mi >= 0 && mi + 1 < args.Length) { ArtCheck.Inspect(args[mi + 1]); GetTree().Quit(); return; }
 
         // ---- online (Etapa 5): Steam só no jogo normal (os testes automáticos não mexem na sua Steam) ----
-        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--court-shot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
+        bool automated = args.Any(a => a.StartsWith("--smoke") || a.StartsWith("--net-smoke") || a == "--screenshot" || a == "--court-shot" || a == "--pose-shot" || a == "--video-test" || a == "--update-test" || a == "--print-version");
         if (!automated)
         {
             if (SteamService.RelaunchForOverlay(args)) { GetTree().Quit(); return; }
@@ -84,6 +84,8 @@ public partial class GameRoot : Node
         if (args.Contains("--pad")) InputDevice.Set(true); // prints com os ícones do controle
         int ci = Array.IndexOf(args, "--court-shot");
         if (ci >= 0 && ci + 1 < args.Length) { CourtShot(args[ci + 1], args.Contains("--fiba")); return; }
+        int pi = Array.IndexOf(args, "--pose-shot"); // v0.21: prints das animações do personagem
+        if (pi >= 0 && pi + 1 < args.Length) { PoseShot.Run(this, args[pi + 1]); return; }
         int si = Array.IndexOf(args, "--screenshot");
         if (si >= 0 && si + 1 < args.Length)
         {

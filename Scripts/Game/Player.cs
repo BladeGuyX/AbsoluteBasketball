@@ -56,6 +56,14 @@ public partial class Player : CharacterBody3D
     public bool SkillFlashOk;
     Vector3 _flightFrom, _flightTo;
     bool _stunOnLand;
+    /// <summary>v0.21: pendurado no aro depois de uma enterrada certa (s restantes).</summary>
+    public float RimHang;
+    Vector3 _hangPos;
+    /// <summary>v0.21: expressão escolhida na roda (0 = nenhuma; ver <see cref="Expressions"/>) e quanto tempo falta.</summary>
+    public byte Emote;
+    public float EmoteT;
+    float _celebrateT;
+    int _lastTeamScore = -1;
 
     // prévia do arremesso = exatamente o que vai sair (calculada no fim de cada tick)
     ShotMath.ShotPlan _shotPlan;
@@ -66,7 +74,7 @@ public partial class Player : CharacterBody3D
     float _airTime;
     Vector3 _jumpVel;
     Node3D _visual;
-    PlayerRig _rig;
+    IPlayerVisual _rig;
     Label3D _nameLabel;
     Node3D _stars;                    // estrelinhas girando = atordoado
     const float ReleaseAnimTime = 0.45f;
@@ -87,7 +95,7 @@ public partial class Player : CharacterBody3D
         CollisionMask = 1 | 2;
         FloorSnapLength = 0.2f;
         AddChild(new CollisionShape3D { Shape = new CapsuleShape3D { Radius = 0.35f, Height = 1.8f }, Position = new Vector3(0, 0.9f, 0) });
-        _rig = new PlayerRig(this, Team);
+        _rig = CharacterVisual.Available ? new CharacterVisual(this) : new PlayerRig(this, Team);
         _visual = _rig.Root;
         _nameLabel = new Label3D
         {
@@ -124,6 +132,20 @@ public partial class Player : CharacterBody3D
         // guarda o aperto do passe por um instante (sai assim que der: pegando a bola, pousando, fim do drible...)
         if (inp.WasPressed(Btn.Pass)) _passBuffer = Tuning.I.PassBufferTime;
         else if (_passBuffer > 0) _passBuffer -= dt;
+        // expressões (v0.21): valem a qualquer momento
+        if (inp.Emote > 0 && inp.Emote <= Expressions.Count) { Emote = inp.Emote; EmoteT = t.EmoteDuration; }
+        else if (EmoteT > 0) { EmoteT -= dt; if (EmoteT <= 0) Emote = 0; }
+
+        if (RimHang > 0)
+        {
+            // pendurado no aro: parado lá em cima até soltar (depois cai normalmente)
+            RimHang -= dt;
+            GlobalPosition = GlobalPosition.Lerp(_hangPos, 1f - Mathf.Exp(-22f * dt));
+            Velocity = Vector3.Zero;
+            if (RimHang <= 0) { RimHang = 0; Airborne = true; _airTime = 0; _jumpVel = Vector3.Zero; }
+            ApplyPose(dt, 0);
+            return;
+        }
 
         if (Flight != FlightKind.None)
         {
@@ -295,6 +317,7 @@ public partial class Player : CharacterBody3D
         LandLock = 0;
         Stun = 0;
         _stunOnLand = false;
+        RimHang = 0;
         BallLockoutTimer = 0;
         SkillFlash = 0;
         Running = false;
@@ -458,8 +481,8 @@ public partial class Player : CharacterBody3D
     bool _jumpRun;
 
     /// <summary>
-    /// Enterrada: pulo ou o botão de roubo (X no controle) — v0.11. O roubo só conta quando é um botão separado do drible
-    /// (no teclado E faz os dois, então lá continua sendo só drible).
+    /// Enterrada: pulo (v0.21: drible e roubo dividem o X no controle, então o X com a bola é drible). O roubo só conta
+    /// se o jogador remapear roubo e drible para botões diferentes.
     /// </summary>
     static bool WantsDunk(PlayerInput inp) =>
         inp.WasPressed(Btn.Jump) || (inp.WasPressed(Btn.Steal) && !inp.WasPressed(Btn.Dribble));
@@ -533,7 +556,15 @@ public partial class Player : CharacterBody3D
     public Vector3 HeldBallPosition()
     {
         var t = Tuning.I;
-        if (Flight != FlightKind.None) return GlobalPosition + Vector3.Up * t.DunkHandReach + Forward * 0.35f;
+        if (Flight != FlightKind.None)
+        {
+            // v0.21: a bola sobe do peito, arma atrás da cabeça e desce por cima do aro (o fim bate com o alvo da enterrada)
+            float k = Mathf.Clamp(FlightT / Mathf.Max(FlightDur, 0.01f), 0, 1), reach = t.DunkHandReach, up, fwd;
+            if (k < 0.55f) { float a = Mathf.SmoothStep(0, 1, k / 0.55f); up = Mathf.Lerp(1.15f, reach + 0.05f, a); fwd = Mathf.Lerp(0.45f, -0.2f, a); }
+            else if (k < 0.8f) { float a = (k - 0.55f) / 0.25f; up = reach + 0.05f + 0.1f * a; fwd = -0.2f - 0.05f * a; }
+            else { float a = Mathf.SmoothStep(0, 1, (k - 0.8f) / 0.2f); up = Mathf.Lerp(reach + 0.15f, reach - 0.05f, a); fwd = Mathf.Lerp(-0.25f, 0.55f, a); }
+            return GlobalPosition + Vector3.Up * up + Forward * fwd;
+        }
         if (ChargingShot) return GlobalPosition + Vector3.Up * 2.02f + Forward * 0.33f;
         if (ChargingPass) return GlobalPosition + Vector3.Up * 1.25f + Forward * 0.5f;
         // driblando: agachado, a mão encontra a bola mais baixo (quique curto e rápido)
@@ -553,7 +584,21 @@ public partial class Player : CharacterBody3D
             JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0, Slowed = StealFail > 0,
             Landing = LandLock > 0, BallSide = BallSide, Dribbling = IsDribbling,
             Dunking = Flight != FlightKind.None, Stunned = Stun > 0 || _stunOnLand,
+            VelY = Velocity.Y, PassHigh = PassHigh, Hanging = RimHang > 0, Emote = Emote,
+            FlightK = Flight != FlightKind.None ? Mathf.Clamp(FlightT / Mathf.Max(FlightDur, 0.01f), 0, 1) : 0,
         };
+        if (M != null)
+        {
+            if (M.Geo != null) st.RimPos = M.Geo.RimCenter[CourtGeo.AttackHoop(Team)];
+            var h = M.Ball?.Holder;
+            st.Defending = h != null && h.Team != Team && !HasBall && (h.GlobalPosition - GlobalPosition).Length() < 3.2f;
+            int sc = M.Score[Team];
+            if (_lastTeamScore >= 0 && sc > _lastTeamScore) _celebrateT = 1.8f;
+            _lastTeamScore = sc;
+            if (_celebrateT > 0) _celebrateT -= dt;
+            bool ended = M.Phase == MatchPhase.Ended && M.Winner >= 0;
+            st.Mood = (ended && M.Winner == Team) || (_celebrateT > 0 && !ended) ? 1 : ended ? 2 : 0;
+        }
         if (st.HasBall) st.BallPos = HeldBallPosition();
         _stars.Visible = Stun > 0;
         if (_stars.Visible) _stars.RotateY(dt * 5f);
@@ -571,7 +616,7 @@ public partial class Player : CharacterBody3D
         CancelPass();
         ChargingJump = false; Airborne = false; _jumpVel = Vector3.Zero; LandLock = 0;
         StealDash = 0; StealFail = 0; DribbleActive = 0;
-        Flight = FlightKind.None; Stun = 0; _stunOnLand = false; SkillFlash = 0; _shotPlanValid = false;
+        Flight = FlightKind.None; Stun = 0; _stunOnLand = false; SkillFlash = 0; _shotPlanValid = false; RimHang = 0;
         Running = false;
         _releaseT = 0; _passReleaseT = 0; _passBuffer = 0;
         _visual.Rotation = new Vector3(0, Yaw, 0);
@@ -678,8 +723,19 @@ public partial class Player : CharacterBody3D
             M.Ball.Throw(this, rim + Vector3.Up * 0.3f, new Vector3(0, -7f, 0), BallState.Shot);
             Sfx.Play3D(M, "rim", rim, 2, 0.8f);
             Sfx.Play3D(M, "board", rim, 0, 0.9f);
-            Sfx.Play3D(M, "fx_dunk", rim);   // sem som: faz o aro tremer (HoopVisual), inclusive no cliente
+            Sfx.Play3D(M, "fx_dunk", rim);   // sem som: aro treme (HoopVisual) e efeito de impacto (ImpactFx), inclusive no cliente
+            Sfx.Play3D(M, "slam", rim, 3);
             M.LogEvent("DUNK_OK", this);
+            if (t.DunkHangTime > 0)
+            {
+                // v0.21: fica pendurado no aro (mãos na frente do aro, corpo embaixo) e depois cai
+                EndFlight();
+                var d = FlatToRim(FlightHoop); d = d.LengthSquared() > 1e-4f ? d.Normalized() : Forward;
+                _hangPos = rim - d * (t.RimRadius + 0.22f) - Vector3.Up * (t.DunkHandReach - 0.12f);
+                _hangPos.Y = Mathf.Max(_hangPos.Y, 0.05f);
+                RimHang = t.DunkHangTime;
+                return;
+            }
         }
         else
         {
@@ -717,8 +773,8 @@ public partial class Player : CharacterBody3D
         public float Yaw;
         public ushort Flags;
         public float Stamina, ShotCharge, PassCharge, Stun, StealFail, StealDash, DribbleActive, LandLock, DribblePhase,
-            ReleaseT, PassReleaseT, FlightT, FlightDur, DunkPressT, SkillFlash, DribbleRecharge;
-        public byte DribbleCharges;
+            ReleaseT, PassReleaseT, FlightT, FlightDur, DunkPressT, SkillFlash, DribbleRecharge, RimHang;
+        public byte DribbleCharges, Emote;
     }
 
     [System.Flags]
@@ -753,7 +809,7 @@ public partial class Player : CharacterBody3D
             Stamina = Stamina, ShotCharge = ShotCharge, PassCharge = PassCharge, Stun = Stun, StealFail = StealFail, StealDash = StealDash,
             DribbleActive = DribbleActive, LandLock = LandLock, DribblePhase = DribblePhase, ReleaseT = _releaseT, PassReleaseT = _passReleaseT,
             FlightT = FlightT, FlightDur = FlightDur, DunkPressT = DunkPressT, SkillFlash = SkillFlash, DribbleRecharge = DribbleRecharge,
-            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255),
+            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255), RimHang = RimHang, Emote = Emote,
         };
     }
 
@@ -762,7 +818,7 @@ public partial class Player : CharacterBody3D
         w.V3(s.Pos); w.V3(s.Vel); w.F(s.Yaw); w.U16(s.Flags);
         w.F(s.Stamina); w.F(s.ShotCharge); w.F(s.PassCharge); w.F(s.Stun); w.F(s.StealFail); w.F(s.StealDash); w.F(s.DribbleActive);
         w.F(s.LandLock); w.F(s.DribblePhase); w.F(s.ReleaseT); w.F(s.PassReleaseT); w.F(s.FlightT); w.F(s.FlightDur); w.F(s.DunkPressT);
-        w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges);
+        w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges); w.F(s.RimHang); w.U8(s.Emote);
     }
 
     public static NetState ReadNet(NetReader r) => new()
@@ -770,7 +826,7 @@ public partial class Player : CharacterBody3D
         Pos = r.V3(), Vel = r.V3(), Yaw = r.F(), Flags = r.U16(),
         Stamina = r.F(), ShotCharge = r.F(), PassCharge = r.F(), Stun = r.F(), StealFail = r.F(), StealDash = r.F(), DribbleActive = r.F(),
         LandLock = r.F(), DribblePhase = r.F(), ReleaseT = r.F(), PassReleaseT = r.F(), FlightT = r.F(), FlightDur = r.F(), DunkPressT = r.F(),
-        SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(),
+        SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(), RimHang = r.F(), Emote = r.U8(),
     };
 
     /// <summary>Cliente: aplica o estado (já interpolado) e anima. Não simula nada.</summary>
@@ -797,6 +853,7 @@ public partial class Player : CharacterBody3D
         DribbleActive = s.DribbleActive; LandLock = s.LandLock; DribblePhase = s.DribblePhase; _releaseT = s.ReleaseT; _passReleaseT = s.PassReleaseT;
         FlightT = s.FlightT; FlightDur = s.FlightDur; DunkPressT = s.DunkPressT; SkillFlash = s.SkillFlash; DribbleRecharge = s.DribbleRecharge;
         DribbleCharges = s.DribbleCharges;
+        RimHang = s.RimHang; Emote = s.Emote;
         _shotPlanValid = false;
         ApplyPose(dt, new Vector2(s.Vel.X, s.Vel.Z).Length());
     }

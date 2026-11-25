@@ -55,6 +55,7 @@ public sealed class Tuning
     const string SDummy = "Bonecos de treino";
     const string SBots = "Bots";
     const string SRumble = "Vibração (controle)";
+    const string SChar = "Personagem (visual)";
 
     // ---------------- Movimento ----------------
     [Param(SMove, "Velocidade andando", "Velocidade máxima andando (m/s).", 1, 10, 0.1f)]
@@ -325,6 +326,12 @@ public sealed class Tuning
     public float DunkHandReach = 2.3f;
     [Param(SDunk, "Atordoamento ao errar", "Segundos atordoado (sem mover nem agir) depois de errar a enterrada.", 0, 6, 0.1f)]
     public float DunkStunTime = 2f;
+    [Param(SDunk, "Pendurado no aro", "Segundos que o jogador fica pendurado no aro depois de uma enterrada certa, antes de cair (v0.21).", 0, 1.5f, 0.05f)]
+    public float DunkHangTime = 0.35f;
+    [Param(SDunk, "Tremor da câmera na enterrada", "Força do tremor da câmera quando uma enterrada entra perto de você (0 = sem tremor). Só visual.", 0, 2, 0.05f)]
+    public float DunkCameraShake = 0.6f;
+    [Param(SDunk, "Efeito de impacto", "Tamanho do clarão, da onda e das faíscas da enterrada (0 = sem efeito). Só visual.", 0, 2.5f, 0.05f)]
+    public float DunkImpactFx = 1f;
     [Param(SDunk, "Pausa da falta", "Segundos entre a falta (enterrada bloqueada) e o reinício do round.", 0, 4, 0.1f)]
     public float FoulDelay = 1.5f;
 
@@ -341,6 +348,20 @@ public sealed class Tuning
     public float FreeThrowGap = 0.8f;
     [Param(SFree, "Tempo de voo da bola", "Segundos de voo da bola no lance livre convertido (maior = arco mais alto).", 0.5f, 2.5f, 0.05f)]
     public float FreeThrowFlightTime = 1.15f;
+
+    // ---------------- Personagem (visual) ----------------
+    [Param(SChar, "Tamanho do personagem", "Escala do modelo (o Rei tem 1,4 m na concept; 1,3 = ~1,8 m, a altura da colisão). Só visual.", 0.6f, 2, 0.05f)]
+    public float CharacterScale = 1.3f;
+    [Param(SChar, "Passada andando", "Metros andados a cada ciclo de dois passos andando (maior = passos mais lentos e longos).", 0.4f, 3, 0.05f)]
+    public float AnimWalkStride = 1.5f;
+    [Param(SChar, "Passada correndo", "Metros por ciclo de dois passos correndo.", 0.4f, 4, 0.05f)]
+    public float AnimRunStride = 2.3f;
+    [Param(SChar, "Rapidez das transições", "Quão rápido uma animação passa para a outra (maior = mais seco).", 2, 40, 0.5f)]
+    public float AnimBlendSpeed = 14f;
+    [Param(SChar, "Rapidez das mãos", "Quão rápido as mãos flutuantes seguem o alvo (maior = mais grudadas).", 4, 80, 1)]
+    public float HandFollow = 26f;
+    [Param(SChar, "Duração da expressão", "Segundos que a expressão escolhida na roda fica no rosto (ou até escolher outra).", 1, 20, 0.5f)]
+    public float EmoteDuration = 5f;
 
     // ---------------- Bots ----------------
     [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]

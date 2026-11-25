@@ -125,6 +125,13 @@ public partial class Match : Node3D
         AddChild(_preview);
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
+        AddChild(new ImpactFx { M = this, Name = "ImpactFx" });
+        if (LocalPlayer != null && !Automated)
+        {
+            var layer = new CanvasLayer { Layer = 6, Name = "EmoteLayer" };
+            AddChild(layer);
+            layer.AddChild(new EmoteWheel { M = this, Name = "EmoteWheel" });
+        }
         _pause = new PauseMenu { M = this, Name = "Pause" };
         AddChild(_pause);
 
@@ -906,6 +913,8 @@ public partial class Match : Node3D
     {
         // input local → host (o personagem só se mexe quando o snapshot do host voltar)
         PlayerInput inp = _clientBot != null ? _clientBot.Build(dt) : _reader.Build(Cam, !InputBlocked);
+        if (Cfg.SmokeNet && !_netEmoteSent && _netT > 20f) { inp.Emote = Expressions.Bravo; _netEmoteSent = true; } // teste: expressão online
+        if (Cfg.SmokeNet && LocalPlayer != null && LocalPlayer.Emote == Expressions.Bravo) _netSawEmote = true;
         if (LocalPlayer != null) LocalPlayer.LastInput = inp;
         if (NetSession.I != null) NetSession.I.ClientRenderTick = Mathf.RoundToInt(_renderTick);
         // skill check: manda onde o ponteiro estava na tela quando apertou (o host julga por isso)
@@ -988,7 +997,7 @@ public partial class Match : Node3D
     int _netFtForced;
     string _netLeftName;
     Vector3 _netLast;
-    bool _netInit, _netSawPlaying;
+    bool _netInit, _netSawPlaying, _netEmoteSent, _netSawEmote;
 
     static void Track(Player p, ref bool init, ref Vector3 last, ref float dist)
     {
@@ -1005,6 +1014,7 @@ public partial class Match : Node3D
         _netT += dt;
         var rp = _remote.Keys.FirstOrDefault();
         Track(rp, ref _netInit, ref _netLast, ref _netDist);
+        if (rp != null && rp.Emote == Expressions.Bravo) _netSawEmote = true;
         // força lances livres para o cliente (skill checks julgados com o atraso da rede)
         if (rp != null && Phase == MatchPhase.Playing && _netFtForced < 3 && _netT > 12f + _netFtForced * 16f)
         {
@@ -1020,7 +1030,8 @@ public partial class Match : Node3D
         GD.Print($"[NETTEST-HOST] skill checks do remoto (com atraso de rede): enterradas {dOk}/{dOk + dFail}, lances livres {fOk}/{fOk + fMiss}");
         // o bot do cliente erra pouco no Normal: se tentou 3+ skill checks e não acertou nenhum, o atraso não está compensado
         bool skillOk = fOk + fMiss >= 4 && fOk >= 2 && (dOk + dFail < 3 || dOk > 0);
-        bool ok = (rp != null || _netLeftPackets >= 0) && _netDist > 15f && acts >= 1 && packets > 1000 && skillOk;
+        bool ok = (rp != null || _netLeftPackets >= 0) && _netDist > 15f && acts >= 1 && packets > 1000 && skillOk && _netSawEmote;
+        GD.Print($"[NETTEST-HOST] expressão do remoto recebida={_netSawEmote}");
         GD.Print($"[NETTEST-HOST] remoto={rp?.PlayerName ?? _netLeftName + " (já saiu)"} pacotes_de_input={packets} andou={_netDist:0}m acoes_do_remoto={acts} " +
                  $"({string.Join(" ", RemoteEvents.Select(kv => kv.Key + "=" + kv.Value))}) placar={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         Cfg.SmokeNet = false;
@@ -1034,7 +1045,8 @@ public partial class Match : Node3D
         if (Phase == MatchPhase.Playing) _netSawPlaying = true;
         if (_netT < 70f) return;
         var ns = NetSession.I;
-        bool ok = ns.SnapshotsReceived > 1000 && ClientSnapshotsApplied > 1000 && _netDist > 15f && _netSawPlaying;
+        bool ok = ns.SnapshotsReceived > 1000 && ClientSnapshotsApplied > 1000 && _netDist > 15f && _netSawPlaying && _netSawEmote;
+        GD.Print($"[NETTEST-CLIENT] expressão voltou no snapshot={_netSawEmote}");
         GD.Print($"[NETTEST-CLIENT] snapshots={ns.SnapshotsReceived} inputs_enviados={ns.InputsSent} andou={_netDist:0}m viu_jogo={_netSawPlaying} " +
                  $"placar_visto={Score[0]}x{Score[1]} -> {(ok ? "OK" : "FALHOU")}");
         Cfg.SmokeNet = false;

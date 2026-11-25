@@ -286,6 +286,7 @@ public partial class NetSession : Node
                 for (int i = 0; i < counters.Length; i++) counters[i] = r.U8();
                 float skillT = r.F();
                 int renderTick = r.I32();
+                byte emoteSeq = r.U8(), emoteId = r.U8();
                 if (seq <= ri.LastSeq) break;
                 if (renderTick > 0)
                 {
@@ -297,6 +298,7 @@ public partial class NetSession : Node
                 ri.Move = move.LimitLength(1f); ri.AimYaw = yaw; ri.AimPitch = pitch; ri.Held = held;
                 Array.Copy(counters, ri.Counters, counters.Length);
                 ri.ShootSkillT = skillT;
+                ri.EmoteSeq = emoteSeq; ri.EmoteId = emoteId;
                 ri.Packets++;
                 break;
             }
@@ -567,12 +569,15 @@ public partial class NetSession : Node
         if (inp.WasPressed(Btn.Shoot)) _lastSkillT = inp.SkillT;
         _w.F(_lastSkillT); // vai em todo pacote (se um se perder, o próximo leva)
         _w.I32(ClientRenderTick);
+        if (inp.Emote > 0) { _emoteSeq++; _emoteId = inp.Emote; }
+        _w.U8(_emoteSeq); _w.U8(_emoteId);
         SendToHost(false);
         InputsSent++;
     }
 
     public int PingToHost() => _t?.Ping(0) ?? -1;
     float _lastSkillT = -1;
+    byte _emoteSeq, _emoteId;
     /// <summary>Cliente: tick do host que está sendo desenhado agora (o Match atualiza).</summary>
     public int ClientRenderTick;
 

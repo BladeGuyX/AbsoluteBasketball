@@ -14,6 +14,10 @@ public partial class CameraRig : Node3D
     public static ulong IgnoreMouseUntilMs;
     Vector3 _pivot;
     bool _hasPivot;
+    float _shake, _shakeT;
+
+    /// <summary>v0.21: tremor (enterrada). Some sozinho em ~0,5 s.</summary>
+    public void Shake(float amount) => _shake = Mathf.Max(_shake, amount);
 
     public override void _Ready()
     {
@@ -25,7 +29,7 @@ public partial class CameraRig : Node3D
 
     public override void _UnhandledInput(InputEvent e)
     {
-        if (!LookEnabled || Input.MouseMode != Input.MouseModeEnum.Captured) return;
+        if (!LookEnabled || EmoteWheel.IsOpen || Input.MouseMode != Input.MouseModeEnum.Captured) return;
         if (e is InputEventMouseMotion mm)
         {
             if (Time.GetTicksMsec() < IgnoreMouseUntilMs || mm.ScreenRelative.Length() > 400f) return;
@@ -74,6 +78,13 @@ public partial class CameraRig : Node3D
         var basis = Basis.FromEuler(new Vector3(Pitch, Yaw, 0));
         var pos = _pivot + basis.Z * t.CameraDistance * Mathf.Clamp(UserSettings.I.CameraDistanceMult, 0.5f, 2f) + basis.X * t.CameraShoulderOffset;
         if (pos.Y < 0.35f) pos.Y = 0.35f;
+        if (_shake > 0.002f)
+        {
+            _shakeT += dt;
+            pos += basis * new Vector3(Mathf.Sin(_shakeT * 71f), Mathf.Sin(_shakeT * 53f + 1f), 0) * (_shake * 0.13f);
+            Cam.Fov -= 7f * _shake;
+            _shake *= Mathf.Exp(-7f * dt);
+        }
         Cam.GlobalTransform = new Transform3D(basis, pos);
     }
 }
@@ -89,6 +100,9 @@ public sealed class LocalInputReader
         if (!enabled) { _sprintToggled = false; return inp; }
 
         var mv = Input.GetVector(Act.MoveL, Act.MoveR, Act.MoveF, Act.MoveB);
+        // roda de expressões aberta no controle: o analógico esquerdo escolhe a expressão (não anda)
+        if (EmoteWheel.IsOpen && InputDevice.Gamepad) mv = Vector2.Zero;
+        inp.Emote = EmoteWheel.TakeChosen();
         float y = cam.Yaw;
         var right = new Vector3(Mathf.Cos(y), 0, -Mathf.Sin(y));
         var back = new Vector3(Mathf.Sin(y), 0, Mathf.Cos(y));

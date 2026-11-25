@@ -135,6 +135,15 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
   previsto, aliados no caminho não bloqueiam, adversário só bloqueia se estiver a menos de `PassLaneRadius` da bola E mais perto dela
   que o recebedor. Aperto do passe guardado por `PassBufferTime` (sai assim que der: pegando a bola, pousando...).
 
+## Revisões do usuário (v0.21) — prevalecem sobre as anteriores
+- 1º personagem: **o Rei** (concept `art_source/concepts/rei.png`). Corpo, cabeça, coroa e mãos são objetos separados; **as mãos não têm
+  braços nem osso** — flutuam e são movidas por código (vão até a bola e até o aro).
+- **Controle: drible e roubo no mesmo botão (X)**, como no teclado (E). A enterrada fica só no pulo (o X com a bola é drible).
+- **Roda de expressões no B (controle) / Q (teclado)**: segura, aponta com o analógico esquerdo ou o mouse e solta; a expressão fica
+  5 s (`EmoteDuration`) ou até outra. 6 expressões: Sério, Focado, Sorriso frio, Bravo (as 4 da concept), Feliz e Surpreso.
+- Enterrada com impacto: clarão, ondas, faíscas, som grave, aro e câmera tremendo; o jogador **fica pendurado no aro** `DunkHangTime`
+  (0,35 s) e depois cai.
+
 ## Decisões de implementação (Claude)
 - **Rede (Etapa 5, v0.8):** host autoritativo. Toda a simulação (jogadores, bola, regras) roda no host a partir de
   `PlayerInput` (humano local, bot ou cliente remoto). Offline = sem sessão.

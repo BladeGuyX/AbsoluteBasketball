@@ -32,6 +32,8 @@ public struct PlayerInput
     /// O host julga por isso — sem isso o atraso da rede fazia o cliente errar todo skill check.
     /// </summary>
     public float SkillT;
+    /// <summary>v0.21: expressão escolhida na roda neste tick (1..Expressions.Count; 0 = nada).</summary>
+    public byte Emote;
 
     public readonly bool IsHeld(Btn b) => (Held & b) != 0;
     public readonly bool WasPressed(Btn b) => (Pressed & b) != 0;

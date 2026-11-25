@@ -11,7 +11,7 @@ public partial class HintBar : HBoxContainer
     static readonly (string Action, string Text)[] Items =
     {
         (Act.Shoot, "arremesso"), (Act.Pass, "passe"), (Act.Variation, "passe alto"), (Act.Jump, "salto / enterrada"),
-        (Act.Dribble, "drible / roubo"), (Act.Sprint, "correr"), (Act.Pause, "pausa"),
+        (Act.Dribble, "drible / roubo"), (Act.Sprint, "correr"), (Act.Emote, "expressões"), (Act.Pause, "pausa"),
     };
 
     public override void _Ready()
@@ -41,7 +41,7 @@ public partial class HintBar : HBoxContainer
             if (action == Act.Dribble && !same)
             {
                 AddChild(Cap(InputDevice.Glyph(Act.Steal)));
-                var ls = UiKit.Outlined("roubo / enterrada", 13, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 4);
+                var ls = UiKit.Outlined("roubo", 13, new Color(1, 1, 1, 0.9f), HorizontalAlignment.Left, 4);
                 ls.MouseFilter = MouseFilterEnum.Ignore;
                 AddChild(ls);
                 AddChild(new Control { CustomMinimumSize = new Vector2(6, 0), MouseFilter = MouseFilterEnum.Ignore });

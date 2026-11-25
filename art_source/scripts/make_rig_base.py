@@ -5,8 +5,9 @@ Rodar:  powershell -ExecutionPolicy Bypass -File tools\\blender.ps1 art_source\\
 
 - Nomes de ossos = perfil humanoide da Godot (SkeletonProfileHumanoid): a Godot reconhece sozinha e dá para
   reaproveitar animações entre personagens (retarget).
-- Altura total ~1,92 m (o boneco placeholder do jogo e a cápsula de colisão de 1,8 m). Ajuste as proporções
-  em PROP abaixo quando a concept art do personagem chegar — mantendo os NOMES dos ossos.
+- v0.21: proporções do 1º personagem (o Rei, chibi de ~1,4 m na concept; a Godot escala o visual por
+  Tuning.CharacterScale). Outro personagem pode passar as próprias proporções em build(prop) — mantendo os NOMES.
+- Os ossos dos braços existem (perfil humanoide), mas o Rei não tem braços: as mãos flutuam e são do código.
 - Pose de descanso: T-pose, olhando para -Y, pés na origem.
 """
 import os
@@ -18,15 +19,15 @@ import ab_common as ab  # noqa: E402
 
 # alturas (m) e larguras — ajustar à concept art
 PROP = dict(
-    hips=0.98, spine=1.10, chest=1.25, upper_chest=1.40, neck=1.52, head=1.62, head_top=1.92,
-    shoulder_x=0.05, upper_arm_x=0.20, elbow_x=0.48, wrist_x=0.74, hand_tip_x=0.86, arm_z=1.48,
-    leg_x=0.11, knee_z=0.53, ankle_z=0.10, toe_y=-0.12, toe_tip_y=-0.21,
+    hips=0.45, spine=0.53, chest=0.62, upper_chest=0.71, neck=0.79, head=0.86, head_top=1.25,
+    shoulder_x=0.05, upper_arm_x=0.17, elbow_x=0.27, wrist_x=0.37, hand_tip_x=0.43, arm_z=0.73,
+    leg_x=0.105, knee_z=0.26, ankle_z=0.075, toe_y=-0.085, toe_tip_y=-0.16,
 )
 
 
-def build():
+def build(prop=None):
     ab.reset_scene()
-    p = PROP
+    p = dict(PROP, **(prop or {}))
     arm = bpy.data.armatures.new("rig_base")
     obj = bpy.data.objects.new("rig_base", arm)
     bpy.context.scene.collection.objects.link(obj)

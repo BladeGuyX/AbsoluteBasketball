@@ -6,6 +6,7 @@ Rodar:
   powershell -ExecutionPolicy Bypass -File tools\\blender.ps1 art_source\\scripts\\render_preview.py -- assets\\models\\ball.glb
   (ou com -Blend arquivo.blend para renderizar a cena aberta)
 Opções depois do arquivo:  --no-ref (sem o boneco de referência)  --frame N (frame da animação ativa)
+                           --hide A,B (esconde objetos cujo nome começa com A ou B)  --out NOME (nome do PNG)
 Saída: art_source/previews/<nome>.png
 """
 import math
@@ -21,6 +22,10 @@ args = ab.script_args()
 src = next((a for a in args if not a.startswith("--") and not a.isdigit()), None)
 show_ref = "--no-ref" not in args
 frame = int(args[args.index("--frame") + 1]) if "--frame" in args else None
+hide = args[args.index("--hide") + 1].split(",") if "--hide" in args else []
+out_name = args[args.index("--out") + 1] if "--out" in args else None
+src = next((a for i, a in enumerate(args) if not a.startswith("--") and not a.isdigit()
+            and (i == 0 or args[i - 1] not in ("--hide", "--out", "--frame"))), None)
 
 if src and src.lower().endswith(".glb"):
     ab.reset_scene()
@@ -29,6 +34,12 @@ if src and src.lower().endswith(".glb"):
 else:
     name = os.path.splitext(os.path.basename(bpy.data.filepath or "cena"))[0]
 sc = bpy.context.scene
+if out_name:
+    name = out_name
+for o in sc.objects:
+    if any(o.name.startswith(h) for h in hide if h):
+        o.hide_render = True
+        o.hide_set(True)
 if frame is not None:
     sc.frame_set(frame)
 

@@ -1220,6 +1220,36 @@
     "default": 2
   },
   {
+    "key": "DunkHangTime",
+    "section": "Enterrada",
+    "label": "Pendurado no aro",
+    "desc": "Segundos que o jogador fica pendurado no aro depois de uma enterrada certa, antes de cair (v0.21).",
+    "min": 0,
+    "max": 1.5,
+    "step": 0.05,
+    "default": 0.35
+  },
+  {
+    "key": "DunkCameraShake",
+    "section": "Enterrada",
+    "label": "Tremor da c\u00E2mera na enterrada",
+    "desc": "For\u00E7a do tremor da c\u00E2mera quando uma enterrada entra perto de voc\u00EA (0 = sem tremor). S\u00F3 visual.",
+    "min": 0,
+    "max": 2,
+    "step": 0.05,
+    "default": 0.6
+  },
+  {
+    "key": "DunkImpactFx",
+    "section": "Enterrada",
+    "label": "Efeito de impacto",
+    "desc": "Tamanho do clar\u00E3o, da onda e das fa\u00EDscas da enterrada (0 = sem efeito). S\u00F3 visual.",
+    "min": 0,
+    "max": 2.5,
+    "step": 0.05,
+    "default": 1
+  },
+  {
     "key": "FoulDelay",
     "section": "Enterrada",
     "label": "Pausa da falta",
@@ -1288,6 +1318,66 @@
     "max": 2.5,
     "step": 0.05,
     "default": 1.15
+  },
+  {
+    "key": "CharacterScale",
+    "section": "Personagem (visual)",
+    "label": "Tamanho do personagem",
+    "desc": "Escala do modelo (o Rei tem 1,4 m na concept; 1,3 = ~1,8 m, a altura da colis\u00E3o). S\u00F3 visual.",
+    "min": 0.6,
+    "max": 2,
+    "step": 0.05,
+    "default": 1.3
+  },
+  {
+    "key": "AnimWalkStride",
+    "section": "Personagem (visual)",
+    "label": "Passada andando",
+    "desc": "Metros andados a cada ciclo de dois passos andando (maior = passos mais lentos e longos).",
+    "min": 0.4,
+    "max": 3,
+    "step": 0.05,
+    "default": 1.5
+  },
+  {
+    "key": "AnimRunStride",
+    "section": "Personagem (visual)",
+    "label": "Passada correndo",
+    "desc": "Metros por ciclo de dois passos correndo.",
+    "min": 0.4,
+    "max": 4,
+    "step": 0.05,
+    "default": 2.3
+  },
+  {
+    "key": "AnimBlendSpeed",
+    "section": "Personagem (visual)",
+    "label": "Rapidez das transi\u00E7\u00F5es",
+    "desc": "Qu\u00E3o r\u00E1pido uma anima\u00E7\u00E3o passa para a outra (maior = mais seco).",
+    "min": 2,
+    "max": 40,
+    "step": 0.5,
+    "default": 14
+  },
+  {
+    "key": "HandFollow",
+    "section": "Personagem (visual)",
+    "label": "Rapidez das m\u00E3os",
+    "desc": "Qu\u00E3o r\u00E1pido as m\u00E3os flutuantes seguem o alvo (maior = mais grudadas).",
+    "min": 4,
+    "max": 80,
+    "step": 1,
+    "default": 26
+  },
+  {
+    "key": "EmoteDuration",
+    "section": "Personagem (visual)",
+    "label": "Dura\u00E7\u00E3o da express\u00E3o",
+    "desc": "Segundos que a express\u00E3o escolhida na roda fica no rosto (ou at\u00E9 escolher outra).",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 5
   },
   {
     "key": "BotAimErrorDeg",
