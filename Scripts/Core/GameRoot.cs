@@ -238,7 +238,7 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : CutKind.KingUlt, CutShotMiss = args.Contains("--miss"), CutShotBlockMiss = args.Contains("--toco"),
+            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : args.Contains("--luck") ? CutKind.UltPose : CutKind.KingUlt, CutShotMiss = args.Contains("--miss"), CutShotBlockMiss = args.Contains("--toco"),
                 ScreenshotPath = args[cs + 1], Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
             return;
         }

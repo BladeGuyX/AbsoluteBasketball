@@ -4,7 +4,7 @@ using Godot;
 
 namespace AB;
 
-public enum CutKind : byte { None, KingUlt, BoltDuel }
+public enum CutKind : byte { None, KingUlt, BoltDuel, UltPose }
 
 /// <summary>
 /// v0.26: cutscenes das ultimates (King "Sua Derrota é Absoluta" e Bolt "Duelo"). Mostradas para TODOS os jogadores.
@@ -65,9 +65,10 @@ public partial class Cutscene : Node3D
             var opp = M.Players.Where(q => q.Team != owner.Team).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(owner.GlobalPosition)).Take(2).ToList();
             for (int i = 0; i < opp.Count; i++) { ActorIds[i + 1] = opp[i].Id; ActorChars[i + 1] = (byte)opp[i].CharacterId; }
         }
+        else if (kind == CutKind.UltPose) { ActorIds[1] = -1; ActorIds[2] = -1; } // v0.35: só o dono fazendo pose
         else { ActorIds[1] = target.Id; ActorChars[1] = (byte)target.CharacterId; ActorIds[2] = -1; }
         Sfx.Play2D(M, "cut_start", -3);
-        M.LogEvent(kind == CutKind.KingUlt ? "CUT_KING" : "CUT_DUEL", owner, target);
+        M.LogEvent(kind == CutKind.KingUlt ? "CUT_KING" : kind == CutKind.BoltDuel ? "CUT_DUEL" : "CUT_POSE", owner, target);
         return true;
     }
 
@@ -86,6 +87,11 @@ public partial class Cutscene : Node3D
         float go = owner?.SkillGrace ?? 0f;
         float Jit(float d) => Mathf.Max(0.25f, d + M.Rng.RandfRange(-t.DunkFlightJitter, t.DunkFlightJitter) * 0.6f);
 
+        if (Kind == CutKind.UltPose)
+        {
+            if (StageT >= Mathf.Max(0.3f, t.UltPoseDuration)) Finish(true);
+            return;
+        }
         if (Kind == CutKind.KingUlt)
         {
             var rim = M.Geo.RimCenter[CourtGeo.AttackHoop(Team)];
@@ -273,9 +279,12 @@ public partial class Cutscene : Node3D
         if (_visStage != Stage) { _visStage = Stage; _vt = StageT; OnStageVisual(Stage); }
         else { _vt += dt; if (Mathf.Abs(_vt - StageT) > 0.15f) _vt = StageT; }
         _time += dt;
-        foreach (var p in M.Players) if (p.Visible) p.Visible = false;
-        if (M.Ball.Visible) M.Ball.Visible = false;
+        // pose da ultimate: só o dono some (vira o boneco da cena); o resto fica parado à vista
+        bool pose = Kind == CutKind.UltPose;
+        foreach (var p in M.Players) if (p.Visible && (!pose || p.Id == OwnerId)) p.Visible = false;
+        if (M.Ball.Visible && (!pose || PoseHasBall)) M.Ball.Visible = false;
         if (Kind == CutKind.KingUlt) KingFrame(_vt, dt);
+        else if (pose) PoseFrame(_vt, dt);
         else DuelFrame(_vt, dt);
         for (int i = 0; i < 3; i++)
         {
@@ -324,9 +333,9 @@ public partial class Cutscene : Node3D
         AddChild(_ovLayer);
         _ov = new CutOverlay();
         _ovLayer.AddChild(UiKit.FullRect(_ov));
-        _ov.Title = Kind == CutKind.KingUlt ? Characters.Get(Characters.King).Abilities[3].Name.ToUpperInvariant()
-                                          : Characters.Get(Characters.Bolt).Abilities[3].Name.ToUpperInvariant();
-        _ov.Accent = Kind == CutKind.KingUlt ? new Color("e8313a") : new Color("3fd7ff");
+        int titleChar = Kind == CutKind.KingUlt ? Characters.King : Kind == CutKind.BoltDuel ? Characters.Bolt : ActorChars[0];
+        _ov.Title = Characters.Get(titleChar).Abilities[3].Name.ToUpperInvariant();
+        _ov.Accent = Kind == CutKind.KingUlt ? new Color("e8313a") : Kind == CutKind.BoltDuel ? new Color("3fd7ff") : Characters.Get(titleChar).Color;
         _ov.TitleT = 0;
         _time = 0;
     }
@@ -372,6 +381,10 @@ public partial class Cutscene : Node3D
             if (stage == KSpin) _ov.Flash(Colors.White, 0.35f);
             if (stage == KBlock) _blockReach = KBlockDur;
             if (stage == KBlocked) _blockHitFx = false;
+        }
+        else if (Kind == CutKind.UltPose)
+        {
+            _ov.Flash(_ov.Accent.Lightened(0.5f), 0.55f);
         }
         else
         {
@@ -690,6 +703,42 @@ public partial class Cutscene : Node3D
     }
 
     static Vector3 Right(float yaw) => new(Mathf.Cos(yaw), 0, -Mathf.Sin(yaw));
+
+    // =====================================================================
+    // v0.35: pose da ultimate (ults que não são cutscene, ex.: Sorte Infinita do Luck) — avisa todo mundo
+
+    bool PoseHasBall => M.Ball.Holder != null && M.Ball.Holder.Id == OwnerId;
+
+    void PoseFrame(float u, float dt)
+    {
+        var L = _act[0];
+        if (L == null) return;
+        var o = Owner;
+        var pos = o != null && IsInstanceValid(o) ? o.GlobalPosition : Vector3.Zero;
+        float yaw = o?.Yaw ?? 0f;
+        float dur = Mathf.Max(0.3f, Tuning.I.UltPoseDuration);
+        float k = Smooth(u / dur);
+        _ov.Bars = Mathf.MoveToward(_ov.Bars, 1f, dt * 6f);
+        _ov.Speed = 0; _ov.Vignette = 0.4f;
+        _ov.TitleT = u;
+        ClearBeam();
+        L.Pos = pos; L.Yaw = yaw; L.St = Base();
+        L.St.Mood = 1;                           // comemoração (braços para cima)
+        L.St.Emote = Expressions.Feliz;
+        if (PoseHasBall)
+        {
+            // gira a bola no dedo, acima da cabeça
+            _ball.Visible = true;
+            _ball.GlobalPosition = pos + Vector3.Up * (2.2f + 0.05f * Mathf.Sin(_time * 9f)) + Right(yaw) * 0.2f;
+            _ball.RotateY(dt * 18f);
+        }
+        else _ball.Visible = false;
+        // câmera de frente: entra pelo lado e fecha no rosto
+        var f = Dir(yaw); var r = Right(yaw);
+        var p0 = pos + f * 4.4f + r * 1.7f + Vector3.Up * 1.0f;
+        var p1 = pos + f * 3.3f - r * 0.6f + Vector3.Up * 1.6f;
+        Cam(p0.Lerp(p1, k), pos + Vector3.Up * Mathf.Lerp(1.3f, 1.6f, k), Mathf.Lerp(50, 46, k));
+    }
 
     // =====================================================================
     // Bolt: Duelo

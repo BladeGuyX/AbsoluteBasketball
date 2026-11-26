@@ -1683,6 +1683,17 @@
     "sub": ""
   },
   {
+    "key": "UltPoseDuration",
+    "section": "Habilidades e ultimate",
+    "label": "Pose da ultimate: dura\u00E7\u00E3o",
+    "desc": "Segundos da cena curta em que o personagem faz uma pose ao usar uma ultimate que n\u00E3o \u00E9 cutscene (ex.: Sorte Infinita do Luck). O jogo fica congelado durante ela.",
+    "min": 0.5,
+    "max": 4,
+    "step": 0.1,
+    "default": 1.6,
+    "sub": ""
+  },
+  {
     "key": "KingStarSpeed",
     "section": "King",
     "label": "Velocidade",

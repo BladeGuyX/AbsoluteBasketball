@@ -221,15 +221,21 @@ public sealed class AbilityScenario
         float baseSpeed = P.St.Speed;
         P.Ab.Ult = 1f;
         _inp.Pressed |= Btn.Ult; yield return 0;
+        // v0.35: a 1ª ativação mostra a pose da ultimate (jogo congelado) — espera ela acabar
+        bool posed = M.Phase == MatchPhase.Cutscene && M.Cut.Kind == CutKind.UltPose;
+        int pn = 0;
+        while (M.Cut.Active && pn++ < 600) yield return 0;
         yield return 0;
-        bool modeOn = P.Ab.ModeT > t.LuckModeDuration - 0.2f && Mathf.Abs(P.St.Speed - baseSpeed * (1f + t.LuckModeBonus)) < 0.01f && P.Ab.Ult <= 0.01f;
+        bool modeOn = posed && P.Ab.ModeT > t.LuckModeDuration - 0.2f && Mathf.Abs(P.St.Speed - baseSpeed * (1f + t.LuckModeBonus)) < 0.01f && P.Ab.Ult <= 0.01f;
         float keepLose = t.LuckGambleLoseChance, keepStep = t.LuckGambleLoseStep;
         t.LuckGambleLoseChance = 0f; t.LuckGambleLoseStep = 0f;
         float before = P.Ab.ModeT;
         _inp.Pressed |= Btn.Ult; yield return 0;
         bool won = P.Ab.ModeWins == 1 && Mathf.Abs(P.Ab.ModeBonus - t.LuckModeBonus * 2f) < 0.001f && P.Ab.ModeT > before + t.LuckGambleExtraTime - 0.1f && P.Ab.ModePoints == 2 * Mathf.RoundToInt(t.LuckModePoints);
-        t.LuckGambleLoseChance = 1f;
+        float keepMax = t.LuckGambleLoseMax;
+        t.LuckGambleLoseChance = 1f; t.LuckGambleLoseMax = 1f; // o teto também limita a chance
         _inp.Pressed |= Btn.Ult; yield return 0;
+        t.LuckGambleLoseMax = keepMax;
         bool lost = P.Ab.ModeT <= 0 && P.Stun > t.LuckGambleStun - 0.1f;
         t.LuckGambleLoseChance = keepLose; t.LuckGambleLoseStep = keepStep;
         if (!(modeOn && won && lost)) GD.Print($"[ABIL] sorte_infinita: modo={modeOn} ganhou={won} perdeu={lost} ModeT={P.Ab.ModeT} stun={P.Stun}");

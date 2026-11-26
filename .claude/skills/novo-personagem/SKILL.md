@@ -20,6 +20,8 @@ e a seção v0.26 do `docs/GDD.md`. Pergunte ao usuário o que faltar das 3 habi
   nome/ícone/texto usando `{CampoDoTuning}`), `Stars`, `Cooldown`, `NeedsTarget`.
 - `Scripts/Core/Tuning.cs`: seção do personagem com `<Nome>Star*` (`Sub = Star`) e valores das habilidades (`Sub = Hab`) — skill `tuning-param`.
 - `Scripts/Game/PlayerAbilities.cs`: efeitos de cada habilidade + ultimate; estado novo que o cliente precisa ver vai no `NetData`.
+  **Ultimate que NÃO é cutscene (pedido do usuário, v0.35):** ao ativar (só a 1ª vez, não nas repetições) chame `M.StartUltPose(P)` —
+  pose curta com o título da ult na cor do personagem, jogo congelado (`CutKind.UltPose`, `Tuning.UltPoseDuration`).
 - `Scripts/Game/BotBrain.cs`: `AbilitiesWithBall` / `AbilitiesOffBall` (e `CutsceneSkill` se a ult tiver cutscene).
 - Visual: ícones em `AbilityIcons`, efeitos `AbilityAura`/`ImpactFx.Ability` (deixas `fx_*`), sons no `Sfx`.
 - UI: aba nova no `InfoMenu`; conferir `CharacterSelect`, `CheatsMenu` (trocar personagem) e `Match.RefreshNames`.

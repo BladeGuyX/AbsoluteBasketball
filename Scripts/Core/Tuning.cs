@@ -406,6 +406,8 @@ public sealed class Tuning
     public float UltBonusDunk = 0.17f;
     [Param(SUlt, "Skill check da cutscene: preparação", "Segundos com o anel na tela antes do ponteiro começar a girar nos skill checks das cutscenes.", 0, 2, 0.05f)]
     public float CutCheckPrep = 0.35f;
+    [Param(SUlt, "Pose da ultimate: duração", "Segundos da cena curta em que o personagem faz uma pose ao usar uma ultimate que não é cutscene (ex.: Sorte Infinita do Luck). O jogo fica congelado durante ela.", 0.5f, 4, 0.1f)]
+    public float UltPoseDuration = 1.6f;
 
     // ---------------- King ----------------
     [Param(SKing, "Velocidade", "Estrelas de Velocidade do King.", 1, 5, 1, Sub = Star)] public float KingStarSpeed = 3f;

@@ -4,6 +4,16 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.35 — pose da ultimate do Luck
+
+1. Jogue de Luck e use a ultimate (Sorte Infinita) pela 1ª vez: o jogo congela ~1,6 s, a câmera vai para a frente do Luck comemorando (se estiver com a bola, ela gira acima dele) e aparece "SORTE INFINITA" em verde. Depois o jogo volta exatamente de onde parou (os outros jogadores e a bola não se mexem durante a pose).
+2. Aperte a ultimate de novo durante o modo (as apostas): **não** tem pose, a aposta é na hora.
+3. O tempo do modo (12 s) só começa a contar depois da pose.
+4. Online: o amigo também vê a pose quando você usa (e vice-versa). Os dois precisam estar na v0.35.
+5. Contra bots Luck: a pose aparece quando o bot usa a ultimate.
+
+---
+
 ## v0.34 — skill checks da ult do King mais apertados
 
 1. **Sua Derrota é Absoluta:** janelas certas menores. 1º (drible) 0,08 s, 2º (bloqueio) 0,065 s, último (arremesso) 0,04 s. A zona colorida do anel fica mais estreita, principalmente no último. Confira também em Informações / no artifact.

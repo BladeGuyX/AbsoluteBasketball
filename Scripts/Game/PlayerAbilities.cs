@@ -239,6 +239,7 @@ public sealed class PlayerAbilities
             ModeT = T.LuckModeDuration; ModeBonus = T.LuckModeBonus; ModeWins = 0; ModeGambles = 0;
             Sfx.Play3D(M, "fx_luckon", P.GlobalPosition + Vector3.Up);
             M.LogEvent("ULT", P);
+            M.StartUltPose(P); // v0.35: pose curta para todo mundo ver (o tempo do modo não corre durante ela)
             return;
         }
         // aposta

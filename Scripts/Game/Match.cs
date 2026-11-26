@@ -849,11 +849,14 @@ public partial class Match : Node3D
     }
 
     /// <summary>Começa a cutscene de uma ultimate (só a autoridade). A partida fica parada até ela acabar.</summary>
+    /// <summary>v0.35: pose curta avisando que <paramref name="owner"/> usou a ultimate (para ults que não são cutscene).</summary>
+    public bool StartUltPose(Player owner) => StartCutscene(CutKind.UltPose, owner, null);
+
     public bool StartCutscene(CutKind kind, Player owner, Player target)
     {
         if (IsClient || Phase != MatchPhase.Playing || Cut == null) return false;
         if (!Cut.Begin(kind, owner, target)) return false;
-        foreach (var p in Players) { p.CancelShot(false); p.CancelPass(); }
+        if (kind != CutKind.UltPose) foreach (var p in Players) { p.CancelShot(false); p.CancelPass(); } // a pose só congela o jogo
         Phase = MatchPhase.Cutscene;
         return true;
     }
@@ -863,6 +866,7 @@ public partial class Match : Node3D
     {
         var t = Tuning.I;
         Phase = MatchPhase.Playing;
+        if (kind == CutKind.UltPose) return; // v0.35: só a pose; o jogo continua de onde parou
         if (success)
         {
             int pts = Mathf.RoundToInt(kind == CutKind.KingUlt ? t.KingUltPoints : t.BoltDuelPoints);
@@ -1191,11 +1195,11 @@ public partial class Match : Node3D
         var inp = new PlayerInput { AimYaw = p.Yaw, SkillT = -1 };
         if (!_cutShotStarted && Phase == MatchPhase.Playing && (_cutShotT += 1f / 60f) > 0.6f)
         {
-            p.CharacterId = Cfg.CutShot == CutKind.KingUlt ? Characters.King : Characters.Bolt;
+            p.CharacterId = Cfg.CutShot == CutKind.KingUlt ? Characters.King : Cfg.CutShot == CutKind.UltPose ? Characters.Luck : Characters.Bolt;
             if (Ball.Holder != p) Ball.GiveTo(p);
             p.Ab.Ult = 1f;
             var opp = Players.FirstOrDefault(q => q.Team != p.Team);
-            if (Cfg.CutShot == CutKind.KingUlt) inp.Pressed |= Btn.Ult;
+            if (Cfg.CutShot is CutKind.KingUlt or CutKind.UltPose) inp.Pressed |= Btn.Ult;
             else if (opp != null) { inp.Target = (byte)opp.Id; inp.TargetSlot = 3; }
             _cutShotStarted = true;
         }
