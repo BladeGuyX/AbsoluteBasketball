@@ -11,7 +11,7 @@ public partial class LobbyMenu : Control
 {
     VBoxContainer _teamA, _teamB, _friends;
     Label _info, _wait;
-    OptionButton _size, _mode, _diff, _abil;
+    OptionButton _size, _mode, _diff, _abil, _test;
     SpinBox _pts, _mins, _teamSize;
     Label _ptsLbl, _minsLbl;
     Button _start;
@@ -22,8 +22,7 @@ public partial class LobbyMenu : Control
     {
         UiKit.FullRect(this);
         Theme = UiKit.Theme;
-        AddChild(UiKit.FullRect(new ColorRect { Color = new Color("3b8fe6") }));
-        AddChild(UiKit.Anchor(new ColorRect { Color = Palette.Sand }, 0, 0.82f, 1, 1, 0, 0, 0, 0));
+        AddChild(UiKit.FullRect(new MenuBackdrop()));
         var center = UiKit.FullRect(new CenterContainer());
         AddChild(center);
         var panel = new PanelContainer();
@@ -37,7 +36,7 @@ public partial class LobbyMenu : Control
         var left = new VBoxContainer();
         left.AddThemeConstantOverride("separation", 12);
         root.AddChild(left);
-        left.AddChild(UiKit.Lbl("Lobby", 48));
+        left.AddChild(UiKit.Title("Lobby"));
         _info = UiKit.Lbl("", 20, new Color("5b6577"));
         left.AddChild(_info);
 
@@ -72,6 +71,11 @@ public partial class LobbyMenu : Control
         _abil.AddItem("Com habilidades", 0); _abil.AddItem("Sem habilidades", 1);
         Row(grid, "Habilidades", _abil);
         _abil.ItemSelected += _ => OnSettingChanged();
+        // v0.27: modo de teste (partida infinita + trapaças para todos)
+        _test = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _test.AddItem("Partida normal", 0); _test.AddItem("Teste (infinita + trapaças)", 1);
+        Row(grid, "Modo", _test);
+        _test.ItemSelected += _ => OnSettingChanged();
         _size.ItemSelected += _ => OnSettingChanged();
         _mode.ItemSelected += _ => OnSettingChanged();
         _pts.ValueChanged += _ => OnSettingChanged();
@@ -88,12 +92,12 @@ public partial class LobbyMenu : Control
         {
             ConfirmText = "Escolher", AbilitiesOn = NetSession.I.Settings.Abilities,
             OnConfirm = id => NetSession.I.SetMyCharacter(id), OnBack = () => chrBtn.GrabFocus(),
-        }), 300);
+        }), UiKit.Purple, 300);
         buttons.AddChild(chrBtn);
-        _start = UiKit.Btn("Começar partida", () => ns.HostStartMatch(), 300);
+        _start = UiKit.Btn("Começar partida", () => ns.HostStartMatch(), UiKit.Green, 300);
         _start.Visible = ns.IsHost;
         buttons.AddChild(_start);
-        buttons.AddChild(UiKit.Btn("Sair do lobby", () => ns.Leave(toMenu: true), 240));
+        buttons.AddChild(UiKit.Btn("Sair do lobby", () => ns.Leave(toMenu: true), UiKit.Red, 240));
         _wait = UiKit.Lbl("Aguardando o host começar...", 20, new Color("5b6577"));
         _wait.Visible = !ns.IsHost;
         left.AddChild(_wait);
@@ -145,12 +149,15 @@ public partial class LobbyMenu : Control
         var col = new VBoxContainer { CustomMinimumSize = new Vector2(300, 0) };
         col.AddThemeConstantOverride("separation", 6);
         var head = new PanelContainer();
-        head.AddThemeStyleboxOverride("panel", UiKit.Box(Palette.Team[team], 14, 16, 6));
-        head.AddChild(UiKit.Outlined(Palette.TeamName[team], 26, Colors.White, outline: 0));
+        head.AddThemeStyleboxOverride("panel", UiKit.Raised(Palette.Team[team], 5, 14, 16, 6));
+        var ht = UiKit.Outlined(Palette.TeamName[team], 26, Colors.White, outline: 0);
+        ht.LabelSettings.Font = UiKit.FontBold;
+        head.AddChild(ht);
         col.AddChild(head);
-        var list = new VBoxContainer { CustomMinimumSize = new Vector2(300, 200) };
+        var list = new VBoxContainer { CustomMinimumSize = new Vector2(300, 220) };
+        list.AddThemeConstantOverride("separation", 6);
         col.AddChild(list);
-        col.AddChild(UiKit.Btn("Entrar neste time", () => NetSession.I.SetMyTeam(team), 300));
+        col.AddChild(UiKit.Btn("Entrar neste time", () => NetSession.I.SetMyTeam(team), Palette.Team[team].Darkened(0.1f), 300));
         parent.AddChild(col);
         return list;
     }
@@ -167,7 +174,7 @@ public partial class LobbyMenu : Control
             TimeMinutes = (float)_mins.Value,
             TeamSize = (int)_teamSize.Value,
             BotDifficulty = _diff.Selected,
-            Abilities = _abil.Selected == 0,
+            Abilities = _abil.Selected == 0, TestMode = _test.Selected == 1,
         };
         NetSession.I.HostSetSettings(s);
     }
@@ -194,7 +201,8 @@ public partial class LobbyMenu : Control
         _teamSize.Value = s.TeamSize;
         _diff.Selected = Mathf.Clamp(s.BotDifficulty, 0, 2);
         _abil.Selected = s.Abilities ? 0 : 1;
-        foreach (var c in new Control[] { _size, _mode, _pts, _mins, _teamSize, _diff, _abil })
+        _test.Selected = s.TestMode ? 1 : 0;
+        foreach (var c in new Control[] { _size, _mode, _pts, _mins, _teamSize, _diff, _abil, _test })
         {
             if (c is OptionButton ob) ob.Disabled = !ns.IsHost;
             else if (c is SpinBox sb) sb.Editable = ns.IsHost;
@@ -215,12 +223,38 @@ public partial class LobbyMenu : Control
             foreach (var m in humans)
             {
                 string tag = (m.NetId == 0 ? "  (host)" : "") + (m.NetId == ns.MyNetId ? "  (você)" : "");
-                list.AddChild(UiKit.Lbl(m.Name + "  · " + Characters.Get(m.Character).Name + tag, 24, m.NetId == ns.MyNetId ? Palette.Team[team] : null));
+                list.AddChild(MemberRow(m.Name + tag, Characters.Get(m.Character), team, m.NetId == ns.MyNetId));
             }
             int bots = Mathf.Clamp(s.TeamSize, 1, perTeam) - humans.Count;
-            for (int i = 0; i < bots; i++) list.AddChild(UiKit.Lbl("Bot", 22, new Color("8a94a6")));
+            for (int i = 0; i < bots; i++) list.AddChild(MemberRow("Bot (vaga vazia)", null, team, false));
         }
         if (_start != null) _start.Disabled = ns.Members.Count == 0;
+    }
+
+    /// <summary>v0.27: cartão de um jogador do lobby: barra da cor do time, nome e o personagem numa etiqueta colorida.</summary>
+    static Control MemberRow(string name, Characters.Def chr, int team, bool me)
+    {
+        var pc = new PanelContainer();
+        var sb = UiKit.Box(me ? new Color("eaf2ff") : new Color("f4f7fc"), 12, 12, 6);
+        sb.BorderColor = Palette.Team[team]; sb.BorderWidthLeft = 6;
+        pc.AddThemeStyleboxOverride("panel", sb);
+        var hb = new HBoxContainer();
+        hb.AddThemeConstantOverride("separation", 8);
+        var l = chr != null ? UiKit.Section(name, 21, me ? Palette.Team[team].Darkened(0.2f) : null) : UiKit.Lbl(name, 20, new Color("8a94a6"));
+        l.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        l.ClipText = true;
+        hb.AddChild(l);
+        if (chr != null)
+        {
+            var tag = new PanelContainer { SizeFlagsVertical = SizeFlags.ShrinkCenter };
+            tag.AddThemeStyleboxOverride("panel", UiKit.Box(chr.Color, 10, 10, 2));
+            var tl = UiKit.Lbl(chr.Name, 17, Colors.White);
+            tl.AddThemeFontOverride("font", UiKit.FontBold);
+            tag.AddChild(tl);
+            hb.AddChild(tag);
+        }
+        pc.AddChild(hb);
+        return pc;
     }
 
     void FillFriends()

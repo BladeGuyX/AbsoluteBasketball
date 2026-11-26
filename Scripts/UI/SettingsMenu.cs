@@ -4,13 +4,10 @@ using Godot;
 
 namespace AB;
 
-/// <summary>Configurações: áudio, vídeo e controles (sensibilidade, corrida alternar, remapeamento).</summary>
+/// <summary>Configurações: áudio, vídeo e controles (sensibilidade, corrida alternar, remapeamento). v0.27: a aba Informações virou o <see cref="InfoMenu"/>.</summary>
 public partial class SettingsMenu : Control
 {
     public Action OnClosed;
-    /// <summary>v0.26: personagem mostrado na aba Informações (−1 = o escolhido no menu).</summary>
-    public int CharacterId = -1;
-    public bool AbilitiesOn = true;
 
     string _waitAction;
     bool _waitPad;
@@ -24,7 +21,7 @@ public partial class SettingsMenu : Control
         UiKit.FullRect(this);
         Theme = UiKit.Theme;
         MouseFilter = MouseFilterEnum.Stop;
-        AddChild(UiKit.FullRect(new ColorRect { Color = new Color(0.05f, 0.08f, 0.14f, 0.6f) }));
+        AddChild(UiKit.Dim(0.6f));
         var center = UiKit.FullRect(new CenterContainer());
         AddChild(center);
         var panel = new PanelContainer { CustomMinimumSize = new Vector2(1100, 800) };
@@ -32,7 +29,7 @@ public partial class SettingsMenu : Control
         var vb = new VBoxContainer();
         vb.AddThemeConstantOverride("separation", 14);
         panel.AddChild(vb);
-        vb.AddChild(UiKit.Lbl("Configurações", 48));
+        vb.AddChild(UiKit.Title("Configurações"));
 
         var tabs = new TabContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
         vb.AddChild(tabs);
@@ -96,74 +93,9 @@ public partial class SettingsMenu : Control
         ctl.AddChild(UiKit.Lbl("Fixos: mira = mouse / analógico direito · pausa = Esc / Menu · F5 = recarregar tuning.json", 20, new Color("5b6577")));
         RefreshBinds();
 
-        // ---------- Informações (v0.26): os controles saíram da tela de jogo e estão aqui, com as habilidades ----------
-        var infoScroll = new ScrollContainer { Name = "Informações", HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled };
-        tabs.AddChild(infoScroll);
-        var info = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
-        info.AddThemeConstantOverride("separation", 10);
-        infoScroll.AddChild(info);
-        BuildInfo(info);
-
-        _backBtn = UiKit.Btn("Voltar", Close);
+        _backBtn = UiKit.Btn("Voltar", Close, UiKit.Grey);
         vb.AddChild(_backBtn);
         _backBtn.CallDeferred(Control.MethodName.GrabFocus);
-    }
-
-    void BuildInfo(VBoxContainer info)
-    {
-        var grey = new Color("5b6577");
-        info.AddChild(UiKit.Lbl("Controles", 34));
-        var grid = new GridContainer { Columns = 3 };
-        grid.AddThemeConstantOverride("h_separation", 18);
-        grid.AddThemeConstantOverride("v_separation", 8);
-        info.AddChild(grid);
-        foreach (var (action, desc) in Act.Info)
-        {
-            string label = Array.Find(Act.Rebindable, x => x.Action == action).Label ?? (action == Act.Pause ? "Pausa" : action);
-            if (action == Act.MoveF) label = "Mover";
-            string kb = action == Act.MoveF ? "W A S D" : action == Act.Pause ? "Esc" : InputSetup.Describe(InputSetup.GetKb(action));
-            string pad = action == Act.MoveF ? "Analógico E" : action == Act.Pause ? "Menu" : InputSetup.Describe(InputSetup.GetPad(action));
-            grid.AddChild(UiKit.Lbl(label, 22));
-            grid.AddChild(UiKit.Lbl(kb + "  /  " + pad, 20, new Color("2f80ed")));
-            var d = UiKit.Lbl(desc, 18, grey);
-            d.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            d.CustomMinimumSize = new Vector2(560, 0);
-            grid.AddChild(d);
-        }
-
-        int chr = Characters.Clamp(CharacterId >= 0 ? CharacterId : UserSettings.I.Character);
-        var def = Characters.Get(chr);
-        info.AddChild(new Control { CustomMinimumSize = new Vector2(0, 10) });
-        info.AddChild(UiKit.Lbl("Habilidades de " + def.Name + (AbilitiesOn ? "" : "  (desligadas nesta partida)"), 34));
-        var stars = Characters.Stars(chr);
-        var srow = new HBoxContainer();
-        srow.AddThemeConstantOverride("separation", 16);
-        for (int i = 0; i < 5; i++)
-        {
-            srow.AddChild(UiKit.Lbl(Characters.StatNames[i], 18, grey));
-            srow.AddChild(new StarsView { Stars = stars[i], CustomMinimumSize = new Vector2(110, 20) });
-        }
-        info.AddChild(srow);
-        string[] keys = { Act.Ab1, Act.Ab2, Act.Ab3, Act.Ult };
-        for (int i = 0; i < 4; i++)
-        {
-            var ab = def.Abilities[i];
-            var r = new HBoxContainer();
-            r.AddThemeConstantOverride("separation", 14);
-            r.AddChild(new AbilityIconView { Icon = ab.Icon, Col = ab.Color, CustomMinimumSize = new Vector2(56, 56) });
-            var col = new VBoxContainer();
-            col.AddThemeConstantOverride("separation", 2);
-            string kb = InputSetup.Describe(InputSetup.GetKb(keys[i])), pad = InputSetup.Describe(InputSetup.GetPad(keys[i]));
-            col.AddChild(UiKit.Lbl((i == 3 ? "ULTIMATE · " : $"({i + 1}) ") + ab.Name + $"   [{kb} / {pad}]", 22, i == 3 ? new Color("b8860b") : null));
-            var d = UiKit.Lbl(Characters.Describe(chr, i), 18, grey);
-            d.AutowrapMode = TextServer.AutowrapMode.WordSmart;
-            d.CustomMinimumSize = new Vector2(900, 0);
-            col.AddChild(d);
-            r.AddChild(col);
-            info.AddChild(r);
-        }
-        info.AddChild(UiKit.Lbl("A barra dourada da ultimate enche bem devagar com o tempo; tocos, passes, roubos e principalmente cestas dão bônus na hora. As recargas não voltam no começo de um round.", 18, grey));
-        info.GetChild<Label>(info.GetChildCount() - 1).AutowrapMode = TextServer.AutowrapMode.WordSmart;
     }
 
     void RefreshBinds()

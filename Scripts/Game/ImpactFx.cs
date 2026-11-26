@@ -130,9 +130,24 @@ public partial class ImpactFx : Node3D
             case "fx_perfect": Burst(pos, Red, 0.6f, 14); Sfx.PlayLocal3D(this, "aura", pos, -6f, 1.3f); break;
             case "fx_jinx": Burst(pos, Red, 0.5f, 12); Sfx.PlayLocal3D(this, "fail", pos, -8f, 1.2f); break;
             case "fx_dice": Burst(pos, Green, 0.6f, 14); Sfx.PlayLocal3D(this, "dice", pos, -4f); break;
-            case "fx_dash": Dust(this, pos with { Y = 0 }, 0.6f); Sfx.PlayLocal3D(this, "whoosh", pos, -4f, 1.2f); break;
+            case "fx_dash": Dust(this, pos with { Y = 0 }, 0.6f); Burst(pos, Green, 0.45f, 8); Sfx.PlayLocal3D(this, "dash", pos, -3f); break;
             case "fx_trip": Dust(this, pos with { Y = 0 }, 0.8f); Sfx.PlayLocal3D(this, "fail", pos, -5f); break;
-            case "fx_bet": Ring(pos, Green, 1.2f, 0.5f, true); Sfx.PlayLocal3D(this, "chime", pos, -8f, 0.8f); break;
+            case "fx_bet":
+                // v0.27: só o time do Luck vê quem foi marcado (o alvo é o jogador logo abaixo da deixa)
+                if (BetHiddenHere(pos)) break;
+                Ring(pos, Green, 1.2f, 0.5f, true); Sfx.PlayLocal3D(this, "chime", pos, -8f, 0.8f); break;
+            case "fx_betwin":
+                // v0.27: a cesta do alvo foi para o time do Luck — efeito grande no aro, para todo mundo
+                Ring(pos, Gold, 3.2f, 0.7f, true); Ring(pos, Green, 2.2f, 0.55f, true);
+                Burst(pos, Green, 1.6f, 40); Burst(pos, Gold, 1.3f, 30);
+                Ring(pos with { Y = 0.05f }, Green, 6f, 0.7f);
+                Sfx.PlayLocal3D(this, "chime", pos, 0f, 1.25f); Sfx.PlayLocal3D(this, "dice", pos, -2f);
+                break;
+            case "fx_boltA": _boltA = pos; _boltAt = Time.GetTicksMsec(); break;
+            case "fx_boltB":
+                // v0.27: rastro reto do Drible Relâmpago (de onde saiu até onde chegou)
+                if (Time.GetTicksMsec() - _boltAt < 1500) BoltLine(_boltA, pos, 0.35f);
+                break;
             case "fx_luckon": Ring(pos with { Y = 0.05f }, Green, 3f, 0.6f); Burst(pos, Green, 1.1f, 30); Sfx.PlayLocal3D(this, "chime", pos, -3f); break;
             case "fx_luckwin": Ring(pos, Gold, 2.2f, 0.5f, true); Burst(pos, Gold, 1.2f, 30); Burst(pos, Green, 0.9f, 18); Sfx.PlayLocal3D(this, "chime", pos, -2f, 1.25f); break;
             case "fx_lucklose": Burst(pos, new Color(0.6f, 0.6f, 0.6f), 0.7f, 16); Sfx.PlayLocal3D(this, "fail", pos, -3f, 0.8f); break;
@@ -146,6 +161,60 @@ public partial class ImpactFx : Node3D
                 Sfx.PlayLocal3D(this, "thunder", pos, 0f);
                 if (M?.Cam != null) M.Cam.Shake(0.7f * (1f - Mathf.Clamp((M.Cam.Cam.GlobalPosition.DistanceTo(pos) - 6f) / 25f, 0, 1)));
                 break;
+        }
+    }
+
+    Vector3 _boltA;
+    ulong _boltAt;
+
+    bool BetHiddenHere(Vector3 pos)
+    {
+        var lp = M?.LocalPlayer;
+        if (lp == null) return false;
+        Player best = null; float bd = 2.5f;
+        foreach (var q in M.Players)
+        {
+            float d = ((q.GlobalPosition - pos) with { Y = 0 }).Length();
+            if (d < bd) { bd = d; best = q; }
+        }
+        return best != null && best.Team == lp.Team;
+    }
+
+    /// <summary>Raio horizontal (Drible Relâmpago): fino, some rápido.</summary>
+    void BoltLine(Vector3 from, Vector3 to, float dur)
+    {
+        var root = new FxNode { Life = dur };
+        AddChild(root);
+        root.GlobalPosition = to;
+        var m = Mat.Unshaded(new Color(0.55f, 0.9f, 1f, 1f), true);
+        m.BlendMode = BaseMaterial3D.BlendModeEnum.Add;
+        var core = Mat.Unshaded(new Color(0.9f, 0.98f, 1f), true);
+        core.BlendMode = BaseMaterial3D.BlendModeEnum.Add;
+        var dir = to - from;
+        int segs = Mathf.Clamp((int)(dir.Length() / 0.7f), 4, 14);
+        var prev = from - to;
+        for (int i = 1; i <= segs; i++)
+        {
+            float k = i / (float)segs;
+            var p = (from - to) + dir * k;
+            if (i < segs) p += new Vector3(Rng.RandfRange(-1, 1), Rng.RandfRange(-0.6f, 0.6f), Rng.RandfRange(-1, 1)) * 0.22f;
+            var seg = p - prev;
+            float len = seg.Length();
+            if (len < 0.01f) { prev = p; continue; }
+            foreach (var (mat, w) in new[] { (m, 0.1f), (core, 0.035f) })
+            {
+                var mi = new MeshInstance3D { Mesh = new BoxMesh { Size = new Vector3(w, len, w) }, MaterialOverride = mat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
+                root.AddChild(mi);
+                mi.Position = (prev + p) * 0.5f;
+                var up = seg / len;
+                var side = up.Cross(Vector3.Up);
+                if (side.LengthSquared() < 1e-4f) side = up.Cross(Vector3.Right);
+                side = side.Normalized();
+                mi.Basis = new Basis(side, up, side.Cross(up).Normalized());
+                float k0 = k;
+                root.Add(t => mi.Visible = t < dur * (0.25f + 0.75f * (1f - k0 * 0.5f)) && (t > 0.08f || Mathf.Sin(t * 60f) > -0.3f));
+            }
+            prev = p;
         }
     }
 

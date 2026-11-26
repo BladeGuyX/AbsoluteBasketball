@@ -18,8 +18,7 @@ public partial class OnlineMenu : Control
     {
         UiKit.FullRect(this);
         Theme = UiKit.Theme;
-        AddChild(UiKit.FullRect(new ColorRect { Color = new Color("3b8fe6") }));
-        AddChild(UiKit.Anchor(new ColorRect { Color = Palette.Sand }, 0, 0.82f, 1, 1, 0, 0, 0, 0));
+        AddChild(UiKit.FullRect(new MenuBackdrop()));
         var center = UiKit.FullRect(new CenterContainer());
         AddChild(center);
         var panel = new PanelContainer();
@@ -27,7 +26,7 @@ public partial class OnlineMenu : Control
         var vb = new VBoxContainer();
         vb.AddThemeConstantOverride("separation", 14);
         panel.AddChild(vb);
-        vb.AddChild(UiKit.Lbl("Online", 48));
+        vb.AddChild(UiKit.Title("Online"));
 
         var ns = NetSession.I;
         bool steam = ns?.Steam != null;

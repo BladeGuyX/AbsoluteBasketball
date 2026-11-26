@@ -4,6 +4,36 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.27 — menus novos, modo de teste com trapaças, ajustes nas habilidades e valores do seu artifact
+
+**Menus e visual**
+1. Menu principal: fundo novo (céu com sol, nuvens andando, quadra em perspectiva, bola grande girando atrás). Botões com relevo e cores (Jogar verde, Personagens roxo, Sair vermelho); passar o mouse faz um "tic", clicar faz um "clique".
+2. Jogar (local), Online, Lobby, Configurações, escolha de personagem: tudo no mesmo estilo (painéis com sombra, listas e campos claros, sliders redondos).
+3. **Informações** agora é um botão no menu principal e no menu de pausa (não está mais nas Configurações). Abas: Controles, King, Luck, Bolt (na pausa abre na aba do seu personagem).
+4. Na partida, segure o arremesso: a linha da trajetória agora é de pontinhos dourados→laranja que andam devagar, ficam menores no fim, e um anel marca onde a bola bate.
+5. Nomes: bots e bonecos se chamam pelo personagem ("Bolt", "Luck"...). Dois iguais no mesmo time: "Bolt" e "Bolt 2". Online, humanos aparecem com o nick (Steam). Offline seu nick da Steam é usado (só aparece no menu de alvo/trapaças).
+
+**Modo de teste** (Jogar (local) → Modo: "Teste (infinita + trapaças)"; online: no lobby, Modo)
+6. O placar mostra TESTE, não tem relógio nem vencedor (passa de 21 sem acabar).
+7. Pausa (Esc) → **Trapaças**: trocar seu personagem (King/Luck/Bolt), recarregar suas habilidades + ultimate, recarregar de todos, pegar a bola, zerar o placar, "Sem recarga" e "Estamina infinita".
+8. Lista de jogadores: trocar o personagem de cada bot (o visual troca na hora e o nome acompanha), recarregar, remover bot; "+ Adicionar bot" com time e personagem (até 12 jogadores).
+9. Online (host + amigo, os dois com a v0.27): o amigo também abre Trapaças e os pedidos funcionam (bot adicionado/removido aparece/some para os dois; troca de personagem aparece para os dois).
+
+**Habilidades**
+10. King (2) Presença: com ela ativa, um adversário perto que começar uma **enterrada** não tem skill check e erra (borda vermelha na tela dele).
+11. Luck (2) Não me Decepciona: abre um painel com o cursor do mouse — clique no adversário (Esc/botão direito/Cancelar fecha; no controle ←→ e arremesso). O trevo verde aparece só para o seu time; jogando do outro lado (online) você NÃO vê o trevo. Quando o alvo faz cesta: "+N TIME!" + linha verde "NÃO ME DECEPCIONA! A cesta de X foi para o time Y" e efeito dourado/verde no aro, para todos.
+12. Luck (3) Impulso: som novo ("fuump" com brilhinho).
+13. Bolt (1) Drible Relâmpago: impulso reto, atravessando o adversário, com um rastro de raio fino no caminho.
+14. Bolt (2) Swap: troca na hora ao apertar. Enquanto o Swap está pronto, quem seria trocado fica com o **anel do chão bem mais claro e maior** (só na sua tela).
+15. Bolt (3) Arranha-Céu: pega qualquer arremesso que um pulo normal pegaria (mesmo estando bem mais alto) e mais.
+16. Bolt ult (Duelo): ícone novo (duas espadas cruzadas com raio). Raio entre os olhos mais fino, cores suaves, sem a linha branca tremendo no meio. Enterrada final: a bola e as mãos chegam por cima do aro (não atravessam).
+17. Duelo entre dois bots: a troca de skill checks dura no máximo 5 s, depois um dos dois erra.
+18. Ultimate: cesta de enterrada enche mais a barra que outras cestas.
+
+**Valores do seu artifact** (agora são o padrão): ex.: Presença 30 s de recarga, King ult 5 pontos, Swap 40 s, Arranha-Céu 40 s, Luck ult 13 s, ultimate enche em 225 s.
+
+---
+
 ## v0.26 — personagens com atributos, habilidades e ultimates
 
 **Menus**

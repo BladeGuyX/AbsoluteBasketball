@@ -38,9 +38,8 @@ public sealed class BotBrain
     // lance livre
     float _ftPressAt = -1; int _ftAttempt;
     // v0.26: habilidades e cutscenes
-    float _abThink, _cutPressAt = -1, _swapYaw;
+    float _abThink, _cutPressAt = -1;
     int _cutSeq = -1, _cutPressedSeq = -1;
-    bool _swapRelease;
 
     public BotBrain(Match m, Player p, ulong seed) { M = m; P = p; R.Seed = seed; }
 
@@ -61,8 +60,7 @@ public sealed class BotBrain
     public PlayerInput Build(float dt)
     {
         var inp = BuildInner(dt);
-        if (_swapRelease) { _swapRelease = false; inp.AimYaw = _swapYaw; inp.Held &= ~Btn.Ab2; } // Swap: solta o botão mirando
-        else if (M.AbilitiesOn && M.CanAct && !P.HasBall && P.Flight == FlightKind.None) AbilitiesOffBall(ref inp, dt);
+        if (M.AbilitiesOn && M.CanAct && !P.HasBall && P.Flight == FlightKind.None) AbilitiesOffBall(ref inp, dt);
         return inp;
     }
 
@@ -319,9 +317,7 @@ public sealed class BotBrain
                 else if (a.Cd[1] <= 0 && toRim < 7f && dist > 14f && dist < T.BoltSwapRange && roll)
                 {
                     // troca de lugar com quem vai pontuar (ele vai parar longe da cesta)
-                    _swapYaw = ShotMath.YawOf(rel);
-                    inp.AimYaw = _swapYaw; inp.Pressed |= Btn.Ab2; inp.Held |= Btn.Ab2;
-                    _swapRelease = true;
+                    inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab2; // v0.27: troca na hora
                 }
                 break;
         }

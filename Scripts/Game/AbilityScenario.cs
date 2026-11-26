@@ -118,6 +118,22 @@ public sealed class AbilityScenario
         foreach (var _ in Wait(2.5f)) yield return 0;
         Rec("presenca_implacavel", control && Ev("JINX") > j0 && M.Score[e0.Team] == sc0);
 
+        // ---------------- v0.27: Presença Implacável na enterrada (sem skill check, erra) ----------------
+        foreach (var _ in WaitPlaying()) yield return 0;
+        float sgn = CourtGeo.HoopSign(CourtGeo.AttackHoop(e0.Team));
+        Place(e0, rim1.X - sgn * 1.8f, rim1.Z, rim1); Place(P, rim1.X - sgn * 1.8f, rim1.Z + 4f, null);
+        e0.Stun = 0;
+        M.Ball.GiveTo(e0);
+        P.Ab.PresenceT = Mathf.Max(P.Ab.PresenceT, 2f);
+        foreach (var _ in Wait(0.25f)) yield return 0;
+        int j1 = Ev("JINX"), df0 = Ev("DUNK_FAIL"); sc0 = M.Score[e0.Team];
+        bool dunkStarted = e0.TestDunk();
+        bool dunkJinxed = e0.DunkJinx;
+        bool noCheck = true;
+        n = 0; while (e0.Flight != FlightKind.None && n++ < 120) { if (e0.SkillFlash > 0) noCheck = false; yield return 0; }
+        foreach (var _ in Wait(1.5f)) { if (e0.SkillFlash > 0) noCheck = false; yield return 0; }
+        Rec("presenca_enterrada", dunkStarted && dunkJinxed && noCheck && Ev("JINX") > j1 && Ev("DUNK_FAIL") > df0 && M.Score[e0.Team] == sc0);
+
         // ---------------- King 3: Drible Perfeito (quem tenta roubar cai) ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
         Reset(Characters.King);
@@ -229,14 +245,13 @@ public sealed class AbilityScenario
         bool past = (P.GlobalPosition.X - e0.GlobalPosition.X) * s > t.BoltDribbleAhead - 0.8f;
         Rec("drible_relampago", past && e0.Stun > 0.5f && M.Ball.Holder == P && Ev("BOLT_DRIBBLE") > 0);
 
-        // ---------------- Bolt 2: Swap (segura = destaca, solta = troca) ----------------
+        // ---------------- Bolt 2: Swap (v0.27: troca na hora ao apertar) ----------------
         Reset(Characters.Bolt);
         Place(P, 0, 0, null); Place(ally, s * 8f, 0, null); Place(e0, 0, 8f); Place(e1, 0, -8f);
         foreach (var _ in Wait(0.1f)) yield return 0;
         var pa = P.GlobalPosition; var pb = ally.GlobalPosition;
-        for (int i = 0; i < 6; i++) { _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Held |= Btn.Ab2; if (i == 0) _inp.Pressed |= Btn.Ab2; yield return 0; }
-        bool aiming = P.Ab.SwapAiming;
-        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); yield return 0; // soltou
+        bool aiming = PlayerAbilities.SwapCandidate(P, ShotMath.YawOf(new Vector3(s, 0, 0))) == ally; // o anel claro fica nele
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab2; yield return 0;
         bool swapped = P.GlobalPosition.DistanceTo(pb) < 0.3f && ally.GlobalPosition.DistanceTo(pa) < 0.3f;
         Rec("swap", aiming && swapped && P.Ab.Cd[1] > 0);
 
@@ -256,6 +271,25 @@ public sealed class AbilityScenario
         // ---------------- Bolt ult: Duelo (adversário erra = 7 pontos; Bolt erra = bola do adversário) ----------------
         foreach (var r in Duel(true)) yield return r;
         foreach (var r in Duel(false)) yield return r;
+
+        // ---------------- v0.27: modo de teste (trapaças: bot entra com nome do personagem, troca e sai) ----------------
+        foreach (var _ in WaitPlaying()) yield return 0;
+        M.Cfg.TestMode = true;
+        int nBefore = M.Players.Count;
+        M.DoCheat(Cheat.AddBot, 1, Characters.Bolt, P);
+        var nb = M.Players.Count == nBefore + 1 ? M.Players[^1] : null;
+        bool added = nb != null && nb.IsBot && nb.Team == 1 && nb.CharacterId == Characters.Bolt && nb.PlayerName.StartsWith("Bolt");
+        yield return 0;
+        if (nb != null) M.DoCheat(Cheat.SetChar, nb.Id, Characters.King, P);
+        bool changed = nb != null && nb.CharacterId == Characters.King && nb.PlayerName.StartsWith("King");
+        P.Ab.Cd[0] = 5; P.Ab.Ult = 0;
+        M.DoCheat(Cheat.Refill, 0, 0, P);
+        bool refilled = P.Ab.Cd[0] <= 0 && P.Ab.Ult >= 0.999f;
+        if (nb != null) M.DoCheat(Cheat.RemoveBot, nb.Id, 0, P);
+        yield return 0;
+        bool removed = M.Players.Count == nBefore;
+        M.Cfg.TestMode = false;
+        Rec("trapacas", added && changed && refilled && removed);
         Done = true;
     }
 

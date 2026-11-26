@@ -225,6 +225,21 @@ Teclado e controle funcionam ao mesmo tempo; dá para trocar no meio da partida.
 - **Por tempo empatado:** prorrogação "próxima cesta vence".
 - Cesta 0 fica em −X, cesta 1 em +X. Time 0 (AZUL) ataca a cesta 1; time 1 (LARANJA) ataca a cesta 0.
 
+## Revisões do usuário (v0.27) — prevalecem sobre as anteriores
+
+- Menus mais bonitos (tema novo, fundo animado). Linha da trajetória mais bonita, mas simples.
+- "Informações" sai das Configurações e vira botão no menu principal e no de pausa.
+- Bots/bonecos se chamam pelo personagem; repetidos no mesmo time ganham número a partir do 2 ("Bolt", "Bolt 2"). Humanos online usam o nick da Steam.
+- Presença Implacável vale para enterradas: sem skill check e erro garantido.
+- Duelo: raio dos olhos mais fino e sutil, sem a linha central tremendo; enterrada sem as mãos atravessarem o aro; dois bots duelando = no máximo 5 s de troca de skill checks.
+- Modo de teste (offline e online): partida infinita e aba de Trapaças (trocar personagem, recarregar habilidades/ult, adicionar bots e trocar o personagem deles, remover, sem recarga, estamina infinita, pegar a bola, zerar placar).
+- "Não me Decepciona": trevo só para o Luck e aliados; o outro time só sabe na cesta, quando todos recebem um aviso claro de que os pontos foram para o outro time. O menu de escolha abre um painel com o cursor e escolhe clicando.
+- Som novo do Impulso Descuidado. Drible Relâmpago é um impulso reto (atravessa o adversário).
+- Arranha-Céu pega tudo que um pulo normal pegaria e mais.
+- Swap: troca ao apertar (não segura mais); o alvo fica com o anel do chão bem mais claro enquanto você é o Bolt e o Swap está pronto.
+- Ícone do Duelo: duas espadas se cruzando com um raio.
+- Enterradas carregam mais a ultimate (`UltBonusDunk`) que outras cestas (`UltBonusScore`).
+
 ## Revisões do usuário (v0.26) — personagens com atributos, habilidades e ultimates
 
 **Pedido do usuário (resumo fiel):** antes da partida cada jogador escolhe um personagem. Há um modo **sem habilidades**

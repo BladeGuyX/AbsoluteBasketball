@@ -6,15 +6,15 @@ namespace AB;
 /// v0.26: efeitos contínuos das habilidades em volta de um jogador (lê o estado replicado, então funciona no cliente):
 /// partículas vermelhas (Presença Implacável do King), brilho vermelho na cabeça (Olho do Rei esperando), partículas verdes
 /// (modo apostador do Luck), trevo verde em cima de quem foi marcado pelo "Não me Decepciona", faíscas azuis no ar
-/// (Arranha-Céu), anel ciano em quem vai ser trocado (Swap, só na tela do Bolt) e setinha amarela em quem está selecionado
+/// (Arranha-Céu), anel do chão claro em quem vai ser trocado (Swap, só na tela do Bolt — v0.27) e setinha amarela em quem está selecionado
 /// no menu de escolher adversário.
 /// </summary>
 public partial class AbilityAura : Node3D
 {
     public Player P;
     CpuParticles3D _red, _green, _sky, _eye;
-    Node3D _clover, _swapRing, _pick;
-    float _t;
+    Node3D _clover, _pick;
+    float _t, _swapK;
 
     public override void _Ready()
     {
@@ -35,11 +35,6 @@ public partial class AbilityAura : Node3D
         _clover.AddChild(Mat.MeshNode(new CylinderMesh { TopRadius = 0.02f, BottomRadius = 0.02f, Height = 0.22f }, g, new Vector3(0.02f, -0.2f, 0), false));
         AddChild(_clover);
 
-        var cyan = Mat.Unshaded(new Color(0.3f, 0.9f, 1f, 0.85f), true);
-        _swapRing = Mat.MeshNode(new TorusMesh { InnerRadius = 0.55f, OuterRadius = 0.7f, Rings = 32, RingSegments = 6 }, cyan, new Vector3(0, 0.06f, 0), false);
-        _swapRing.Scale = new Vector3(1, 0.1f, 1);
-        _swapRing.Visible = false;
-        AddChild(_swapRing);
 
         _pick = Mat.MeshNode(new CylinderMesh { TopRadius = 0.0f, BottomRadius = 0.18f, Height = 0.34f, RadialSegments = 4 }, Mat.Unshaded(new Color("ffd23f")),
             new Vector3(0, 2.75f, 0), false);
@@ -80,19 +75,19 @@ public partial class AbilityAura : Node3D
         _sky.Emitting = a.SkyJump && P.Airborne;
         _eye.Emitting = a.EyeT > 0 || a.EyeArmed;
 
-        // marcado pelo "Não me Decepciona" de algum Luck adversário
+        // marcado pelo "Não me Decepciona" de algum Luck adversário — v0.27: só o time do Luck vê (o alvo não sabe)
+        var lp = P.M.LocalPlayer;
         bool marked = false;
         foreach (var q in P.M.Players)
-            if (q.Team != P.Team && q.Ab != null && q.Ab.BetT > 0 && q.Ab.BetTarget == P.Id) { marked = true; break; }
+            if (q.Team != P.Team && q.Ab != null && q.Ab.BetT > 0 && q.Ab.BetTarget == P.Id && (lp == null || lp.Team == q.Team)) { marked = true; break; }
         _clover.Visible = marked;
         if (marked) { _clover.Rotation = new Vector3(0, _t * 3f, 0); _clover.Position = new Vector3(0, 2.75f + 0.06f * Mathf.Sin(_t * 4f), 0); }
 
-        // destaque do Swap (só na tela de quem está segurando o botão)
-        var lp = P.M.LocalPlayer;
+        // v0.27: alvo do Swap = anel do chão bem mais claro, sempre que você é o Bolt e o Swap está pronto (só nesta tela)
         bool swap = lp != null && lp != P && lp.CharacterId == Characters.Bolt && P.M.AbilitiesOn && !TargetPicker.IsOpen && lp.Ab.Cd[1] <= 0
-                    && Input.IsActionPressed(Act.Ab2) && P.M.Cam != null && P.M.CanAct && PlayerAbilities.SwapCandidate(lp, P.M.Cam.Yaw) == P;
-        _swapRing.Visible = swap;
-        if (swap) { float s = 1f + 0.12f * Mathf.Sin(_t * 10f); _swapRing.Scale = new Vector3(s, 0.1f, s); }
+                    && P.M.Cam != null && P.M.CanAct && PlayerAbilities.SwapCandidate(lp, P.M.Cam.Yaw) == P;
+        _swapK = Mathf.MoveToward(_swapK, swap ? 1f : 0f, (float)delta * 10f);
+        P.SetRingHighlight(_swapK);
 
         bool pick = TargetPicker.Current == P;
         _pick.Visible = pick;

@@ -56,7 +56,7 @@ public partial class AimIndicator : Control
         }
 
         // ---- enterrada: skill check ----
-        if (p.Flight == FlightKind.Dunk || (p.SkillFlash > 0 && !mute))
+        if ((p.Flight == FlightKind.Dunk && !p.DunkJinx) || (p.SkillFlash > 0 && !mute)) // v0.27: enterrada com a Presença não tem skill check
         {
             DrawSkillCheck(c, t, p.FlightT, p.FlightDur, p.Flight == FlightKind.Dunk, p.DunkPressed, p.DunkPressT, p.SkillFlash, p.SkillFlashOk, p.FlightT, t.DunkWindow);
             return;

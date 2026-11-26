@@ -20,6 +20,9 @@ public enum Msg : byte
     BackToLobby,    // H→C: volta todo mundo para o lobby
     Reject,         // H→C: recusado (versão diferente, cheio, partida em andamento)
     SetCharacter,   // C→H: v0.26: escolhi o personagem X (tela de seleção no lobby)
+    Cheat,          // C→H: v0.27: trapaça do modo de teste (comando + 2 números)
+    PlayerAdded,    // H→C: v0.27: entrou um jogador no meio da partida (bot do modo de teste)
+    PlayerRemoved,  // H→C: v0.27: saiu um jogador (bot removido no modo de teste)
 }
 
 /// <summary>Configurações da partida online (o host escolhe no lobby).</summary>
@@ -32,17 +35,18 @@ public sealed class OnlineSettings
     public int TeamSize = 2;          // jogadores por time; vagas vazias viram bots
     public int BotDifficulty = 1;
     public bool Abilities = true;     // v0.26: false = modo sem habilidades
+    public bool TestMode;             // v0.27: modo de teste (partida infinita + trapaças)
 
     public void Write(NetWriter w)
     {
         w.U8((byte)Size); w.U8((byte)Mode); w.I16((short)TargetScore); w.F(TimeMinutes); w.U8((byte)TeamSize); w.U8((byte)BotDifficulty);
-        w.Bool(Abilities);
+        w.Bool(Abilities); w.Bool(TestMode);
     }
 
     public static OnlineSettings Read(NetReader r) => new()
     {
         Size = (CourtSize)r.U8(), Mode = (WinMode)r.U8(), TargetScore = r.I16(), TimeMinutes = r.F(), TeamSize = r.U8(), BotDifficulty = r.U8(),
-        Abilities = r.Bool(),
+        Abilities = r.Bool(), TestMode = r.Bool(),
     };
 
     public OnlineSettings Clone() => (OnlineSettings)MemberwiseClone();
@@ -69,7 +73,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 6; // v0.26: habilidades (botões, alvo, estado), cutscenes, modo sem habilidades, troca de personagem no lobby
+    public const int Version = 7; // v0.27: modo de teste (trapaças, jogadores entrando/saindo), personagem no snapshot, enterrada com a Presença
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>
@@ -168,6 +172,7 @@ public sealed class NetSnapshot
     public MatchPhase Phase;
     public float PhaseTimer, Clock;
     public int Score0, Score1, Winner, Possession;
+    public byte TestFlags;   // v0.27: 1 = sem recarga, 2 = estamina infinita
     public bool Overtime;
     // lances livres
     public int FtShooter, FtAttempt, FtFlashPlayer;

@@ -56,6 +56,8 @@ public partial class Player : CharacterBody3D
     public float DunkPressT;
     public float SkillFlash;          // >0: mostra o resultado do skill check (HUD)
     public bool SkillFlashOk;
+    /// <summary>v0.27: enterrada começada perto de um King com a Presença Implacável: sem skill check e erra com certeza.</summary>
+    public bool DunkJinx;
     Vector3 _flightFrom, _flightTo;
     bool _stunOnLand;
     /// <summary>v0.21: pendurado no aro depois de uma enterrada certa (s restantes).</summary>
@@ -136,6 +138,31 @@ public partial class Player : CharacterBody3D
 
     /// <summary>Atributos de estrela (+ bônus do modo apostador do Luck). Testes antigos jogam com tudo neutro.</summary>
     public void UpdateStats() => St = PlayerStats.For(CharacterId, Ab?.ModeBonus ?? 0f, M == null || M.UseStars);
+
+    /// <summary>v0.27 (modo de teste): troca o personagem na hora — refaz o visual. Recargas e ultimate continuam.</summary>
+    public void SetCharacter(int id)
+    {
+        id = Characters.Clamp(id);
+        if (id == CharacterId) return;
+        CharacterId = id;
+        if (Ab != null) { Ab.OnRoundReset(); Ab.EyeT = 0; Ab.PresenceT = 0; Ab.ModeT = 0; Ab.ModeBonus = 0; Ab.BetT = 0; Ab.BetTarget = 0; }
+        if (_rig is CharacterVisual cv) cv.Remove(); else _visual?.QueueFree();
+        _rig = CharacterVisual.Available ? new CharacterVisual(this) : new PlayerRig(this, Team);
+        _visual = _rig.Root;
+        _visual.Rotation = new Vector3(0, Yaw, 0);
+        UpdateStats();
+        Stamina = Mathf.Min(Stamina, St.StaminaMax);
+    }
+
+    /// <summary>v0.27: nome mostrado em cima do boneco e no menu de escolher alvo.</summary>
+    public void SetDisplayName(string name)
+    {
+        PlayerName = name;
+        if (_nameLabel != null) _nameLabel.Text = name;
+    }
+
+    /// <summary>v0.27: destaque do anel do chão (alvo do Swap, só na tela do Bolt).</summary>
+    public void SetRingHighlight(float k) { if (_rig is CharacterVisual cv) cv.SetRingHighlight(k); }
 
     // =====================================================================
     /// <summary>Simulação autoritativa de um tick.</summary>
@@ -715,7 +742,8 @@ public partial class Player : CharacterBody3D
         float k = Mathf.Clamp(_moveT / _moveDur, 0, 1);
         var d = (_moveTo - _moveFrom) with { Y = 0 };
         var side = d.LengthSquared() > 1e-4f ? new Vector3(-d.Z, 0, d.X).Normalized() : Vector3.Zero;
-        var p = _moveFrom.Lerp(_moveTo, Mathf.SmoothStep(0, 1, k)) + side * (_moveBulge * Mathf.Sin(k * Mathf.Pi));
+        float e = 1f - (1f - k) * (1f - k) * (1f - k); // v0.27: reto e rápido (relâmpago), freia só no fim
+        var p = _moveFrom.Lerp(_moveTo, e) + side * (_moveBulge * Mathf.Sin(k * Mathf.Pi));
         GlobalPosition = p;
         Velocity = Vector3.Zero;
         if (d.LengthSquared() > 1e-4f) Yaw = ShotMath.YawOf(d);
@@ -811,6 +839,9 @@ public partial class Player : CharacterBody3D
         float dur = t.DunkFlightTime + M.Rng.RandfRange(-t.DunkFlightJitter, t.DunkFlightJitter);
         BeginFlight(FlightKind.Dunk, Mathf.Max(dur, 0.25f), rim - dir * 0.1f + Vector3.Up * 0.35f, hoop);
         M.LogEvent("DUNK", this);
+        // v0.27: Presença Implacável também vale para enterradas: sem skill check, erra com certeza
+        DunkJinx = M.PresenceJinx(this);
+        if (DunkJinx) { Ab.JinxFlash = t.KingPresenceFlash; Sfx.Play3D(M, "fx_jinx", GlobalPosition + Vector3.Up * 2f); M.LogEvent("JINX", this); }
     }
 
     void FlightTick(PlayerInput inp, float dt)
@@ -829,6 +860,12 @@ public partial class Player : CharacterBody3D
         // enterrada: skill check SÓ com o botão de arremesso no momento de tocar a cesta (Espaço não vale — v0.7)
         float half = t.DunkWindow * 0.5f;
         if (!HasBall) { EndFlight(); return; }
+        if (DunkJinx)
+        {
+            // sem skill check: chega no aro e erra
+            if (FlightT >= FlightDur) FinishDunk(false);
+            return;
+        }
         if (!DunkPressed && inp.WasPressed(Btn.Shoot))
         {
             DunkPressed = true;
@@ -849,11 +886,13 @@ public partial class Player : CharacterBody3D
         var t = Tuning.I;
         var rim = M.Geo.RimCenter[FlightHoop];
         // resultado fica na tela com o ponteiro parado (v0.19): verde = certo, vermelho = errado
-        if (Flight == FlightKind.Dunk) { SkillFlash = Mathf.Max(t.SkillResultHold, 0.001f); SkillFlashOk = ok; }
+        if (Flight == FlightKind.Dunk && !DunkJinx) { SkillFlash = Mathf.Max(t.SkillResultHold, 0.001f); SkillFlashOk = ok; }
+        DunkJinx = false;
         if (ok)
         {
             BallLockoutTimer = 0.8f;
             M.Ball.Throw(this, rim + Vector3.Up * 0.3f, new Vector3(0, -7f, 0), BallState.Shot);
+            M.Ball.FromDunk = true; // v0.27: enterrada carrega mais a ultimate
             Sfx.Play3D(M, "rim", rim, 2, 0.8f);
             Sfx.Play3D(M, "board", rim, 0, 0.9f);
             Sfx.Play3D(M, "fx_dunk", rim);   // sem som: aro treme (HoopVisual) e efeito de impacto (ImpactFx), inclusive no cliente
@@ -890,6 +929,7 @@ public partial class Player : CharacterBody3D
     {
         if (Flight == FlightKind.None) return;
         Flight = FlightKind.None;
+        DunkJinx = false;
         Airborne = true;
         _airTime = 0;
         _jumpVel = Vector3.Zero;
@@ -907,7 +947,7 @@ public partial class Player : CharacterBody3D
         public ushort Flags;
         public float Stamina, ShotCharge, PassCharge, Stun, StealFail, StealDash, DribbleActive, LandLock, DribblePhase,
             ReleaseT, PassReleaseT, FlightT, FlightDur, DunkPressT, SkillFlash, DribbleRecharge, RimHang;
-        public byte DribbleCharges, Emote;
+        public byte DribbleCharges, Emote, Char;
         public PlayerAbilities.NetData Ab;   // v0.26
     }
 
@@ -915,7 +955,7 @@ public partial class Player : CharacterBody3D
     enum NF : ushort
     {
         Running = 1, ChargingShot = 2, ChargingPass = 4, PassHigh = 8, ChargingJump = 16, Airborne = 32, Dunk = 64,
-        DunkPressed = 128, SkillFlashOk = 256, StunOnLand = 512, DunkReady = 1024, Scripted = 2048,
+        DunkPressed = 128, SkillFlashOk = 256, StunOnLand = 512, DunkReady = 1024, Scripted = 2048, DunkJinx = 4096,
     }
 
     /// <summary>Cliente: "pode enterrar" calculado no host (o boneco do cliente não tem física de chão).</summary>
@@ -939,13 +979,14 @@ public partial class Player : CharacterBody3D
         if (_stunOnLand) f |= NF.StunOnLand;
         if (IsLocalHuman || !IsBot) { if (CanDunk()) f |= NF.DunkReady; }
         if (_moveDur > 0) f |= NF.Scripted;
+        if (DunkJinx) f |= NF.DunkJinx;
         return new NetState
         {
             Pos = GlobalPosition, Vel = Velocity, Yaw = Yaw, Flags = (ushort)f,
             Stamina = Stamina, ShotCharge = ShotCharge, PassCharge = PassCharge, Stun = Stun, StealFail = StealFail, StealDash = StealDash,
             DribbleActive = DribbleActive, LandLock = LandLock, DribblePhase = DribblePhase, ReleaseT = _releaseT, PassReleaseT = _passReleaseT,
             FlightT = FlightT, FlightDur = FlightDur, DunkPressT = DunkPressT, SkillFlash = SkillFlash, DribbleRecharge = DribbleRecharge,
-            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255), RimHang = RimHang, Emote = Emote, Ab = Ab.Capture(),
+            DribbleCharges = (byte)Mathf.Clamp(DribbleCharges, 0, 255), RimHang = RimHang, Emote = Emote, Ab = Ab.Capture(), Char = (byte)CharacterId,
         };
     }
 
@@ -954,7 +995,7 @@ public partial class Player : CharacterBody3D
         w.V3(s.Pos); w.V3(s.Vel); w.F(s.Yaw); w.U16(s.Flags);
         w.F(s.Stamina); w.F(s.ShotCharge); w.F(s.PassCharge); w.F(s.Stun); w.F(s.StealFail); w.F(s.StealDash); w.F(s.DribbleActive);
         w.F(s.LandLock); w.F(s.DribblePhase); w.F(s.ReleaseT); w.F(s.PassReleaseT); w.F(s.FlightT); w.F(s.FlightDur); w.F(s.DunkPressT);
-        w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges); w.F(s.RimHang); w.U8(s.Emote);
+        w.F(s.SkillFlash); w.F(s.DribbleRecharge); w.U8(s.DribbleCharges); w.F(s.RimHang); w.U8(s.Emote); w.U8(s.Char);
         PlayerAbilities.Write(w, s.Ab);
     }
 
@@ -963,7 +1004,7 @@ public partial class Player : CharacterBody3D
         Pos = r.V3(), Vel = r.V3(), Yaw = r.F(), Flags = r.U16(),
         Stamina = r.F(), ShotCharge = r.F(), PassCharge = r.F(), Stun = r.F(), StealFail = r.F(), StealDash = r.F(), DribbleActive = r.F(),
         LandLock = r.F(), DribblePhase = r.F(), ReleaseT = r.F(), PassReleaseT = r.F(), FlightT = r.F(), FlightDur = r.F(), DunkPressT = r.F(),
-        SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(), RimHang = r.F(), Emote = r.U8(),
+        SkillFlash = r.F(), DribbleRecharge = r.F(), DribbleCharges = r.U8(), RimHang = r.F(), Emote = r.U8(), Char = r.U8(),
         Ab = PlayerAbilities.Read(r),
     };
 
@@ -987,6 +1028,8 @@ public partial class Player : CharacterBody3D
         SkillFlashOk = (f & NF.SkillFlashOk) != 0;
         _stunOnLand = (f & NF.StunOnLand) != 0;
         NetDunkReady = (f & NF.DunkReady) != 0;
+        DunkJinx = (f & NF.DunkJinx) != 0;
+        if (s.Char != CharacterId) SetCharacter(s.Char); // v0.27: troca de personagem no modo de teste
         Stamina = s.Stamina; ShotCharge = s.ShotCharge; PassCharge = s.PassCharge; Stun = s.Stun; StealFail = s.StealFail; StealDash = s.StealDash;
         DribbleActive = s.DribbleActive; LandLock = s.LandLock; DribblePhase = s.DribblePhase; _releaseT = s.ReleaseT; _passReleaseT = s.PassReleaseT;
         FlightT = s.FlightT; FlightDur = s.FlightDur; DunkPressT = s.DunkPressT; SkillFlash = s.SkillFlash; DribbleRecharge = s.DribbleRecharge;
@@ -1010,6 +1053,9 @@ public partial class Player : CharacterBody3D
         s.FlightT = Mathf.Lerp(a.FlightT, b.FlightT, k);
         return s;
     }
+
+    /// <summary>Teste (--smoke-abilities, v0.27): começa uma enterrada se puder.</summary>
+    public bool TestDunk() { if (!CanDunk()) return false; StartDunk(); return true; }
 
     /// <summary>Teste (--smoke-abilities): arremesso certinho na cesta adversária, pelo caminho normal (passa pela Presença).</summary>
     public void TestShot()

@@ -23,6 +23,8 @@ public partial class Ball : Node3D
     int _noScoreHoop = -1;         // passou subindo pelo aro: a descida não vale cesta
     /// <summary>v0.26: este arremesso não pode virar cesta (Presença Implacável / Arremesso Arriscado que erra). Some ao tocar o chão.</summary>
     public bool NoScore;
+    /// <summary>v0.27: a bola saiu de uma enterrada (a cesta carrega mais a ultimate). Só no host.</summary>
+    public bool FromDunk;
     /// <summary>v0.26: efeito na bola: 1 = rastro vermelho do Olho do Rei (some ao ser pega/tocar o chão).</summary>
     public byte Aura;
     BallTrail _trail;
@@ -74,6 +76,7 @@ public partial class Ball : Node3D
         _noScoreHoop = -1;
         FreeThrow = false;
         NoScore = false;
+        FromDunk = false;
         Aura = 0;
         GlobalPosition = p.HeldBallPosition();
         ResetPhysicsInterpolation();
@@ -90,6 +93,7 @@ public partial class Ball : Node3D
         _noScoreHoop = -1;
         FreeThrow = false;
         NoScore = false;
+        FromDunk = false;
         Aura = 0;
         PassTarget = target;
         FlightTime = 0;
@@ -104,6 +108,7 @@ public partial class Ball : Node3D
         State = BallState.Loose;
         PassTarget = null;
         FreeThrow = false;
+        FromDunk = false;
         Aura = 0;
         GlobalPosition = pos;
         Vel = vel;
@@ -148,7 +153,7 @@ public partial class Ball : Node3D
         GlobalPosition = p;
         FlightTime += dt;
         if (hit.Floor && State != BallState.Loose) { State = BallState.Loose; PassTarget = null; }
-        if (hit.Floor) { FreeThrow = false; NoScore = false; Aura = 0; }
+        if (hit.Floor) { FreeThrow = false; NoScore = false; FromDunk = false; Aura = 0; }
         return hit;
     }
 

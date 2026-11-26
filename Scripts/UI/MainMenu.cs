@@ -11,17 +11,7 @@ public partial class MainMenu : Control
     {
         UiKit.FullRect(this);
         Theme = UiKit.Theme;
-        var grad = new Gradient();
-        grad.SetColor(0, new Color("3b8fe6"));
-        grad.SetColor(1, new Color("bfe6ff"));
-        AddChild(UiKit.FullRect(new TextureRect
-        {
-            Texture = new GradientTexture2D { Gradient = grad, FillFrom = new Vector2(0, 0), FillTo = new Vector2(0, 1), Width = 16, Height = 256 },
-            ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
-            StretchMode = TextureRect.StretchModeEnum.Scale,
-        }));
-        // "chão" de areia
-        AddChild(UiKit.Anchor(new ColorRect { Color = Palette.Sand }, 0, 0.82f, 1, 1, 0, 0, 0, 0));
+        AddChild(UiKit.FullRect(new MenuBackdrop())); // v0.27: céu, nuvens, quadra e bola girando
 
         var center = UiKit.FullRect(new CenterContainer());
         AddChild(center);
@@ -42,20 +32,21 @@ public partial class MainMenu : Control
     void ShowHome()
     {
         Clear();
-        _box.AddChild(UiKit.Outlined("ABSOLUTE", 110, Colors.White, outline: 26));
-        _box.AddChild(UiKit.Outlined("BASKETBALL", 110, new Color("ff8a3d"), outline: 26));
-        _box.AddChild(new Control { CustomMinimumSize = new Vector2(0, 30) });
-        var play = UiKit.Btn("Jogar (local)", ShowSetup, 420);
+        _box.AddChild(Logo("ABSOLUTE", Colors.White));
+        _box.AddChild(Logo("BASKETBALL", new Color("ff8a3d")));
+        _box.AddChild(new Control { CustomMinimumSize = new Vector2(0, 24) });
+        var play = UiKit.Btn("Jogar (local)", ShowSetup, UiKit.Green, 440);
         _box.AddChild(Centered(play));
-        _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 420)));
-        _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 420)));
+        _box.AddChild(Centered(UiKit.Btn("Online", () => GameRoot.I.ShowOnlineMenu(), 440)));
+        _box.AddChild(Centered(UiKit.Btn("Informações", () => AddChild(new InfoMenu { OnClosed = ShowHome }), 440)));
+        _box.AddChild(Centered(UiKit.Btn("Configurações", OpenSettings, 440)));
         // v0.26: ver os personagens (atributos e habilidades) e deixar um escolhido (vale também no online)
         Button chr = null;
-        chr = UiKit.Btn(CharText(), () => AddChild(new CharacterSelect { ConfirmText = "Escolher", OnConfirm = _ => chr.Text = CharText(), OnBack = () => chr.GrabFocus() }), 420);
+        chr = UiKit.Btn(CharText(), () => AddChild(new CharacterSelect { ConfirmText = "Escolher", OnConfirm = _ => chr.Text = CharText(), OnBack = () => chr.GrabFocus() }), UiKit.Purple, 440);
         _box.AddChild(Centered(chr));
-        _update = UiKit.Btn("", () => Updater.I?.Activate(), 420);
+        _update = UiKit.Btn("", () => Updater.I?.Activate(), UiKit.Grey, 440);
         _box.AddChild(Centered(_update));
-        _box.AddChild(Centered(UiKit.Btn("Sair", () => GameRoot.QuitClean(this), 420)));
+        _box.AddChild(Centered(UiKit.Btn("Sair", () => GameRoot.QuitClean(this), UiKit.Red, 440)));
         RefreshUpdate();
         play.CallDeferred(Control.MethodName.GrabFocus);
     }
@@ -86,6 +77,17 @@ public partial class MainMenu : Control
 
     static string CharText() => "Personagens (" + Characters.Get(UserSettings.I.Character).Name + ")";
 
+    /// <summary>Letreiro do título: contorno escuro grosso + sombra deslocada.</summary>
+    static Control Logo(string text, Color color)
+    {
+        var l = UiKit.Outlined(text, 112, color, outline: 26);
+        l.LabelSettings.Font = UiKit.FontBold;
+        l.LabelSettings.ShadowSize = 2;
+        l.LabelSettings.ShadowColor = new Color(0.05f, 0.1f, 0.25f, 0.55f);
+        l.LabelSettings.ShadowOffset = new Vector2(8, 10);
+        return l;
+    }
+
     static Control Centered(Control c)
     {
         var cc = new CenterContainer();
@@ -101,7 +103,7 @@ public partial class MainMenu : Control
         var vb = new VBoxContainer();
         vb.AddThemeConstantOverride("separation", 18);
         panel.AddChild(vb);
-        vb.AddChild(UiKit.Lbl("Nova partida", 48));
+        vb.AddChild(UiKit.Title("Nova partida"));
 
         var grid = new GridContainer { Columns = 2 };
         grid.AddThemeConstantOverride("h_separation", 30);
@@ -131,6 +133,14 @@ public partial class MainMenu : Control
         var minsLbl = new Label { Text = "Duração" };
         grid.AddChild(minsLbl);
         grid.AddChild(mins);
+
+        // v0.27: modo de teste = partida infinita e trapaças no menu de pausa
+        var test = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        test.AddItem("Partida normal", 0);
+        test.AddItem("Teste (infinita + trapaças)", 1);
+        test.Selected = Last.TestMode ? 1 : 0;
+        grid.AddChild(new Label { Text = "Modo" });
+        grid.AddChild(test);
 
         var abil = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
         abil.AddItem("Com habilidades", 0);
@@ -194,13 +204,21 @@ public partial class MainMenu : Control
             Last.TrainingDummies = kind.Selected == 1;
             Last.BotDifficulty = diff.Selected;
             Last.Abilities = abil.Selected == 0;
+            Last.TestMode = test.Selected == 1;
             // v0.26: escolha do personagem antes de começar
             AddChild(new CharacterSelect { AbilitiesOn = Last.Abilities, OnConfirm = _ => GameRoot.I.StartMatch(Last.Clone()), OnBack = () => start.GrabFocus() });
         });
-        vb.AddChild(start);
-        vb.AddChild(UiKit.Btn("Voltar", ShowHome));
+        UiKit.Tint(start, UiKit.Green);
+        var btns = new HBoxContainer();
+        btns.AddThemeConstantOverride("separation", 14);
+        btns.AddChild(UiKit.Btn("Voltar", ShowHome, UiKit.Grey, 220));
+        start.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        btns.AddChild(start);
+        vb.AddChild(btns);
         start.CallDeferred(Control.MethodName.GrabFocus);
     }
+
+    public void DebugSetup() => ShowSetup();
 
     void OpenSettings()
     {

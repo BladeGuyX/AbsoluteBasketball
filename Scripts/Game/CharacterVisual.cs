@@ -115,6 +115,29 @@ public sealed class CharacterVisual : IPlayerVisual
         ring.Scale = new Vector3(1, 0.08f, 1);
         ring.Name = "TeamRing";
         parent.AddChild(ring);
+        _ring = ring; _ringMat = ringMat; _ringColor = Palette.Team[team];
+    }
+
+    Node3D _ring;
+    StandardMaterial3D _ringMat;
+    Color _ringColor;
+    float _ringGlow = -1;
+
+    /// <summary>v0.27: anel do chão bem mais claro e mais largo (alvo do Swap na tela do Bolt). 0 = normal, 1 = destacado.</summary>
+    public void SetRingHighlight(float k)
+    {
+        if (_ringMat == null || Mathf.IsEqualApprox(k, _ringGlow)) return;
+        _ringGlow = k;
+        _ringMat.AlbedoColor = _ringColor.Lerp(Colors.White, 0.75f * k) with { A = 0.85f + 0.15f * k };
+        float s = 1f + 0.35f * k;
+        _ring.Scale = new Vector3(s, 0.08f + 0.06f * k, s);
+    }
+
+    /// <summary>v0.27: tira o visual (troca de personagem no modo de teste).</summary>
+    public void Remove()
+    {
+        if (GodotObject.IsInstanceValid(Root)) Root.QueueFree();
+        if (GodotObject.IsInstanceValid(_ring)) _ring.QueueFree();
     }
 
     static Skeleton3D FindSkeleton(Node n)

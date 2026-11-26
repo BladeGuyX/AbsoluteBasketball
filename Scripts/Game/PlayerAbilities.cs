@@ -31,8 +31,6 @@ public sealed class PlayerAbilities
     public float ModeT, ModeBonus;                // Luck ult: modo apostador
     public int ModeWins, ModeGambles;
     public bool SkyJump;                          // Bolt 3: no ar do Arranha-Céu
-    public bool SwapAiming;                       // Bolt 2: segurando o botão (destaque de quem vai trocar)
-    bool _swapHeld;
 
     public static Btn SlotBtn(int slot) => slot switch { 0 => Btn.Ab1, 1 => Btn.Ab2, 2 => Btn.Ab3, _ => Btn.Ult };
 
@@ -50,7 +48,7 @@ public sealed class PlayerAbilities
     /// <summary>Início de round: efeitos momentâneos acabam (recargas e carga da ult continuam).</summary>
     public void OnRoundReset()
     {
-        EyeArmed = false; PerfectDribble = false; DashT = 0; SkyJump = false; SwapAiming = false; _swapHeld = false;
+        EyeArmed = false; PerfectDribble = false; DashT = 0; SkyJump = false;
     }
 
     // =====================================================================
@@ -64,22 +62,10 @@ public sealed class PlayerAbilities
         if (DashT > 0) DashT -= dt;
         if (ModeT > 0) { ModeT -= dt; if (ModeT <= 0) EndMode(); }
         if (PerfectDribble && !P.IsDribbling) PerfectDribble = false;
-        if (!Enabled) { SwapAiming = false; return; }
+        if (!Enabled) return;
         if (M.Phase == MatchPhase.Playing && ModeT <= 0) Ult = Mathf.Min(1f, Ult + dt / Mathf.Max(T.UltChargeTime, 1f));
 
         bool can = M.CanAct && P.Stun <= 0 && P.Flight == FlightKind.None && P.RimHang <= 0 && !P.InScriptedMove;
-        // Swap (Bolt 2): segura = mira (destaque), solta = troca
-        if (Char == Characters.Bolt)
-        {
-            bool held = inp.IsHeld(Btn.Ab2) || inp.WasPressed(Btn.Ab2);
-            if (held && can && Cd[1] <= 0) { SwapAiming = true; _swapHeld = true; }
-            else if (_swapHeld && !held)
-            {
-                _swapHeld = false; SwapAiming = false;
-                if (can && Cd[1] <= 0) DoSwap(inp.AimYaw);
-            }
-            else if (!can) { SwapAiming = false; _swapHeld = false; }
-        }
         if (!can) return;
         for (int s = 0; s < 3; s++)
             if (inp.WasPressed(SlotBtn(s)) && !Characters.NeedsTarget(Char, s)) TryUse(s, inp);
@@ -87,7 +73,10 @@ public sealed class PlayerAbilities
         if (inp.Target > 0) TryTarget(inp.TargetSlot, inp.Target);
     }
 
-    void StartCd(int slot) => Cd[slot] = Characters.Cooldown(Char, slot);
+    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && M.NoCooldowns ? 0f : Characters.Cooldown(Char, slot);
+
+    /// <summary>v0.27 (modo de teste): recargas zeradas e ultimate cheia.</summary>
+    public void Refill() { Cd[0] = Cd[1] = Cd[2] = 0; Ult = 1f; }
 
     void TryUse(int slot, PlayerInput inp)
     {
@@ -100,6 +89,7 @@ public sealed class PlayerAbilities
             (Characters.Luck, 0) => LuckRisky(),
             (Characters.Luck, 2) => LuckDash(inp.AimYaw),
             (Characters.Bolt, 0) => BoltDribble(inp.AimYaw),
+            (Characters.Bolt, 1) => DoSwap(inp.AimYaw), // v0.27: troca na hora (o alvo fica com o anel do chão claro antes)
             (Characters.Bolt, 2) => BoltSky(),
             _ => false,
         };
@@ -310,29 +300,30 @@ public sealed class PlayerAbilities
         dir = dir.LengthSquared() > 1e-4f ? dir.Normalized() : P.Forward;
         var to = tgt.GlobalPosition + dir * T.BoltDribbleAhead;
         to = M.Geo.ClampInside(to with { Y = from.Y }, 0.6f);
-        float side = M.Rng.Randf() < 0.5f ? -1f : 1f;
         P.Yaw = ShotMath.YawOf(dir);
-        P.StartScriptedMove(from, to, T.BoltDribbleTime, side * 1.1f);
+        P.StartScriptedMove(from, to, T.BoltDribbleTime, 0f); // v0.27: reto, atravessa o adversário como um raio
         tgt.CancelShot(false); tgt.CancelPass();
         tgt.Stun = Mathf.Max(tgt.Stun, T.BoltDribbleStun);
         tgt.StealDash = 0;
         Sfx.Play3D(M, "fx_bolt", from + Vector3.Up);
         Sfx.Play3D(M, "fx_bolt", to + Vector3.Up);
+        Sfx.Play3D(M, "fx_boltA", from + Vector3.Up * 1.1f); // rastro reto (ImpactFx junta A e B)
+        Sfx.Play3D(M, "fx_boltB", to + Vector3.Up * 1.1f);
         M.LogEvent("BOLT_DRIBBLE", P, tgt);
         return true;
     }
 
-    void DoSwap(float aimYaw)
+    bool DoSwap(float aimYaw)
     {
         var q = SwapCandidate(P, aimYaw);
-        if (q == null) return;
+        if (q == null) return false;
         var a = P.GlobalPosition; var b = q.GlobalPosition;
         P.QueueRelocate(b);
         q.QueueRelocate(a);
-        StartCd(1);
         Sfx.Play3D(M, "fx_swap", a + Vector3.Up);
         Sfx.Play3D(M, "fx_swap", b + Vector3.Up);
         M.LogEvent("SWAP", P, q);
+        return true;
     }
 
     bool BoltSky()
@@ -366,7 +357,7 @@ public sealed class PlayerAbilities
     {
         Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
         DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
-        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (SwapAiming ? 8 : 0)),
+        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0)),
     };
 
     public static void Write(NetWriter w, in NetData d)
@@ -385,6 +376,6 @@ public sealed class PlayerAbilities
     {
         Cd[0] = d.Cd0; Cd[1] = d.Cd1; Cd[2] = d.Cd2; Ult = d.Ult; EyeT = d.EyeT; PresenceT = d.PresenceT; JinxFlash = d.JinxFlash;
         BetT = d.BetT; DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetTarget = d.BetTarget; ModeWins = d.ModeWins;
-        EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; SwapAiming = (d.Flags & 8) != 0;
+        EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0;
     }
 }

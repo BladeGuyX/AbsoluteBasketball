@@ -30,7 +30,7 @@ public partial class CharacterSelect : Control
         ProcessMode = ProcessModeEnum.Always;
         MouseFilter = MouseFilterEnum.Stop;
         _sel = Characters.Clamp(UserSettings.I.Character);
-        AddChild(UiKit.FullRect(new ColorRect { Color = new Color(0.05f, 0.07f, 0.12f, 0.92f) }));
+        AddChild(UiKit.Dim(0.85f));
         var center = UiKit.FullRect(new CenterContainer());
         AddChild(center);
         var panel = new PanelContainer();
@@ -38,7 +38,7 @@ public partial class CharacterSelect : Control
         var root = new VBoxContainer();
         root.AddThemeConstantOverride("separation", 14);
         panel.AddChild(root);
-        root.AddChild(UiKit.Lbl("Escolha seu personagem", 44));
+        root.AddChild(UiKit.Title("Escolha seu personagem", 44));
 
         var row = new HBoxContainer();
         row.AddThemeConstantOverride("separation", 26);
@@ -52,7 +52,7 @@ public partial class CharacterSelect : Control
         {
             int id = i;
             var d = Characters.Get(i);
-            var b = UiKit.Btn(d.Name, () => Select(id), 240);
+            var b = UiKit.Btn(d.Name, () => Select(id), d.Color.Darkened(0.1f), 240);
             b.CustomMinimumSize = new Vector2(240, 76);
             b.AddThemeFontSizeOverride("font_size", 30);
             b.FocusEntered += () => Select(id);
@@ -93,8 +93,8 @@ public partial class CharacterSelect : Control
         var buttons = new HBoxContainer { Alignment = BoxContainer.AlignmentMode.End };
         buttons.AddThemeConstantOverride("separation", 12);
         root.AddChild(buttons);
-        buttons.AddChild(UiKit.Btn("Voltar", () => { OnBack?.Invoke(); QueueFree(); }, 220));
-        var ok = UiKit.Btn(ConfirmText, Confirm, 300);
+        buttons.AddChild(UiKit.Btn("Voltar", () => { OnBack?.Invoke(); QueueFree(); }, UiKit.Grey, 220));
+        var ok = UiKit.Btn(ConfirmText, Confirm, UiKit.Green, 300);
         buttons.AddChild(ok);
         Select(_sel);
         _cards[_sel].CallDeferred(Control.MethodName.GrabFocus);
@@ -113,7 +113,7 @@ public partial class CharacterSelect : Control
         _sel = Characters.Clamp(id);
         var d = Characters.Get(_sel);
         for (int i = 0; i < _cards.Length; i++)
-            _cards[i].Modulate = i == _sel ? new Color(1.25f, 1.25f, 1.25f) : new Color(0.75f, 0.78f, 0.85f);
+            _cards[i].Modulate = i == _sel ? Colors.White : new Color(0.78f, 0.8f, 0.86f, 0.85f);
         _name.Text = d.Name;
         _name.AddThemeColorOverride("font_color", d.Color.Darkened(0.15f));
         _tag.Text = d.Tagline + (AbilitiesOn ? "" : "   (modo sem habilidades: só os atributos valem)");

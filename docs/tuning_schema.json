@@ -612,7 +612,7 @@
     "min": 0,
     "max": 2,
     "step": 0.05,
-    "default": 0.35,
+    "default": 0.7,
     "sub": ""
   },
   {
@@ -1602,7 +1602,7 @@
     "min": 30,
     "max": 900,
     "step": 5,
-    "default": 240,
+    "default": 225,
     "sub": ""
   },
   {
@@ -1624,7 +1624,7 @@
     "min": 0,
     "max": 1,
     "step": 0.005,
-    "default": 0.025,
+    "default": 0.03,
     "sub": ""
   },
   {
@@ -1635,7 +1635,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.08,
+    "default": 0.07,
     "sub": ""
   },
   {
@@ -1646,7 +1646,18 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.16,
+    "default": 0.14,
+    "sub": ""
+  },
+  {
+    "key": "UltBonusDunk",
+    "section": "Habilidades e ultimate",
+    "label": "Ultimate: b\u00F4nus por enterrada",
+    "desc": "Fra\u00E7\u00E3o da barra ganha ao fazer uma cesta de enterrada (no lugar do b\u00F4nus por cesta; deve ser maior).",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.2,
     "sub": ""
   },
   {
@@ -1734,7 +1745,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 15,
+    "default": 20,
     "sub": "Habilidades"
   },
   {
@@ -1745,7 +1756,7 @@
     "min": 1,
     "max": 4,
     "step": 0.05,
-    "default": 2,
+    "default": 2.1,
     "sub": "Habilidades"
   },
   {
@@ -1778,7 +1789,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 25,
+    "default": 30,
     "sub": "Habilidades"
   },
   {
@@ -1822,7 +1833,7 @@
     "min": 1,
     "max": 20,
     "step": 1,
-    "default": 7,
+    "default": 5,
     "sub": "Habilidades"
   },
   {
@@ -1833,7 +1844,7 @@
     "min": 0.3,
     "max": 3,
     "step": 0.05,
-    "default": 0.95,
+    "default": 0.85,
     "sub": "Habilidades"
   },
   {
@@ -1844,7 +1855,7 @@
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.1,
+    "default": 0.09,
     "sub": "Habilidades"
   },
   {
@@ -1855,7 +1866,7 @@
     "min": 0.3,
     "max": 3,
     "step": 0.05,
-    "default": 0.7,
+    "default": 0.6,
     "sub": "Habilidades"
   },
   {
@@ -1866,7 +1877,7 @@
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.07,
+    "default": 0.06,
     "sub": "Habilidades"
   },
   {
@@ -1954,7 +1965,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.2,
+    "default": 0.3,
     "sub": "Habilidades"
   },
   {
@@ -1965,7 +1976,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 15,
+    "default": 25,
     "sub": "Habilidades"
   },
   {
@@ -1976,7 +1987,7 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 20,
+    "default": 15,
     "sub": "Habilidades"
   },
   {
@@ -1987,7 +1998,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 30,
+    "default": 40,
     "sub": "Habilidades"
   },
   {
@@ -2009,7 +2020,7 @@
     "min": 0,
     "max": 10,
     "step": 0.25,
-    "default": 2,
+    "default": 2.5,
     "sub": "Habilidades"
   },
   {
@@ -2020,7 +2031,7 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 7,
+    "default": 10,
     "sub": "Habilidades"
   },
   {
@@ -2031,7 +2042,7 @@
     "min": 2,
     "max": 40,
     "step": 0.5,
-    "default": 10,
+    "default": 13,
     "sub": "Habilidades"
   },
   {
@@ -2097,7 +2108,7 @@
     "min": 0,
     "max": 15,
     "step": 0.5,
-    "default": 3,
+    "default": 5,
     "sub": "Habilidades"
   },
   {
@@ -2108,7 +2119,7 @@
     "min": 0,
     "max": 10,
     "step": 0.25,
-    "default": 4,
+    "default": 3,
     "sub": "Habilidades"
   },
   {
@@ -2130,7 +2141,7 @@
     "min": 0.05,
     "max": 1.5,
     "step": 0.01,
-    "default": 0.32,
+    "default": 0.35,
     "sub": "Avan\u00E7ado"
   },
   {
@@ -2262,7 +2273,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 15,
+    "default": 20,
     "sub": "Habilidades"
   },
   {
@@ -2273,7 +2284,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 20,
+    "default": 40,
     "sub": "Habilidades"
   },
   {
@@ -2284,7 +2295,7 @@
     "min": 5,
     "max": 40,
     "step": 0.5,
-    "default": 16.5,
+    "default": 16,
     "sub": "Habilidades"
   },
   {
@@ -2295,7 +2306,7 @@
     "min": 0,
     "max": 10,
     "step": 0.25,
-    "default": 3,
+    "default": 3.25,
     "sub": "Habilidades"
   },
   {
@@ -2317,7 +2328,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 25,
+    "default": 40,
     "sub": "Habilidades"
   },
   {
@@ -2376,6 +2387,17 @@
     "sub": "Habilidades"
   },
   {
+    "key": "BotDuelMaxTime",
+    "section": "Bolt",
+    "label": "Ult: dura\u00E7\u00E3o m\u00E1xima entre bots",
+    "desc": "Quando os dois do Duelo s\u00E3o bots, a troca de skill checks dura no m\u00E1ximo isso (s); depois um dos dois erra (50%).",
+    "min": 1,
+    "max": 20,
+    "step": 0.5,
+    "default": 5,
+    "sub": "Avan\u00E7ado"
+  },
+  {
     "key": "BoltDribbleAngle",
     "section": "Bolt",
     "label": "Drible Rel\u00E2mpago: \u00E2ngulo do olhar",
@@ -2394,7 +2416,7 @@
     "min": 0.05,
     "max": 1,
     "step": 0.01,
-    "default": 0.2,
+    "default": 0.18,
     "sub": "Avan\u00E7ado"
   },
   {
@@ -2427,7 +2449,7 @@
     "min": 0.3,
     "max": 5,
     "step": 0.05,
-    "default": 1.7,
+    "default": 1.75,
     "sub": "Avan\u00E7ado"
   },
   {

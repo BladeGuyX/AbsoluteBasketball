@@ -137,6 +137,14 @@ public partial class Cutscene : Node3D
                     if (StageT >= DIntroDur) { Next(DDuel); StartDuelRound(true); }
                     break;
                 case DDuel:
+                    // v0.27: dois bots se enfrentando não podem ficar trocando acertos para sempre
+                    if (owner != null && target != null && (owner.IsBot || owner.IsDummy) && (target.IsBot || target.IsDummy)
+                        && StageT >= Mathf.Max(0.5f, t.BotDuelMaxTime))
+                    {
+                        Next(M.Rng.Randf() < 0.5f ? DThunder : DLose);
+                        A.Active = B.Active = false;
+                        break;
+                    }
                     A.Tick(dt, io, go);
                     B.Tick(dt, ti, gt);
                     if (A.Done && B.Done)
@@ -652,14 +660,14 @@ public partial class Cutscene : Node3D
                 else
                 {
                     float k = Smooth((u - 1.3f) / 0.7f);
-                    beam = true; beamW = 0.08f + 0.1f * k;
+                    beam = true; beamW = 0.05f + 0.05f * k;
                     Cam((bSpot + oSpot) * 0.5f + side * Mathf.Lerp(2.2f, 3.6f, k) + Vector3.Up * 1.75f, (eyeB + eyeO) * 0.5f, Mathf.Lerp(44, 56, k));
                 }
                 break;
             }
             case DDuel:
             {
-                beam = true; beamW = 0.16f + 0.03f * Mathf.Min(Round, 8);
+                beam = true; beamW = 0.09f + 0.015f * Mathf.Min(Round, 8); // v0.27: mais fino
                 Bo.St.Dribbling = true;
                 ball = Held(Bo, drib * 1.5f, Mathf.Sin(_time * 4f) >= 0 ? 1 : -1, true);
                 Bo.St.BallSide = Mathf.Sin(_time * 4f) >= 0 ? 1 : -1;
@@ -700,18 +708,34 @@ public partial class Cutscene : Node3D
                 }
                 else
                 {
-                    // enterrada de trovão
+                    // enterrada de trovão — v0.27: mesmas posições da enterrada do jogo (o corpo para antes do aro e fica
+                    // pendurado na frente dele; antes ele ia para perto demais e as mãos atravessavam o aro)
+                    var tu = Tuning.I;
                     float k = Mathf.Clamp((u - 0.55f) / 0.6f, 0, 1);
                     var toRim = ((rim - oSpot) with { Y = 0 }).Normalized();
                     var take = rim - toRim * 2.6f; take.Y = 0;
-                    var top = rim - toRim * 0.6f - Vector3.Up * (Tuning.I.DunkHandReach - 0.15f);
-                    Bo.Pos = take.Lerp(top, Ease(k));
+                    var flyTo = rim - toRim * 0.45f + Vector3.Up * (0.35f - tu.DunkHandReach); flyTo.Y = Mathf.Max(flyTo.Y, 0.05f);
+                    var hang = rim - toRim * (tu.RimRadius + 0.22f) - Vector3.Up * (tu.DunkHandReach - 0.12f); hang.Y = Mathf.Max(hang.Y, 0.05f);
+                    if (k < 1f)
+                    {
+                        // sobe rápido e "flutua" no topo; na horizontal sai rápido e desacelera (como o voo da enterrada)
+                        float kh = 1f - (1f - k) * (1f - k), kv = Mathf.Sin(k * Mathf.Pi * 0.5f);
+                        Bo.Pos = take.Lerp(flyTo, kh) with { Y = Mathf.Lerp(take.Y, flyTo.Y, kv) };
+                    }
+                    else Bo.Pos = flyTo.Lerp(hang, Smooth((u - 1.15f) / 0.12f));
                     Bo.Yaw = ShotMath.YawOf(toRim);
                     Bo.St.Dunking = k < 1f; Bo.St.FlightK = k; Bo.St.RimPos = rim; Bo.St.Hanging = k >= 1f && u < 1.9f;
                     Bo.St.Emote = Expressions.Bravo;
-                    if (u >= 1.9f) { Bo.Pos = top.Lerp(top with { Y = 0 }, Mathf.Clamp((u - 1.9f) / 0.35f, 0, 1)); Bo.St.Hanging = false; Bo.St.Airborne = Bo.Pos.Y > 0.05f; Bo.St.Mood = 1; }
-                    ball = k < 1f ? Bo.Pos + Vector3.Up * Mathf.Lerp(1.2f, Tuning.I.DunkHandReach + 0.1f, k) + Dir(Bo.Yaw) * Mathf.Lerp(0.4f, 0.55f, k)
-                                  : rim + Vector3.Down * Mathf.Min(4f, (u - 1.15f) * 4f);
+                    if (u >= 1.9f) { Bo.Pos = hang.Lerp(hang with { Y = 0 }, Ease(Mathf.Clamp((u - 1.9f) / 0.4f, 0, 1))); Bo.St.Hanging = false; Bo.St.Airborne = Bo.Pos.Y > 0.05f; Bo.St.Mood = 1; }
+                    ball = k < 1f ? Bo.Pos + Vector3.Up * Mathf.Lerp(1.2f, tu.DunkHandReach + 0.1f, Ease(k * 1.4f)) + Dir(Bo.Yaw) * Mathf.Lerp(0.4f, 0.55f, k)
+                                  : rim + Vector3.Up * 0.45f + Vector3.Down * Mathf.Min(4.45f, (u - 1.15f) * 5f);
+                    if (k < 1f)
+                    {
+                        // a bola (e as mãos) só chegam sobre o aro por cima — nunca atravessando a borda
+                        float hd = ((ball - rim) with { Y = 0 }).Length();
+                        float over = 1f - Mathf.SmoothStep(tu.RimRadius, tu.RimRadius + 0.6f, hd);
+                        ball.Y = Mathf.Max(ball.Y, Mathf.Lerp(ball.Y, rim.Y + 0.4f, over));
+                    }
                     Bo.St.HasBall = k < 1f;
                     var cp = rim - toRim * 5.2f + Right(Bo.Yaw) * 2.6f + Vector3.Down * 1.6f;
                     Cam(cp, rim + Vector3.Down * 0.6f, 54);
@@ -742,17 +766,18 @@ public partial class Cutscene : Node3D
     void Glare(Vector3 a, Vector3 b, float w)
     {
         // dois raios saindo dos olhos que se chocam no meio, com faíscas
+        // v0.27: mais fino, cores mais suaves (meio transparentes) e sem a linha branca tremendo no meio; o zigue-zague só
+        // muda ~12 vezes por segundo (antes mudava todo quadro)
         var mid = (a + b) * 0.5f + new Vector3(0, Mathf.Sin(_time * 9f) * 0.03f, 0);
+        _fxRng.Seed = (ulong)(Mathf.FloorToInt(_time * 12f) + 1000);
         _beamMesh.ClearSurfaces();
         _beamMesh.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-        Ribbon(a, mid, w, new Color(0.45f, 0.9f, 1f), 9, 0.09f);
-        Ribbon(b, mid, w, new Color(1f, 0.55f, 0.35f), 9, 0.09f);
-        Ribbon(a, mid, w * 0.35f, Colors.White, 9, 0.05f);
-        Ribbon(b, mid, w * 0.35f, Colors.White, 9, 0.05f);
-        for (int i = 0; i < 4; i++)
+        Ribbon(a, mid, w, new Color(0.62f, 0.92f, 1f, 0.55f), 9, 0.07f);
+        Ribbon(b, mid, w, new Color(1f, 0.7f, 0.55f, 0.55f), 9, 0.07f);
+        for (int i = 0; i < 3; i++)
         {
-            var d = new Vector3(_fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1)).Normalized() * _fxRng.RandfRange(0.15f, 0.45f);
-            Ribbon(mid, mid + d, w * 0.4f, new Color(1f, 0.95f, 0.7f), 3, 0.05f);
+            var d = new Vector3(_fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1)).Normalized() * _fxRng.RandfRange(0.12f, 0.32f);
+            Ribbon(mid, mid + d, w * 0.45f, new Color(1f, 0.96f, 0.8f, 0.6f), 3, 0.05f);
         }
         _beamMesh.SurfaceEnd();
         _beamDrawn = true;
@@ -789,7 +814,7 @@ public partial class Cutscene : Node3D
             var seg = p - prev;
             var toCam = (camPos - (prev + p) * 0.5f).Normalized();
             var off = seg.Cross(toCam).Normalized() * (w * 0.5f);
-            var c0 = c with { A = 1f };
+            var c0 = c;
             _beamMesh.SurfaceSetColor(c0); _beamMesh.SurfaceAddVertex(prev - off);
             _beamMesh.SurfaceSetColor(c0); _beamMesh.SurfaceAddVertex(prev + off);
             _beamMesh.SurfaceSetColor(c0); _beamMesh.SurfaceAddVertex(p + off);

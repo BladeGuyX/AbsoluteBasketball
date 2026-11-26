@@ -6,6 +6,8 @@ namespace AB;
 
 public enum MatchPhase { Countdown, Playing, Scored, FreeThrow, Ended, Cutscene }
 public enum WinMode { Points, Time }
+/// <summary>v0.27: trapaças do modo de teste (o host executa; o cliente pede por <see cref="Msg.Cheat"/>).</summary>
+public enum Cheat : byte { SetChar = 1, Refill, RefillAll, AddBot, RemoveBot, NoCooldowns, InfStamina, ResetScore, GiveBall }
 
 public sealed class MatchConfig
 {
@@ -27,6 +29,8 @@ public sealed class MatchConfig
     public bool CutShotMiss;
     /// <summary>v0.26: false = modo sem habilidades (ainda escolhe personagem, mas nenhuma habilidade nem ultimate funciona).</summary>
     public bool Abilities = true;
+    /// <summary>v0.27: modo de teste — partida infinita (sem vencedor nem relógio) e aba de trapaças no menu de pausa.</summary>
+    public bool TestMode;
     public bool AutoPilotLocal;      // jogador local controlado pelo piloto (screenshot/demo)
     public string ScreenshotPath;    // se definido: tira prints e fecha
     // ---- online (Etapa 5) ----
@@ -134,6 +138,7 @@ public partial class Match : Node3D
             for (int i = 0; i < enemies; i++) AddOther(1, $"Adversário {i + 1}");
             if (Cfg.SmokeE4) _bots[LocalPlayer] = new BotBrain(this, LocalPlayer, 999);
         }
+        RefreshNames();
 
         Sfx.LocalTeam = LocalPlayer?.Team ?? -1;
         Cam = new CameraRig { Target = LocalPlayer ?? Players.FirstOrDefault(), Name = "CameraRig" };
@@ -153,7 +158,9 @@ public partial class Match : Node3D
             layer.AddChild(new TargetPicker { M = this, Name = "TargetPicker" });
         }
         _pause = new PauseMenu { M = this, Name = "Pause" };
-        AddChild(_pause);
+        var pauseLayer = new CanvasLayer { Layer = 10, Name = "PauseLayer" }; // v0.27: por cima da HUD
+        AddChild(pauseLayer);
+        pauseLayer.AddChild(_pause);
 
         Clock = Cfg.TimeMinutes * 60f;
         if (Cfg.SmokeTest || Cfg.AutoPilotLocal) _smoke = new AutoPilot(this, LocalPlayer);
@@ -202,13 +209,17 @@ public partial class Match : Node3D
         GameRoot.I.Toast($"{name} saiu — um bot assumiu o lugar.");
     }
 
-    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false, int character = -1)
+    int _nextId = 1;
+
+    Player SpawnPlayer(int team, string name, bool isLocal = false, bool isDummy = false, int character = -1, int id = 0)
     {
+        if (id <= 0) id = _nextId;
+        _nextId = Mathf.Max(_nextId, id + 1);
         var p = new Player
         {
-            Id = Players.Count + 1, Team = team,
+            Id = id, Team = team,
             CharacterId = Characters.Clamp(character >= 0 ? character : Characters.ForSlot(Players.Count)), PlayerName = name, IsLocalHuman = isLocal, IsDummy = isDummy, M = this,
-            Name = "Player" + (Players.Count + 1),
+            Name = "Player" + id,
         };
         AddChild(p);
         Players.Add(p);
@@ -230,6 +241,34 @@ public partial class Match : Node3D
     }
 
     public IEnumerable<Player> TeamPlayers(int team) => Players.Where(p => p.Team == team);
+
+    /// <summary>v0.27: bots/bonecos se chamam pelo personagem ("Bolt", "Bolt 2"... contando por time); humanos online usam o
+    /// nick (Steam ou o nome do IP direto); offline, você usa o nick da Steam (ou o nome do personagem sem a Steam).
+    /// Determinístico: host e clientes chegam nos mesmos nomes.</summary>
+    public void RefreshNames()
+    {
+        var count = new Dictionary<(int, int), int>();
+        foreach (var p in Players.OrderBy(q => q.Id))
+        {
+            bool byChar = p.IsBot || p.IsDummy;
+            if (!IsOnline && p.IsLocalHuman)
+            {
+                string nick = SteamService.LocalName;
+                if (!string.IsNullOrWhiteSpace(nick)) { p.SetDisplayName(nick); continue; }
+                byChar = true;
+            }
+            if (!byChar) continue;
+            var key = (p.Team, p.CharacterId);
+            int n = count.GetValueOrDefault(key) + 1;
+            count[key] = n;
+            string baseName = Characters.Get(p.CharacterId).Name;
+            p.SetDisplayName(n == 1 ? baseName : $"{baseName} {n}");
+        }
+        PlayersChanged?.Invoke();
+    }
+
+    /// <summary>v0.27: lista de jogadores, nomes ou personagens mudaram (menu de trapaças se redesenha).</summary>
+    public event System.Action PlayersChanged;
 
     // ------------------------------------------------------------------ rounds
 
@@ -301,6 +340,13 @@ public partial class Match : Node3D
         if (IsHost) NetSession.I?.HostHud(1, text, dur, color, false, -1);
     }
 
+    /// <summary>v0.27: linha menor embaixo da mensagem (ex.: cesta roubada pelo "Não me Decepciona").</summary>
+    void UiSub(string text, float dur, Color color)
+    {
+        Hud?.ShowSub(text, dur, color);
+        if (IsHost) NetSession.I?.HostHud(3, text, dur, color, true, -1);
+    }
+
     void UiEnd(int winner)
     {
         Hud?.ShowEnd(winner);
@@ -334,7 +380,7 @@ public partial class Match : Node3D
                 if (PhaseTimer <= 0) BeginPlay();
                 break;
             case MatchPhase.Playing:
-                if (Cfg.Mode == WinMode.Time && !Overtime)
+                if (Cfg.Mode == WinMode.Time && !Overtime && !Cfg.TestMode)
                 {
                     Clock -= dt;
                     if (Clock <= 0) OnTimeUp();
@@ -380,6 +426,7 @@ public partial class Match : Node3D
             p.ServerTick(inp, dt);
         }
         foreach (var p in Players) p.ApplyQueuedRelocate(); // Swap do Bolt
+        TestModeTick();
         if (cut)
         {
             Cut.HostTick(dt, q => _cutInputs.TryGetValue(q, out var ci) ? ci : default);
@@ -430,6 +477,7 @@ public partial class Match : Node3D
         bool three = !freeThrow && Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotOrigin, hoop);
         int pts = Mathf.RoundToInt(freeThrow ? t.FreeThrowPoints : three ? t.PointsOutside : t.PointsInside);
         var thrower = Ball.LastThrower;
+        bool betStolen = false;
         if (AbilitiesOn && thrower != null && team == thrower.Team)
         {
             // Luck (modo apostador): as cestas dele valem mais
@@ -440,22 +488,34 @@ public partial class Match : Node3D
             {
                 if (q.Team == thrower.Team || q.CharacterId != Characters.Luck || q.Ab.BetT <= 0 || q.Ab.BetTarget != thrower.Id) continue;
                 team = q.Team;
+                betStolen = true;
                 q.Ab.BetT = 0; q.Ab.BetTarget = 0;
                 LogEvent("BET_WIN", q, thrower);
                 Sfx.Play3D(this, "fx_luckwin", thrower.GlobalPosition + Vector3.Up * 2f);
                 break;
             }
         }
+        // v0.27: enterrada carrega mais a ultimate que as outras cestas
+        if (AbilitiesOn && thrower != null && Ball.FromDunk && thrower.Team == CourtGeo.ScoringTeamForHoop(hoop))
+            thrower.Ab.AddUlt(Mathf.Max(0f, t.UltBonusDunk - t.UltBonusScore));
         Ball.FreeThrow = false;
+        Ball.FromDunk = false;
         Score[team] += pts;
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
         Sfx.Play2D(this, "score_t" + team, -7); // cada tela toca "cesta feita" ou "cesta sofrida" (Sfx.LocalTeam)
-        UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
+        if (betStolen)
+        {
+            // v0.27: aviso claro para todos — a cesta do alvo foi para o outro time
+            UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.4f, Palette.Team[team]);
+            UiSub($"NÃO ME DECEPCIONA! A cesta de {thrower.PlayerName} foi para o time {Palette.TeamName[team]}", 2.6f, new Color("5fe08a"));
+            Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
+        }
+        else UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
         LogEvent(freeThrow ? "SCORE_FT" : Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
         GD.Print($"[SCORE] time {team} +{pts} ({(freeThrow ? "lance livre" : three ? "3pt" : "2pt")}) placar {Score[0]} x {Score[1]}");
 
-        bool wins = (Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime);
+        bool wins = !Cfg.TestMode && ((Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime));
         if (Phase == MatchPhase.FreeThrow)
         {
             // 1º lance convertido: vai para o 2º (a não ser que já tenha vencido)
@@ -501,8 +561,16 @@ public partial class Match : Node3D
             var rel = Ball.GlobalPosition - p.GlobalPosition;
             float hd = new Vector2(rel.X, rel.Z).Length();
             bool sky = p.Ab.SkyJump; // v0.26: Arranha-Céu do Bolt = área de bloqueio bem maior
-            float br = sky ? t.BoltSkyBlockRadius : t.BlockRadius;
-            if (hd > br + t.BallRadius || rel.Y < (sky ? -1.2f : 0.8f) || rel.Y > t.BlockReach + t.BallRadius + (sky ? 0.6f : 0f)) continue;
+            float br = sky ? Mathf.Max(t.BoltSkyBlockRadius, t.BlockRadius) : t.BlockRadius;
+            if (hd > br + t.BallRadius) continue;
+            if (sky)
+            {
+                // v0.27: pega tudo que um pulo normal pegaria e mais: a coluna inteira, da altura dos braços de quem está
+                // no chão até as mãos dele lá em cima (o pulo é bem mais alto, mas não passa por cima da bola)
+                float by = Ball.GlobalPosition.Y;
+                if (by < 0.8f || by > p.GlobalPosition.Y + t.BlockReach + t.BallRadius + 0.6f) continue;
+            }
+            else if (rel.Y < 0.8f || rel.Y > t.BlockReach + t.BallRadius) continue;
             var away = new Vector3(rel.X, 0, rel.Z);
             away = away.LengthSquared() > 1e-4f ? away.Normalized() : -p.Forward;
             Ball.Drop(Ball.GlobalPosition, away * t.BlockBounceSpeed + Vector3.Up * 1.2f);
@@ -802,7 +870,7 @@ public partial class Match : Node3D
             UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.8f, Palette.Team[team]);
             LogEvent("SCORE_ULT", owner);
             GD.Print($"[SCORE] time {team} +{pts} (ultimate) placar {Score[0]} x {Score[1]}");
-            bool wins = (Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime);
+            bool wins = !Cfg.TestMode && ((Cfg.Mode == WinMode.Points && Score[team] >= Cfg.TargetScore) || (Cfg.Mode == WinMode.Time && Overtime));
             _nextPossession = 1 - team;
             Phase = MatchPhase.Scored;
             PhaseTimer = t.PostScoreDelay;
@@ -820,6 +888,124 @@ public partial class Match : Node3D
             if (target != null && IsInstanceValid(target)) { Ball.GiveTo(target); target.Ab.AddUlt(t.UltBonusSteal); Sfx.Play3D(this, "catch", target.GlobalPosition + Vector3.Up, 0, 1.3f); }
         }
         if (LocalPlayer != null) Cam.SnapBehind(LocalPlayer.Yaw);
+    }
+
+    // ------------------------------------------------------------------ v0.27: modo de teste (trapaças)
+
+    /// <summary>Sem recarga: habilidades sempre prontas e ultimate sempre cheia. Estamina infinita. (Replicados no snapshot.)</summary>
+    public bool NoCooldowns, InfiniteStamina;
+    public const int TestMaxPlayers = 12;
+
+    /// <summary>Pede uma trapaça (offline/host: faz na hora; cliente: manda para o host).</summary>
+    public void RequestCheat(Cheat c, int a = 0, int b = 0)
+    {
+        if (!Cfg.TestMode) return;
+        if (IsClient) NetSession.I?.SendCheat((byte)c, a, b);
+        else DoCheat(c, a, b, LocalPlayer);
+    }
+
+    /// <summary>Host/offline: executa a trapaça. <paramref name="requester"/> = quem pediu (alvo padrão).</summary>
+    public void DoCheat(Cheat c, int a, int b, Player requester)
+    {
+        if (!Cfg.TestMode || IsClient) return;
+        bool cut = Phase == MatchPhase.Cutscene;
+        switch (c)
+        {
+            case Cheat.SetChar:
+            {
+                var p = ById(a) ?? requester;
+                if (p == null || cut) return;
+                p.SetCharacter(b);
+                RefreshNames();
+                break;
+            }
+            case Cheat.Refill: (ById(a) ?? requester)?.Ab.Refill(); break;
+            case Cheat.RefillAll: foreach (var p in Players) p.Ab.Refill(); break;
+            case Cheat.AddBot:
+            {
+                if (Players.Count >= TestMaxPlayers || cut) return;
+                int team = a == 1 ? 1 : 0;
+                var p = SpawnPlayer(team, "Bot", character: Characters.Clamp(b));
+                p.IsBot = true;
+                _bots[p] = new BotBrain(this, p, (ulong)(p.Id * 7919 + 17));
+                float sign = CourtGeo.HoopSign(CourtGeo.AttackHoop(team));
+                var pos = new Vector3(-sign * Geo.HalfL * 0.25f, 0.05f, Rng.RandfRange(-Geo.HalfW * 0.5f, Geo.HalfW * 0.5f));
+                p.Teleport(pos, ShotMath.YawOf(new Vector3(sign, 0, 0)));
+                if (IsHost) NetSession.I?.HostPlayerAdded(p);
+                RefreshNames();
+                break;
+            }
+            case Cheat.RemoveBot:
+            {
+                var p = ById(a);
+                if (p == null || cut || !(p.IsBot || p.IsDummy) || _remote.ContainsKey(p) || p == LocalPlayer) return;
+                if (Players.Count(q => q.Team == p.Team) <= 1) return; // cada time precisa de alguém
+                RemovePlayer(p);
+                break;
+            }
+            case Cheat.NoCooldowns: NoCooldowns = a != 0; if (NoCooldowns) foreach (var p in Players) p.Ab.Refill(); break;
+            case Cheat.InfStamina: InfiniteStamina = a != 0; break;
+            case Cheat.ResetScore: Score[0] = Score[1] = 0; break;
+            case Cheat.GiveBall:
+            {
+                var p = ById(a) ?? requester;
+                if (p == null || Phase != MatchPhase.Playing || p.Flight != FlightKind.None) return;
+                if (Ball.Holder != null && Ball.Holder != p) { Ball.Holder.CancelShot(false); Ball.Holder.CancelPass(); }
+                Ball.GiveTo(p);
+                break;
+            }
+        }
+        LogEvent("CHEAT_" + c, requester);
+    }
+
+    /// <summary>Tira um jogador da partida (bot do modo de teste). Host avisa os clientes.</summary>
+    void RemovePlayer(Player p)
+    {
+        if (Ball.Holder == p) Ball.Drop(p.GlobalPosition + Vector3.Up * 1.2f, Vector3.Zero);
+        if (FtShooter == p) EndFreeThrows();
+        _bots.Remove(p); _dummies.Remove(p);
+        Players.Remove(p);
+        foreach (var q in Players) if (q.Ab.BetTarget == p.Id) { q.Ab.BetTarget = 0; q.Ab.BetT = 0; }
+        if (IsHost) NetSession.I?.HostPlayerRemoved(p.Id);
+        p.QueueFree();
+        RefreshNames();
+    }
+
+    /// <summary>Cliente: o host acrescentou um jogador (bot do modo de teste).</summary>
+    public void ClientAddPlayer(int id, int team, int character, bool isBot, string name)
+    {
+        if (ById(id) != null) return;
+        var p = SpawnPlayer(team, name, character: character, id: id);
+        p.IsBot = isBot;
+        RefreshNames();
+    }
+
+    /// <summary>Cliente: o host tirou um jogador.</summary>
+    public void ClientRemovePlayer(int id)
+    {
+        var p = ById(id);
+        if (p == null || p == LocalPlayer) return;
+        Players.Remove(p);
+        p.QueueFree();
+        RefreshNames();
+    }
+
+    /// <summary>Host: jogador controlado por um cliente (quem pediu a trapaça).</summary>
+    public Player PlayerOfNetId(int netId) => _remote.FirstOrDefault(kv => kv.Value == netId).Key;
+
+    public byte TestFlags => (byte)((NoCooldowns ? 1 : 0) | (InfiniteStamina ? 2 : 0));
+
+    public void DebugOpenCheats() { _pause.Open(); _pause.DebugCheats(); }
+    public void DebugOpenPicker() => GetNodeOrNull<TargetPicker>("EmoteLayer/TargetPicker")?.OpenFor(1);
+
+    void TestModeTick()
+    {
+        if (!Cfg.TestMode) return;
+        foreach (var p in Players)
+        {
+            if (InfiniteStamina) p.Stamina = p.St.StaminaMax;
+            if (NoCooldowns && AbilitiesOn) { p.Ab.Cd[0] = p.Ab.Cd[1] = p.Ab.Cd[2] = 0; if (p.Ab.ModeT <= 0) p.Ab.Ult = 1f; }
+        }
     }
 
     public void LogEvent(string kind, Player a, Player b = null)
@@ -927,7 +1113,7 @@ public partial class Match : Node3D
     }
 
     /// <summary>O cursor deve ficar escondido/preso (jogando, sem pausa nem tela de fim). Aplicado pelo GameRoot.</summary>
-    public bool WantsCapturedMouse => !Automated && !InputBlocked;
+    public bool WantsCapturedMouse => !Automated && !InputBlocked && !TargetPicker.IsOpen; // v0.27: menu de alvo usa o cursor
 
     // ------------------------------------------------------------------ testes automáticos
 
@@ -1092,6 +1278,7 @@ public partial class Match : Node3D
         if (kind == 0) Hud?.ShowCountdown(text, dur);
         else if (kind == 1) Hud?.ShowMessage(text, dur, color, small);
         else if (kind == 2) { Winner = winner; Phase = MatchPhase.Ended; Hud?.ShowEnd(winner); }
+        else if (kind == 3) Hud?.ShowSub(text, dur, color);
     }
 
     void ClientPhysics(float dt)
@@ -1158,6 +1345,7 @@ public partial class Match : Node3D
         var prevPhase = Phase;
         if (Phase != MatchPhase.Ended) Phase = b.Phase;
         PhaseTimer = b.PhaseTimer; Score[0] = b.Score0; Score[1] = b.Score1; Clock = b.Clock; Overtime = b.Overtime; Possession = b.Possession;
+        NoCooldowns = (b.TestFlags & 1) != 0; InfiniteStamina = (b.TestFlags & 2) != 0;
         if (Phase != MatchPhase.Ended) Winner = b.Winner;
         FtShooter = ById(b.FtShooter); FtAttempt = b.FtAttempt; FtT = b.FtT; FtDur = b.FtDur; FtPressed = b.FtPressed; FtPressT = b.FtPressT;
         FtFlash = b.FtFlash; FtFlashOk = b.FtFlashOk; FtFlashPlayer = ById(b.FtFlashPlayer); _netFtChecking = b.FtChecking;

@@ -285,6 +285,12 @@ public partial class NetSession : Node
                 if (mem != null && !InMatch) { mem.Team = team; BroadcastLobby(); }
                 break;
             }
+            case Msg.Cheat:
+            {
+                byte cmd = r.U8(); int a = r.I32(), b = r.I32();
+                if (InMatch && _match != null && IsInstanceValid(_match)) _match.DoCheat((Cheat)cmd, a, b, _match.PlayerOfNetId(peer));
+                break;
+            }
             case Msg.Input:
             {
                 int seq = r.I32();
@@ -440,7 +446,7 @@ public partial class NetSession : Node
     {
         Size = Settings.Size, Mode = Settings.Mode, TargetScore = Settings.TargetScore, TimeMinutes = Settings.TimeMinutes,
         BotDifficulty = Settings.BotDifficulty, Net = role, Roster = _roster, MyNetId = MyNetId, SmokeNet = SmokeNet, ScreenshotPath = SmokeShot,
-        Abilities = Settings.Abilities,
+        Abilities = Settings.Abilities, TestMode = Settings.TestMode,
     };
 
     /// <summary>Host: volta todos para o lobby (fim da partida).</summary>
@@ -476,7 +482,7 @@ public partial class NetSession : Node
         var w = _w.Begin(Msg.Snapshot);
         w.I32(_hostTick);
         w.U8((byte)m.Phase); w.F(m.PhaseTimer); w.I16((short)m.Score[0]); w.I16((short)m.Score[1]); w.F(m.Clock); w.Bool(m.Overtime);
-        w.U8((byte)(m.Winner + 1)); w.U8((byte)m.Possession);
+        w.U8((byte)(m.Winner + 1)); w.U8((byte)m.Possession); w.U8(m.TestFlags);
         w.U8(Id(m.FtShooter)); w.U8((byte)m.FtAttempt); w.F(m.FtT); w.F(m.FtDur); w.Bool(m.FtPressed); w.F(m.FtPressT); w.F(m.FtFlash);
         w.Bool(m.FtFlashOk); w.U8(Id(m.FtFlashPlayer)); w.Bool(m.FtChecking);
         var b = m.Ball;
@@ -500,6 +506,30 @@ public partial class NetSession : Node
         _w.Begin(Msg.Hud); _w.U8((byte)kind); _w.Str(text); _w.F(dur); _w.F(color.R); _w.F(color.G); _w.F(color.B); _w.F(color.A);
         _w.Bool(small); _w.I16((short)winner);
         SendToAll(true);
+    }
+
+    /// <summary>Host (modo de teste): entrou um bot no meio da partida.</summary>
+    public void HostPlayerAdded(Player p)
+    {
+        if (!IsHost || !InMatch) return;
+        _w.Begin(Msg.PlayerAdded); _w.U8((byte)p.Id); _w.U8((byte)p.Team); _w.U8((byte)p.CharacterId); _w.Bool(p.IsBot); _w.Str(p.PlayerName);
+        SendToAll(true);
+    }
+
+    /// <summary>Host (modo de teste): um bot saiu.</summary>
+    public void HostPlayerRemoved(int id)
+    {
+        if (!IsHost || !InMatch) return;
+        _w.Begin(Msg.PlayerRemoved); _w.U8((byte)id);
+        SendToAll(true);
+    }
+
+    /// <summary>Cliente (modo de teste): pede uma trapaça ao host.</summary>
+    public void SendCheat(byte cmd, int a, int b)
+    {
+        if (!IsClient || !Connected) return;
+        _w.Begin(Msg.Cheat); _w.U8(cmd); _w.I32(a); _w.I32(b);
+        SendToHost(true);
     }
 
     // =====================================================================
@@ -558,6 +588,18 @@ public partial class NetSession : Node
                 InMatch = false;
                 GameRoot.I.ShowLobby();
                 break;
+            case Msg.PlayerAdded:
+            {
+                int id = r.U8(), team = r.U8(), chr = r.U8(); bool bot = r.Bool(); string name = r.Str();
+                if (_match != null && IsInstanceValid(_match)) _match.ClientAddPlayer(id, team, chr, bot, name);
+                break;
+            }
+            case Msg.PlayerRemoved:
+            {
+                int id = r.U8();
+                if (_match != null && IsInstanceValid(_match)) _match.ClientRemovePlayer(id);
+                break;
+            }
         }
     }
 
@@ -566,7 +608,7 @@ public partial class NetSession : Node
         var s = new NetSnapshot
         {
             Tick = r.I32(), Phase = (MatchPhase)r.U8(), PhaseTimer = r.F(), Score0 = r.I16(), Score1 = r.I16(), Clock = r.F(), Overtime = r.Bool(),
-            Winner = r.U8() - 1, Possession = r.U8(),
+            Winner = r.U8() - 1, Possession = r.U8(), TestFlags = r.U8(),
             FtShooter = r.U8(), FtAttempt = r.U8(), FtT = r.F(), FtDur = r.F(), FtPressed = r.Bool(), FtPressT = r.F(), FtFlash = r.F(),
             FtFlashOk = r.Bool(), FtFlashPlayer = r.U8(), FtChecking = r.Bool(),
             BallState = (BallState)r.U8(), BallHolder = r.U8(), BallThrowTeam = r.U8() - 1, BallLastThrower = r.U8(), BallPassTarget = r.U8(),

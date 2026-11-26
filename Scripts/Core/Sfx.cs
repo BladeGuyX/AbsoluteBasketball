@@ -127,6 +127,19 @@ public static class Sfx
             wl += (Noise() - wl) * (0.04f + 0.25f * Mathf.Sin(Mathf.Pi * Mathf.Clamp(t / 0.45f, 0, 1)));
             return wl * Mathf.Sin(Mathf.Pi * Mathf.Clamp(t / 0.45f, 0, 1)) * 1.8f;
         });
+        // v0.27: impulso do Luck — "fuump" com baque grave, rajada de ar subindo e um brilhinho de sorte
+        float d1 = 0, d2 = 0;
+        Streams["dash"] = Make(0.34f, t =>
+        {
+            float k = Mathf.Clamp(t / 0.34f, 0, 1);
+            float n = Noise();
+            d1 += (n - d1) * (0.06f + 0.45f * k);
+            d2 += (d1 - d2) * 0.05f;
+            float air = (d1 - d2) * Mathf.Min(1f, t / 0.012f) * Mathf.Exp(-t * 8.5f) * 2.4f;
+            float thump = Mathf.Sin(Tau * (140 - 260 * t) * t) * Mathf.Exp(-t * 30) * 0.55f;
+            float sparkle = Bell(t - 0.05f, 1760f) * 0.1f + Bell(t - 0.09f, 2349f) * 0.07f;
+            return Mathf.Clamp(air + thump + sparkle, -1, 1) * 0.8f;
+        });
         Streams["chime"] = Make(0.9f, t => (Bell(t, 1046.5f) + Bell(t - 0.06f, 1318.5f) * 0.8f + Bell(t - 0.12f, 1568f) * 0.7f) * 0.22f);
         Streams["fail"] = Make(0.6f, t => (Mathf.Sin(Tau * (330 - 160 * t) * t) + 0.5f * Mathf.Sin(Tau * (220 - 100 * t) * t)) * Mathf.Exp(-t * 4) * Mathf.Min(1f, t / 0.01f) * 0.35f);
         Streams["aura"] = Make(0.6f, t => (Mathf.Sin(Tau * 110 * t) * 0.6f + Mathf.Sin(Tau * 165 * t) * 0.4f + Noise() * 0.15f)
@@ -144,6 +157,9 @@ public static class Sfx
         Streams["cut_whoosh"] = Streams["whoosh"];
         Streams["cut_zap"] = Streams["zap"];
         Streams["cut_thunder"] = Streams["thunder"];
+        // v0.27: sons dos menus (passar o mouse / clicar)
+        Streams["tick"] = Make(0.04f, t => Mathf.Sin(Tau * 2400 * t) * Mathf.Exp(-t * 140) * 0.35f);
+        Streams["click"] = Make(0.09f, t => (Mathf.Sin(Tau * (900 - 2500 * t) * t) * 0.6f + Noise() * 0.15f) * Mathf.Exp(-t * 55) * Mathf.Min(1f, t / 0.002f) * 0.5f);
         Streams["catch"] = Make(0.08f, t => Noise() * Mathf.Exp(-t * 90) * 0.25f + Mathf.Sin(Tau * 200 * t) * Mathf.Exp(-t * 50) * 0.45f);
     }
 
@@ -178,6 +194,17 @@ public static class Sfx
         var p = new AudioStreamPlayer3D { Stream = s, Bus = "SFX", VolumeDb = volumeDb, PitchScale = pitch, UnitSize = 6 };
         parent.AddChild(p);
         p.GlobalPosition = pos;
+        p.Finished += p.QueueFree;
+        p.Play();
+    }
+
+    /// <summary>v0.27: som de interface (menus) — só nesta tela, nunca vai para a rede.</summary>
+    public static void PlayUi(Node parent, string name, float volumeDb = 0f)
+    {
+        Init();
+        if (parent == null || !parent.IsInsideTree() || !Streams.TryGetValue(name, out var s)) return;
+        var p = new AudioStreamPlayer { Stream = s, Bus = "SFX", VolumeDb = volumeDb, ProcessMode = Node.ProcessModeEnum.Always };
+        parent.GetTree().Root.AddChild(p);
         p.Finished += p.QueueFree;
         p.Play();
     }

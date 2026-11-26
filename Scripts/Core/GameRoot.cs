@@ -104,9 +104,37 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            if (args.Contains("--menu") || args.Contains("--online") || args.Contains("--lobby") || args.Contains("--charsel"))
+            // v0.27: prints das telas novas: --info, --setup, --cheats (partida de teste com o menu de trapaças), --picker (menu de alvo)
+            if (args.Contains("--traj")) // v0.27: print da linha da trajetória (segura o arremesso por código)
             {
-                if (args.Contains("--charsel")) { ShowMainMenu(); _ui.AddChild(new CharacterSelect()); } // v0.26
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Small, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true });
+                GetTree().CreateTimer(7.0).Timeout += () => { _match.Cam.Pitch = Mathf.DegToRad(8f); Input.ActionPress(Act.Shoot); };
+                GetTree().CreateTimer(7.9).Timeout += () =>
+                {
+                    GetViewport().GetTexture().GetImage().SavePng(args[si + 1]);
+                    Input.ActionRelease(Act.Shoot);
+                    GameRoot.QuitClean(this);
+                };
+                return;
+            }
+            if (args.Contains("--cheats") || args.Contains("--picker"))
+            {
+                bool pick = args.Contains("--picker");
+                UserSettings.I.Character = pick ? Characters.Luck : Characters.Bolt;
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Medium, AllyDummies = 1, EnemyDummies = 3 });
+                GetTree().CreateTimer(4.5).Timeout += () => { if (pick) _match.DebugOpenPicker(); else _match.DebugOpenCheats(); };
+                GetTree().CreateTimer(5.5).Timeout += () =>
+                {
+                    GetViewport().GetTexture().GetImage().SavePng(args[si + 1]);
+                    GameRoot.QuitClean(this);
+                };
+                return;
+            }
+            if (args.Contains("--menu") || args.Contains("--online") || args.Contains("--lobby") || args.Contains("--charsel") || args.Contains("--info") || args.Contains("--setup"))
+            {
+                if (args.Contains("--info")) { ShowMainMenu(); _ui.AddChild(new InfoMenu()); }
+                else if (args.Contains("--setup")) { ShowMainMenu(); (_menu as MainMenu)?.CallDeferred(MainMenu.MethodName.DebugSetup); }
+                else if (args.Contains("--charsel")) { ShowMainMenu(); _ui.AddChild(new CharacterSelect()); } // v0.26
                 else if (args.Contains("--online")) ShowOnlineMenu();
                 else if (args.Contains("--lobby")) { NetSession.I.HostDirect(NetSmokePort, "Blade", loopbackOnly: true); NetSession.I.SetMyTeam(0); }
                 else ShowMainMenu();

@@ -78,10 +78,35 @@ public static class AbilityIcons
                 ci.DrawLine(P(-0.55f, 0.55f), P(0.55f, 0.55f), A(new Color("fff27a")), lw, true);
                 break;
             case AbIcon.Duel:
-                ci.DrawLine(P(-0.5f, -0.5f), P(0.45f, 0.45f), w, lw * 1.2f, true);
-                ci.DrawLine(P(0.5f, -0.5f), P(-0.45f, 0.45f), w, lw * 1.2f, true);
-                ci.DrawColoredPolygon(new[] { P(0.05f, -0.3f), P(-0.15f, 0.02f), P(0.02f, 0.02f), P(-0.06f, 0.3f), P(0.16f, -0.05f), P(0.0f, -0.05f) }, A(new Color("fff27a")));
+            {
+                // v0.27: duas espadas se cruzando (pontas para cima) com um raio no choque
+                var gold = A(new Color("ffd23f"));
+                var steel = A(new Color("e9f1ff"));
+                var grip = A(new Color("7a4a2a"));
+                for (int k = -1; k <= 1; k += 2)
+                {
+                    // espada que vai do canto de baixo (k) até o canto de cima oposto
+                    var tip = new Vector2(-k * 0.56f, -0.56f);
+                    var hilt = new Vector2(k * 0.34f, 0.34f);
+                    var d = (tip - hilt).Normalized();
+                    var n = new Vector2(-d.Y, d.X);
+                    Vector2 Q(Vector2 v) => c + v * r;
+                    // lâmina com ponta
+                    ci.DrawColoredPolygon(new[] { Q(hilt + n * 0.07f), Q(tip - d * 0.14f + n * 0.07f), Q(tip), Q(tip - d * 0.14f - n * 0.07f), Q(hilt - n * 0.07f) }, steel);
+                    ci.DrawLine(Q(hilt), Q(tip - d * 0.1f), A(new Color(0.6f, 0.7f, 0.85f)), Mathf.Max(1f, lw * 0.3f), true);
+                    // guarda, cabo e pomo
+                    ci.DrawLine(Q(hilt + n * 0.2f), Q(hilt - n * 0.2f), gold, lw * 1.1f, true);
+                    ci.DrawLine(Q(hilt), Q(hilt - d * 0.2f), grip, lw * 1.2f, true);
+                    ci.DrawCircle(Q(hilt - d * 0.24f), r * 0.065f, gold);
+                }
+                // raio no ponto do choque
+                var bolt = A(new Color("fff27a"));
+                ci.DrawColoredPolygon(new[] { P(0.06f, -0.42f), P(-0.13f, -0.12f), P(0.0f, -0.12f), P(-0.08f, 0.1f), P(0.14f, -0.2f), P(0.02f, -0.2f) }, bolt);
+                ci.DrawLine(P(-0.2f, -0.28f), P(-0.32f, -0.36f), bolt, lw * 0.45f, true);
+                ci.DrawLine(P(0.2f, -0.28f), P(0.32f, -0.36f), bolt, lw * 0.45f, true);
+                ci.DrawLine(P(0f, -0.48f), P(0f, -0.6f), bolt, lw * 0.45f, true);
                 break;
+            }
         }
     }
 }

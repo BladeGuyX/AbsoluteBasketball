@@ -6,13 +6,13 @@ public partial class Hud : CanvasLayer
 {
     public Match M;
 
-    Label _scoreA, _scoreB, _info, _countdown, _msg;
+    Label _scoreA, _scoreB, _info, _countdown, _msg, _sub;
     ProgressBar _stamina, _power;
     HBoxContainer _dribblePips;
     Control _powerBox, _endPanel;
     Label _endTitle, _endScore;
     Button _rematchBtn;
-    float _countT, _msgT;
+    float _countT, _msgT, _subT;
     Control _top, _bottom, _cross, _abilityBar;
     JinxBorder _jinx;
 
@@ -44,6 +44,10 @@ public partial class Hud : CanvasLayer
         _msg = UiKit.Outlined("", 64, Colors.White, outline: 18);
         UiKit.Anchor(_msg, 0.5f, 0, 0.5f, 0, -600, 190, 600, 290);
         root.AddChild(_msg);
+        // v0.27: linha menor embaixo da mensagem (ex.: cesta roubada pelo "Não me Decepciona")
+        _sub = UiKit.Outlined("", 34, Colors.White, outline: 12);
+        UiKit.Anchor(_sub, 0.5f, 0, 0.5f, 0, -900, 290, 900, 345);
+        root.AddChild(_sub);
 
         // ---- mira ----
         var cross = new ColorRect { Color = new Color(1, 1, 1, 0.8f), Size = new Vector2(6, 6), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -177,6 +181,15 @@ public partial class Hud : CanvasLayer
         _msg.Modulate = Colors.White;
     }
 
+    public void ShowSub(string text, float dur, Color color)
+    {
+        _sub.Text = text;
+        _sub.LabelSettings.FontColor = color;
+        _subT = dur;
+        _sub.Modulate = Colors.White;
+        _sub.Scale = Vector2.One;
+    }
+
     public void ShowEnd(int winner)
     {
         _endPanel.Visible = true;
@@ -201,6 +214,7 @@ public partial class Hud : CanvasLayer
             _info.Text = M.Overtime ? "PRORROG." : $"{s / 60}:{s % 60:00}";
         }
         else _info.Text = $"ATÉ {M.Cfg.TargetScore}";
+        if (M.Cfg.TestMode) _info.Text = "TESTE"; // v0.27: partida infinita
 
         var p = M.LocalPlayer;
         if (p != null)
@@ -217,6 +231,12 @@ public partial class Hud : CanvasLayer
             float a = Mathf.Clamp(_countT / 0.25f, 0, 1);
             _countdown.Modulate = new Color(1, 1, 1, a);
             if (_countT <= 0) _countdown.Text = "";
+        }
+        if (_subT > 0)
+        {
+            _subT -= dt;
+            _sub.Modulate = new Color(1, 1, 1, Mathf.Clamp(_subT / 0.3f, 0, 1));
+            if (_subT <= 0) _sub.Text = "";
         }
         if (_msgT > 0)
         {
