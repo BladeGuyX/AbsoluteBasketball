@@ -4,6 +4,16 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.30 — botão "Atualizar" consertado
+
+O botão nunca instalava (desde a v0.12): o jogo fechava e o instalador morria em silêncio. **Quem está na v0.29 ou antes precisa baixar a v0.30 à mão uma vez** (Releases no GitHub, extrair por cima); depois disso o botão funciona.
+
+1. Com a v0.30 instalada, espere sair uma versão nova (v0.31) e clique em "Atualizar" no menu.
+2. O jogo deve fechar, abrir uma janela azul "Atualizando Absolute Basketball para a v…" (Extraindo / Copiando / Pronto) e reabrir sozinho.
+3. No menu, a versão no canto deve ser a nova e o botão não deve mais oferecer atualização.
+4. Se der erro: a janela azul mostra a mensagem por 8 s; mande o arquivo `%TEMP%\AbsoluteBasketball-update.log`.
+
+
 ## v0.29 — estamina nova, menus online organizados, jogar de novo online, balanceamento
 
 1. Na partida: a estamina é uma barra arredondada mais embaixo (acima dos ícones das habilidades), com um raiozinho no começo; fica laranja/vermelha quando está acabando e pisca quando não dá para correr; ao gastar, um rastro claro some devagar. As cargas de drible são bolinhas de basquete à direita; a que está recarregando enche como relógio; driblando, um contorno dourado pisca em volta delas.

@@ -165,12 +165,16 @@ public partial class Updater : Node
             File.WriteAllText(script, Script, new System.Text.UTF8Encoding(true));
             int pid = OS.GetProcessId();
             GD.Print($"[UPDATE] instalando v{Latest} em {dir}");
-            int child = OS.CreateProcess("powershell.exe", new[]
+            // Nunca passar argumento vazio: a Godot não põe aspas em "" e ele some da linha de comando — o PowerShell
+            // via "-ExeArgs" sem valor, dava erro e fechava sem instalar nada (bug da v0.12 à v0.29).
+            var args = new System.Collections.Generic.List<string>
             {
                 "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script,
-                "-ProcId", pid.ToString(), "-Zip", ZipPath, "-Dir", dir, "-Exe", exe, "-Version", Latest ?? "",
-                "-ExeArgs", Auto ? "--print-version" : "",
-            });
+                "-ProcId", pid.ToString(), "-Zip", ZipPath, "-Dir", dir, "-Exe", exe,
+            };
+            if (!string.IsNullOrEmpty(Latest)) { args.Add("-Version"); args.Add(Latest); }
+            if (Auto) { args.Add("-ExeArgs"); args.Add("--print-version"); }
+            int child = OS.CreateProcess("powershell.exe", args.ToArray());
             if (child <= 0) { Set(St.Failed, "não consegui iniciar o instalador"); return; }
             GameRoot.QuitClean(this);
         }
