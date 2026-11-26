@@ -100,6 +100,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - **não** anime a bola dentro do .blend.
 
 ## Modelos prontos
+- **v0.36 — dado do Luck:** `art_source/scripts/make_dado.py` → `assets/models/dado.glb` (cubo 0,26 m com bevel, materiais `Dado`/`Ponto`, +Y na Godot = 6). Usado na cena da Sorte Infinita (`Cutscene.LuckPose`).
 - **v0.32 — cenário da praia:** `art_source/scripts/make_scenery.py` (sem concept) → `palmeira_a/b`, `arquibancada` (material
   `Assento` pintado com a cor do time na Godot), `guarda_sol`, `espreguicadeira`, `torre_salva_vidas`, `poste_luz` (`Lampada`
   vira unshaded), `pedra_a/b`, `arbusto`, `prancha`. Montagem em `Scripts/Game/Scenery.cs` (posições sorteadas com semente fixa,

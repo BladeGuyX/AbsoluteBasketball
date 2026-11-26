@@ -4,6 +4,14 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.36 — cena da Sorte Infinita com dados
+
+1. Use a ultimate do Luck (1ª vez): o jogo congela ~2 s. O Luck joga dois dados para o alto (som de dados quando caem), eles giram no ar e caem na frente dele com o **6 e 6** para cima; ele comemora (clarão verde e um "plim"). Não aparece mais a bola girando, mesmo se ele estiver com ela.
+2. As apostas (apertar a ultimate de novo durante o modo) continuam sem cena.
+3. Online: o amigo vê a mesma cena.
+
+---
+
 ## v0.35 — pose da ultimate do Luck
 
 1. Jogue de Luck e use a ultimate (Sorte Infinita) pela 1ª vez: o jogo congela ~1,6 s, a câmera vai para a frente do Luck comemorando (se estiver com a bola, ela gira acima dele) e aparece "SORTE INFINITA" em verde. Depois o jogo volta exatamente de onde parou (os outros jogadores e a bola não se mexem durante a pose).

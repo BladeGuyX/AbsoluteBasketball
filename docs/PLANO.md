@@ -25,6 +25,7 @@ artifact de tuning atualizado, `CLAUDE.md` atualizado e roteiro de testes em `do
 | — | **v0.33:** skill check do bloqueio na ult do King (`Cutscene.KBlock` vira skill check; errou → `KBlocked` = toco e bola do adversário; `KingUltCheckBlockTime/Window`, último check mais difícil), descrições dos personagens removidas, Não me Decepciona 5 s, Drible Perfeito com partículas vermelhas estilizadas. Prints: `--screenshot <png> --fire`, `--cut-shot <png> --toco`. | ✅ |
 | — | **v0.34:** janelas dos skill checks da ult do King: 0,08 / 0,065 / 0,04 s. | ✅ |
 | — | **v0.35:** pose da ultimate (`CutKind.UltPose`, `Match.StartUltPose`, `Cutscene.PoseFrame`, `UltPoseDuration`) na 1ª ativação da Sorte Infinita; vale para toda ult futura que não seja cutscene. `NetProtocol.Version` = 8. Print `--cut-shot <png> --luck`. | ✅ |
+| — | **v0.36:** cena da Sorte Infinita = Luck joga dois dados (`make_dado.py` → `dado.glb`, `Cutscene.LuckPose`) que caem 6 e 6; sem bola na cena; `UltPoseDuration` 2,1 s. Cenas de ult não-cutscene devem ter a ver com a ult. | ✅ |
 | 8 | Áudio e polimento: música, sons reais, partículas, replays de cesta, menus finais | |
 
 ## Arquitetura (resumo)

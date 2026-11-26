@@ -89,6 +89,12 @@ public partial class Cutscene : Node3D
 
         if (Kind == CutKind.UltPose)
         {
+            var po = Owner;
+            if (po != null && po.CharacterId == Characters.Luck)
+            {
+                if (Cross(prev, StageT, LuckLandAt)) Sfx.Play2D(M, "dice", -2);
+                if (Cross(prev, StageT, LuckCheerAt)) Sfx.Play2D(M, "chime", -6);
+            }
             if (StageT >= Mathf.Max(0.3f, t.UltPoseDuration)) Finish(true);
             return;
         }
@@ -322,6 +328,9 @@ public partial class Cutscene : Node3D
             _act[i] = new Actor { Node = node, Vis = vis, Team = team };
         }
         _ball = MakeBall();
+        if (Kind == CutKind.UltPose && ActorChars[0] == Characters.Luck)
+            for (int i = 0; i < 2; i++) { _dice[i] = MakeDie(); _dice[i].Visible = false; AddChild(_dice[i]); }
+        _poseFx = false;
         AddChild(_ball);
         _beamMesh = new ImmediateMesh();
         var bm = Mat.Unshaded(Colors.White, true);
@@ -346,7 +355,7 @@ public partial class Cutscene : Node3D
         _visStage = -1;
         foreach (var c in GetChildren()) c.QueueFree();
         for (int i = 0; i < 3; i++) _act[i] = null;
-        _cam = null; _ball = null; _ov = null; _beam = null;
+        _cam = null; _ball = null; _ov = null; _beam = null; _dice[0] = _dice[1] = null;
         if (M != null)
         {
             foreach (var p in M.Players) p.Visible = true;
@@ -384,7 +393,7 @@ public partial class Cutscene : Node3D
         }
         else if (Kind == CutKind.UltPose)
         {
-            _ov.Flash(_ov.Accent.Lightened(0.5f), 0.55f);
+            _ov.Flash(_ov.Accent.Lightened(0.5f), 0.35f);
         }
         else
         {
@@ -705,39 +714,117 @@ public partial class Cutscene : Node3D
     static Vector3 Right(float yaw) => new(Mathf.Cos(yaw), 0, -Mathf.Sin(yaw));
 
     // =====================================================================
-    // v0.35: pose da ultimate (ults que não são cutscene, ex.: Sorte Infinita do Luck) — avisa todo mundo
+    // v0.35/v0.36: cena curta da ultimate (ults que não são cutscene) — avisa todo mundo. Cada personagem tem a SUA cena,
+    // ligada ao que a ultimate faz (pedido do usuário: não é só uma comemoração). Sem a bola em cena.
 
     bool PoseHasBall => M.Ball.Holder != null && M.Ball.Holder.Id == OwnerId;
+
+    // Luck (Sorte Infinita): joga dois dados (assets/models/dado.glb), eles giram no ar e caem com o 6 para cima
+    public const float LuckThrowAt = 0.35f, LuckLandAt = 1.05f, LuckCheerAt = 1.25f;
+    readonly Node3D[] _dice = new Node3D[2];
+    bool _poseFx;
+
+    static Node3D MakeDie()
+    {
+        var n = new Node3D { Name = "Dado" };
+        const string path = "res://assets/models/dado.glb";
+        if (ResourceLoader.Exists(path) && GD.Load<PackedScene>(path) is { } sc)
+        {
+            var m = sc.Instantiate<Node3D>();
+            Mat.ApplyToon(m, name => name == "Dado" ? 0.012f : 0f);
+            n.AddChild(m);
+        }
+        else n.AddChild(Mat.MeshNode(new BoxMesh { Size = Vector3.One * 0.26f }, Mat.ToonOutlined(new Color("ede6d6"), 0.012f), Vector3.Zero));
+        return n;
+    }
 
     void PoseFrame(float u, float dt)
     {
         var L = _act[0];
         if (L == null) return;
         var o = Owner;
-        var pos = o != null && IsInstanceValid(o) ? o.GlobalPosition : Vector3.Zero;
+        var pos = o != null && IsInstanceValid(o) ? o.GlobalPosition with { Y = 0 } : Vector3.Zero;
         float yaw = o?.Yaw ?? 0f;
-        float dur = Mathf.Max(0.3f, Tuning.I.UltPoseDuration);
-        float k = Smooth(u / dur);
         _ov.Bars = Mathf.MoveToward(_ov.Bars, 1f, dt * 6f);
         _ov.Speed = 0; _ov.Vignette = 0.4f;
         _ov.TitleT = u;
         ClearBeam();
+        _ball.Visible = false;
         L.Pos = pos; L.Yaw = yaw; L.St = Base();
-        L.St.Mood = 1;                           // comemoração (braços para cima)
-        L.St.Emote = Expressions.Feliz;
-        if (PoseHasBall)
+        if (ActorChars[0] == Characters.Luck) LuckPose(L, pos, yaw, u);
+        else
         {
-            // gira a bola no dedo, acima da cabeça
-            _ball.Visible = true;
-            _ball.GlobalPosition = pos + Vector3.Up * (2.2f + 0.05f * Mathf.Sin(_time * 9f)) + Right(yaw) * 0.2f;
-            _ball.RotateY(dt * 18f);
+            // genérico (personagem novo ainda sem cena própria): comemoração com a câmera fechando
+            float k = Smooth(u / Mathf.Max(0.3f, Tuning.I.UltPoseDuration));
+            L.St.Mood = 1; L.St.Emote = Expressions.Feliz;
+            var f = Dir(yaw); var r = Right(yaw);
+            Cam((pos + f * 4.4f + r * 1.7f + Vector3.Up * 1.0f).Lerp(pos + f * 3.3f - r * 0.6f + Vector3.Up * 1.6f, k),
+                pos + Vector3.Up * Mathf.Lerp(1.3f, 1.6f, k), Mathf.Lerp(50, 46, k));
         }
-        else _ball.Visible = false;
-        // câmera de frente: entra pelo lado e fecha no rosto
+    }
+
+    void LuckPose(Actor L, Vector3 pos, float yaw, float u)
+    {
         var f = Dir(yaw); var r = Right(yaw);
-        var p0 = pos + f * 4.4f + r * 1.7f + Vector3.Up * 1.0f;
-        var p1 = pos + f * 3.3f - r * 0.6f + Vector3.Up * 1.6f;
-        Cam(p0.Lerp(p1, k), pos + Vector3.Up * Mathf.Lerp(1.3f, 1.6f, k), Mathf.Lerp(50, 46, k));
+        float half = 0.13f;
+        var rest = Basis.FromEuler(new Vector3(0, yaw, 0));
+        var lands = new[] { pos + f * 1.7f - r * 0.32f, pos + f * 1.55f + r * 0.38f };
+        var handPos = pos + Vector3.Up * 1.45f + f * 0.45f + r * 0.2f;
+        var mid = (lands[0] + lands[1]) * 0.5f;
+
+        // corpo: prepara (sorriso de canto) → lança (braço na frente) → comemora quando o 6 e 6 aparecem
+        if (u < LuckThrowAt) { L.St.Emote = Expressions.SorrisoFrio; L.St.Charging = true; L.St.Charge = Mathf.Clamp(u / LuckThrowAt, 0, 1) * 0.5f; }
+        else if (u < LuckCheerAt) { L.St.Emote = Expressions.Focado; L.St.Release = Mathf.Clamp(1f - (u - LuckThrowAt) / 0.5f, 0, 1); }
+        else { L.St.Mood = 1; L.St.Emote = Expressions.Feliz; }
+
+        for (int i = 0; i < 2; i++)
+        {
+            var d = _dice[i];
+            if (d == null) continue;
+            d.Visible = u >= LuckThrowAt;
+            if (!d.Visible) continue;
+            var axis = new Vector3(i == 0 ? 1f : 0.6f, 0.4f, i == 0 ? 0.5f : -1f).Normalized();
+            Vector3 p; float spin;
+            if (u < LuckLandAt)
+            {
+                float k = (u - LuckThrowAt) / (LuckLandAt - LuckThrowAt);
+                var start = handPos + r * (i == 0 ? -0.1f : 0.1f);
+                var end = lands[i] + Vector3.Up * half;
+                p = start.Lerp(end, k) + Vector3.Up * (2.6f * 4f * k * (1f - k) * (i == 0 ? 1f : 0.85f));
+                spin = (1f - k) * (i == 0 ? 15f : 12f) + 0.6f;
+            }
+            else
+            {
+                // quiquinho e assenta com o 6 para cima
+                float bt = u - LuckLandAt;
+                float hop = 0.14f * Mathf.Max(0, Mathf.Sin(Mathf.Clamp(bt / 0.22f, 0, 1) * Mathf.Pi));
+                p = lands[i] + Vector3.Up * (half + hop) + f * (bt < 0.22f ? bt * 0.4f : 0.088f);
+                spin = 0.6f * (1f - Smooth(bt / 0.22f));
+            }
+            d.GlobalPosition = p;
+            d.GlobalBasis = new Basis(axis, spin) * rest;
+        }
+
+        // efeitos locais: clarão verde quando os dados assentam
+        if (u >= LuckCheerAt && !_poseFx) { _poseFx = true; _ov.Flash(new Color("b8ffcf"), 0.45f); _shake = 0.4f; }
+
+        // câmera: de frente → acompanha os dados subindo → baixa, nos dados com o Luck comemorando atrás
+        var c0 = pos + f * 3.8f + r * 1.2f + Vector3.Up * 1.3f;
+        var l0 = pos + Vector3.Up * 1.3f;
+        var c1 = pos + f * 4.2f - r * 0.8f + Vector3.Up * 1.0f;
+        var l1 = pos + f * 1.0f + Vector3.Up * 2.2f;
+        var c2 = mid + f * 2.6f + r * 0.5f + Vector3.Up * 1.75f;
+        var l2 = mid.Lerp(pos + Vector3.Up * 1.2f, 0.5f) + Vector3.Up * 0.3f;
+        if (u < LuckThrowAt + 0.3f)
+        {
+            float k = Smooth(u / (LuckThrowAt + 0.3f));
+            Cam(c0.Lerp(c1, k), l0.Lerp(l1, k), Mathf.Lerp(48, 54, k));
+        }
+        else
+        {
+            float k = Smooth((u - LuckThrowAt - 0.3f) / 0.55f);
+            Cam(c1.Lerp(c2, k), l1.Lerp(l2, k), Mathf.Lerp(54, 46, k));
+        }
     }
 
     // =====================================================================
