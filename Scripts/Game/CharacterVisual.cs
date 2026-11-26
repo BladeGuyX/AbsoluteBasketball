@@ -119,6 +119,8 @@ public sealed class CharacterVisual : IPlayerVisual
     }
 
     Node3D _ring;
+    /// <summary>v0.42: anel do time no chão (filho do jogador, fora do Root).</summary>
+    public Node3D Ring => _ring;
     StandardMaterial3D _ringMat;
     Color _ringColor;
     float _ringGlow = -1;

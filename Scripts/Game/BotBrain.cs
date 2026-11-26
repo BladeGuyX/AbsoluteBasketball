@@ -54,7 +54,9 @@ public sealed class BotBrain
     static Vector3 Flat(Vector3 v) => v with { Y = 0 };
     Vector3 RimFlat(int hoop) => Flat(M.Geo.RimCenter[hoop]);
     IEnumerable<Player> Mates => M.Players.Where(q => q != P && q.Team == P.Team);
-    IEnumerable<Player> Opps => M.Players.Where(q => q.Team != P.Team);
+    IEnumerable<Player> Opps => M.Players.Where(q => q.Team != P.Team && Sees(q));
+    /// <summary>v0.42: o bot só "sabe" de quem ele veria na tela (Realm / Domínio das Sombras do One).</summary>
+    bool Sees(Player q) => q != null && RealmView.Alpha(M, P, q) > 0.01f;
 
     float Openness(Player q) => Opps.Select(o => Flat(o.GlobalPosition - q.GlobalPosition).Length()).DefaultIfEmpty(99f).Min();
 
@@ -295,7 +297,7 @@ public sealed class BotBrain
                 if (a.Cd[0] <= 0)
                 {
                     var tg = PlayerAbilities.DribbleCandidate(P, ShotMath.YawOf(rim - me));
-                    if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab1; return true; }
+                    if (tg != null && Sees(tg) && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab1; return true; }
                 }
                 break;
             case Characters.Iron:
@@ -303,7 +305,7 @@ public sealed class BotBrain
                 if (a.Cd[1] <= 0 && open < 2.2f)
                 {
                     var tg = PlayerAbilities.BonkCandidate(P, ShotMath.YawOf(rim - me));
-                    if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
+                    if (tg != null && Sees(tg) && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
                 }
                 break;
             case Characters.One:
@@ -314,7 +316,7 @@ public sealed class BotBrain
                 if (a.Cd[1] <= 0 && open < 2.5f)
                 {
                     var tg = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(rim - me));
-                    if (tg != null && tg.Team != P.Team && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
+                    if (tg != null && tg.Team != P.Team && Sees(tg) && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
                 }
                 break;
             }
@@ -338,7 +340,7 @@ public sealed class BotBrain
         }
         if (P.CharacterId is Characters.Iron or Characters.One && a.UltT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
         var h = M.Ball.Holder;
-        if (h == null || h.Team == P.Team || M.Ball.State != BallState.Held) return;
+        if (h == null || h.Team == P.Team || M.Ball.State != BallState.Held || !Sees(h)) return;
         var rel = Flat(h.GlobalPosition - P.GlobalPosition);
         float dist = rel.Length();
         float toRim = Flat(h.GlobalPosition - M.Geo.RimCenter[DefendHoop]).Length();
@@ -358,7 +360,7 @@ public sealed class BotBrain
                 if (a.Cd[0] <= 0 && outside && toRim < M.Geo.ThreePt + 6f && (h.ChargingShot || h.ChargingPass) && roll) { inp.Pressed |= Btn.Ab1; break; }
                 // pancada em quem está perto sem a bola (alguém livre para receber)
                 var bk = PlayerAbilities.BonkCandidate(P, P.Yaw);
-                if (a.Cd[1] <= 0 && bk != null && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(bk.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
+                if (a.Cd[1] <= 0 && bk != null && Sees(bk) && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(bk.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
                 // investida em quem tem a bola, se ele estiver na frente a uma distância boa
                 if (a.Cd[2] <= 0 && dist > 3f && dist < 9f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
                 break;
@@ -369,7 +371,7 @@ public sealed class BotBrain
                 // Realm para atravessar até quem tem a bola (o roubo tira ele de lá)
                 if (a.Cd[2] <= 0 && toRim < 13f && roll) { inp.Target = (byte)h.Id; inp.TargetSlot = 2; break; }
                 var ab = PlayerAbilities.AbductCandidate(P, P.Yaw);
-                if (a.Cd[1] <= 0 && ab != null && ab.Team != P.Team && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(ab.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
+                if (a.Cd[1] <= 0 && ab != null && Sees(ab) && ab.Team != P.Team && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(ab.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
                 if (a.Cd[0] <= 0 && a.RealmT <= 0 && !a.Phased && dist > 4f && dist < 10f && P.IsOnFloor() && roll) inp.Pressed |= Btn.Ab1;
                 break;
             }
@@ -413,7 +415,7 @@ public sealed class BotBrain
         float bestScore = myScore + 1.2f;
         foreach (var q in Mates)
         {
-            if (q.Airborne || q.Stun > 0) continue;
+            if (q.Airborne || q.Stun > 0 || !q.CanCatch || !Sees(q)) continue;
             var qp = Flat(q.GlobalPosition);
             float dist = (qp - me).Length();
             if (dist < 3f || dist > 22f) continue;
@@ -560,6 +562,21 @@ public sealed class BotBrain
     {
         var target = Assignment(carrier);
         var ownRim = RimFlat(DefendHoop);
+        if (!Sees(carrier))
+        {
+            // v0.42: não vê quem tem a bola (Domínio das Sombras): só vê a bola flutuando — fica na zona e às vezes
+            // arrisca um bote na bola, sem saber se dá para roubar
+            Zone(ref inp, carrier);
+            var rb = Flat(M.Ball.GlobalPosition - P.GlobalPosition);
+            if (_stealCd <= 0 && !P.Airborne && P.StealFail <= 0 && rb.Length() < T.StealReach + 0.4f && R.Randf() < T.BotStealChancePerSec * 0.4f * dt / Mult)
+            {
+                var d = rb.Normalized();
+                inp.Move = new Vector2(d.X, d.Z);
+                inp.Pressed |= Btn.Steal;
+                _stealCd = 2.5f;
+            }
+            return;
+        }
         if (target == null) { Zone(ref inp, carrier); return; }
         var tp = Flat(target.GlobalPosition);
         float markDist = target == carrier ? T.BotMarkDistance : T.BotMarkDistance + 1.2f;

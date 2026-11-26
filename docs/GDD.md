@@ -336,3 +336,11 @@ Atributos 3/3/3/3/3.
 4. **Ult: Domínio das Sombras** — cutscene da quadra sendo consumida pelas sombras; todos vão para o Realm por 25 s (só o One que usou ganha os 20%). Todos jogam e interagem normalmente, mas o time adversário tem −20% nos atributos, recargas 50% mais lentas e não vê nenhum jogador do time do One (vê a bola normalmente, mesmo flutuando).
 
 Implementação (Claude): `Ab.RealmT`/`AbductT`/`CurseT` (snapshot, `NetProtocol.Version` 11); `Player.Phased` = sem colisão com jogadores (`CollisionLayer` 0), não pega a bola (`CanCatch`), não bloqueia nem intercepta, imune a habilidades de quem está fora (`Characters.Immune`; de dentro dá para usar habilidades em quem está fora). Recarga do Realm conta a partir da saída. Abduzido não vê quem está fora; quem está fora não vê adversário abduzido (aliado vê transparente). Maldição vale também em lance livre (1 → 0). "Recargas 50% mais lentas" = correm na metade da velocidade, também a barra da ultimate. O Iron Indestrutível não sofre o Domínio (nem a perda de atributos/recargas nem a invisibilidade). Cena da ult: olhos brilhando, braços abertos, sombra roxa com tentáculos saindo dos pés e cobrindo a quadra, câmera subindo.
+
+## Revisões do usuário (v0.42) — prevalecem sobre a v0.41
+- Maldição: 15 s, recarga 40 s, alvo com 70% dos atributos, não vale para lance livre.
+- Aliados de quem foi abduzido também não o veem. Abdução: 3 s, recarga 40 s.
+- Domínio das Sombras: 20 s.
+- Quem está num Realm não pode usar habilidade que leve ao Realm: nada de Domínio durante outro Domínio, nem Realm durante o Domínio; a Abdução só pega quem não está em nenhum Realm (durante um Domínio, ninguém), mas o One pode abduzir estando no Realm.
+- Realm: 3 s, recarga 25 s. Iron: Muralha de Aço com recarga de 45 s.
+- Bots não podem agir como se vissem os jogadores invisíveis para eles.

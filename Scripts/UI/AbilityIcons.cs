@@ -190,19 +190,12 @@ public static class AbilityIcons
             }
             case AbIcon.Shadow:
             {
-                // quadra (retângulo) sendo engolida por uma mancha escura com olhos roxos
-                ci.DrawRect(new Rect2(P(-0.6f, -0.38f), new Vector2(1.2f, 0.76f) * r), A(new Color("e0a35a")), true);
-                ci.DrawLine(P(0, -0.38f), P(0, 0.38f), A(new Color(1, 1, 1, 0.8f)), lw * 0.4f, true);
-                var blob = new Vector2[18];
-                for (int i = 0; i < 18; i++)
-                {
-                    float a = i * Mathf.Tau / 18f;
-                    float rr = 0.5f + 0.12f * Mathf.Sin(a * 5f + 0.7f);
-                    blob[i] = P(Mathf.Cos(a) * rr * 1.1f, Mathf.Sin(a) * rr * 0.85f);
-                }
-                ci.DrawColoredPolygon(blob, A(new Color(0.1f, 0.03f, 0.18f, 0.95f)));
-                ci.DrawCircle(P(-0.14f, -0.04f), r * 0.07f, A(new Color("c97cff")));
-                ci.DrawCircle(P(0.14f, -0.04f), r * 0.07f, A(new Color("c97cff")));
+                // v0.42: orbe de sombra com borda roxa e dois olhos brilhando (simples, como as outras ultimates)
+                ci.DrawCircle(c, r * 0.52f, A(new Color("1d0b33")));
+                ci.DrawArc(c, r * 0.52f, 0, Mathf.Tau, 36, A(new Color("b57bff")), lw * 0.9f, true);
+                var eye = A(new Color("e6c8ff"));
+                ci.DrawColoredPolygon(new[] { P(-0.3f, -0.08f), P(-0.06f, 0.0f), P(-0.1f, 0.08f), P(-0.28f, 0.02f) }, eye);
+                ci.DrawColoredPolygon(new[] { P(0.3f, -0.08f), P(0.06f, 0.0f), P(0.1f, 0.08f), P(0.28f, 0.02f) }, eye);
                 break;
             }
         }

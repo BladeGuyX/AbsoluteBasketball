@@ -491,7 +491,7 @@ public partial class Match : Node3D
             // Luck (modo apostador): as cestas dele valem mais
             if (thrower.CharacterId == Characters.Luck) pts += thrower.Ab.ModePoints;
             // v0.41: amaldiçoado pelo One = cestas valem menos
-            if (thrower.Ab.CurseT > 0) { pts = Mathf.Max(0, pts - Mathf.RoundToInt(t.OneCursePointLoss)); LogEvent("SCORE_CURSED", thrower); }
+            if (thrower.Ab.CurseT > 0 && !freeThrow) { pts = Mathf.Max(0, pts - Mathf.RoundToInt(t.OneCursePointLoss)); LogEvent("SCORE_CURSED", thrower); }
             thrower.Ab.AddUlt(t.UltBonusScore);
             // Luck "Não me Decepciona": a cesta do adversário marcado vai para o time do Luck
             foreach (var q in Players)

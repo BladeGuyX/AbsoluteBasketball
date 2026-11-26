@@ -104,7 +104,7 @@ public partial class TargetPicker : Control
             {
                 if (!Characters.NeedsTarget(lp.CharacterId, s) || !Input.IsActionJustPressed(SlotActions[s])) continue;
                 if (!lp.Ab.Ready(s) || (s == 3 && !lp.HasBall)) continue;
-                _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp)).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
+                _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp) && RealmView.Alpha(M, lp, q) > 0.01f).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
                 if (_list.Count == 0) continue;
                 _slot = s; _sel = 0; _hover = -1; _open = 0; IsOpen = true;
                 break;
@@ -141,7 +141,7 @@ public partial class TargetPicker : Control
     {
         var lp = M?.LocalPlayer;
         if (lp == null) return;
-        _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp)).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
+        _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp) && RealmView.Alpha(M, lp, q) > 0.01f).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
         _slot = slot; _sel = 0; _hover = 1; _open = 0; IsOpen = _list.Count > 0;
     }
 

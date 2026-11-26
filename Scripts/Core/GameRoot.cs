@@ -178,7 +178,7 @@ public partial class GameRoot : Node
             {
                 if (args.Contains("--info")) { ShowMainMenu(); _ui.AddChild(new InfoMenu()); }
                 else if (args.Contains("--setup")) { ShowMainMenu(); (_menu as MainMenu)?.CallDeferred(MainMenu.MethodName.DebugSetup); }
-                else if (args.Contains("--charsel")) { ShowMainMenu(); _ui.AddChild(new CharacterSelect()); } // v0.26
+                else if (args.Contains("--charsel")) { int ch = Array.IndexOf(args, "--char"); if (ch >= 0 && ch + 1 < args.Length && int.TryParse(args[ch + 1], out int cid)) UserSettings.I.Character = Characters.Clamp(cid); ShowMainMenu(); _ui.AddChild(new CharacterSelect()); } // v0.26 (v0.42: --char N escolhe quem aparece, sem salvar)
                 else if (args.Contains("--online")) ShowOnlineMenu();
                 else if (args.Contains("--lobby")) { NetSession.I.HostDirect(NetSmokePort, "Blade", loopbackOnly: true); NetSession.I.SetMyTeam(0); }
                 else ShowMainMenu();

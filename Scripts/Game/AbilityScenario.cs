@@ -576,7 +576,7 @@ public sealed class AbilityScenario
         int ab0 = Ev("ABDUCT");
         _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab2; yield return 0;
         bool abducted = Ev("ABDUCT") > ab0 && e0.Phased && e0.Ab.AbductT > t.OneAbductDuration - 0.1f && P.Ab.Cd[1] > 0;
-        bool blind = RealmView.Alpha(M, e0, ally) == 0f && RealmView.Alpha(M, e0, P) == 0f && RealmView.Alpha(M, e1, e0) == Mathf.Clamp(t.OneGhostAlpha, 0.05f, 1f)
+        bool blind = RealmView.Alpha(M, e0, ally) == 0f && RealmView.Alpha(M, e0, P) == 0f && RealmView.Alpha(M, e1, e0) == 0f
                      && RealmView.Alpha(M, P, e0) == 0f;
         M.Ball.Drop(e0.GlobalPosition + Vector3.Up * 1.0f, Vector3.Zero);
         foreach (var _ in Wait(0.4f)) yield return 0;
@@ -587,6 +587,14 @@ public sealed class AbilityScenario
         M.Ball.GiveTo(e0);
         yield return 0;
         bool notHolder = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(new Vector3(s, 0, 0))) == null;
+        // v0.42: quem já está no Realm não pode ser abduzido (mas o One pode abduzir estando no Realm)
+        M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        e0.Ab.AbductT = 1f;
+        bool notPhased = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(new Vector3(s, 0, 0))) == null;
+        e0.Ab.AbductT = 0; P.Ab.RealmT = 2f;
+        bool fromRealm = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(new Vector3(s, 0, 0))) == e0;
+        P.Ab.RealmT = 0;
+        notHolder &= notPhased && fromRealm;
         bool ok2 = abducted && blind && noCatch && back && notHolder;
         if (!ok2) GD.Print($"[ABIL] abducao: abduziu={abducted} cego={blind} sem_bola={noCatch} voltou={back} nao_no_dono={notHolder}");
         Rec("abducao", ok2);
@@ -639,8 +647,13 @@ public sealed class AbilityScenario
         n = 0; while (M.Ball.Holder != e0 && n++ < 60) yield return 0;
         bool interacts = M.Ball.Holder == e0;
         e0.Ab.Cd[0] = 0; ally.Ab.Cd[0] = 0;
-        bool ok4 = posed && on && stats && hidden && slow && interacts;
-        if (!ok4) GD.Print($"[ABIL] dominio: pose={posed} ativo={on} atributos={stats} invisível={hidden} recargas={slow} ({eRan:0.00}/{aRan:0.00}) interage={interacts}");
+        // v0.42: no Domínio não dá para entrar no Realm, abduzir ninguém nem usar outro Domínio
+        P.Ab.Cd[0] = 0; P.Ab.Cd[1] = 0; P.Ab.Ult = 1f;
+        _inp.Pressed |= Btn.Ab1 | Btn.Ult; yield return 0;
+        bool gated = P.Ab.RealmT <= 0 && P.Ab.Ult >= 0.999f && M.Phase == MatchPhase.Playing && PlayerAbilities.AbductCandidate(P, P.Yaw) == null;
+        P.Ab.Ult = 0;
+        bool ok4 = posed && on && stats && hidden && slow && interacts && gated;
+        if (!ok4) GD.Print($"[ABIL] dominio: pose={posed} ativo={on} atributos={stats} invisível={hidden} recargas={slow} ({eRan:0.00}/{aRan:0.00}) interage={interacts} bloqueios={gated}");
         Rec("dominio_das_sombras", ok4);
         P.Ab.UltT = 0;
         foreach (var q in M.Players) q.UpdateStats();

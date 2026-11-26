@@ -460,14 +460,15 @@ def make_faces():
     R.mouth_line(f, [(-0.012, MZ), (0.0, MZ - 0.0012), (0.012, MZ)], 0.005)
     faces.append(f.build("Rosto_Focado"))
 
-    # Sorriso sinistro (slot "SorrisoFrio"): olhos fechados em arco e sorriso largo e fino
+    # Sorriso sinistro (slot "SorrisoFrio"; v0.42: era alegre demais): olhos semicerrados olhando de lado,
+    # sobrancelhas em V e um sorriso torto e fino, com um canto bem mais alto que o outro
     f = R.Face()
     for s in (1, -1):
-        cx, cz = s * R.EYE_X, R.EYE_Z
-        f.strip([(cx - 0.042, cz - 0.01), (cx - 0.022, cz + 0.008), (cx, cz + 0.013), (cx + 0.022, cz + 0.008), (cx + 0.042, cz - 0.01)],
-                0.011, 0.011, "Tinta", 3)
-        R.brow(f, s, z=1.06, angle=-4, arch=0.004)
-    f.strip([(-0.03, MZ + 0.008), (-0.017, MZ - 0.003), (0.0, MZ - 0.006), (0.017, MZ - 0.003), (0.03, MZ + 0.008)], 0.006, 0.006, "Tinta", 2)
+        R.eye(f, s, lid=-0.002, slope=0.38, low=-0.013, lid_w=0.011)
+        R.brow(f, s, z=1.05, angle=24, w0=0.012, w1=0.005)
+    f.strip([(-0.028, MZ + 0.001), (-0.016, MZ - 0.002), (-0.002, MZ - 0.003), (0.013, MZ - 0.0005), (0.024, MZ + 0.005), (0.031, MZ + 0.012)],
+            0.0045, 0.006, "Tinta", 2)
+    f.strip([(0.026, MZ + 0.015), (0.033, MZ + 0.009)], 0.004, 0.003, "Tinta", 2)   # covinha do canto levantado
     faces.append(f.build("Rosto_SorrisoFrio"))
 
     # Olhar frio (slot "Bravo"): olhos roxos brilhando, sobrancelhas em V, boca para baixo

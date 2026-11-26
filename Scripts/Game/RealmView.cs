@@ -74,7 +74,7 @@ void fragment() {
         bool vp = viewer.Phased, tp = target.Phased;
         if (vp && tp) return 1f;                                    // os dois no Realm: se veem normalmente
         if (vp) return viewer.Ab.AbductT > 0 ? 0f : g;              // abduzido não vê quem está fora; o One vê transparente
-        if (tp) return target.Team == viewer.Team ? g : 0f;         // aliado no Realm = transparente; adversário = invisível
+        if (tp) return target.Team == viewer.Team && target.Ab.AbductT <= 0 ? g : 0f; // aliado no Realm = transparente; adversário ou abduzido = invisível
         return 1f;
     }
 }

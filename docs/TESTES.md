@@ -4,6 +4,21 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.42 — ajustes do One (e Muralha do Iron)
+
+1. **Maldição:** dura **15 s**, recarga **40 s**, o alvo fica com **70%** dos atributos (antes 50%). Cesta de 2 do amaldiçoado vale 1; **lance livre continua valendo 1**.
+2. **Realm:** dura **3 s** (antes 4) e recarrega em **25 s** (antes 35).
+3. **Abdução:** dura **3 s** e recarrega em **40 s**. Abduza alguém: **nem os aliados dele o veem** agora.
+4. Abduzir quem já está no Realm (outro One no Realm, ou alguém abduzido) não funciona; estando no seu Realm, você ainda abduz quem está fora.
+5. **Domínio das Sombras:** dura **20 s**. Durante ele (de qualquer time): Realm, Abdução e outro Domínio não funcionam. Estando no seu Realm, a ult também não sai.
+6. Com o One adversário no Realm ou no Domínio, **o anel do chão dele também some** (antes ficava aparecendo, principalmente depois de trocar de personagem no modo de teste).
+7. **Bots no seu Domínio:** eles não veem você nem seus aliados — não marcam vocês, não tentam bloquear seus arremessos e, se você está com a bola, só ficam na zona e às vezes dão um bote às cegas na bola. Também não te escolhem como alvo de habilidades (e o menu de alvo só mostra quem você vê).
+8. Ícone do Domínio das Sombras novo (orbe escura com dois olhos).
+9. Expressão **Sorriso sinistro** (também é a cara na tela de escolha): olhos semicerrados, sobrancelhas em V e sorriso torto.
+10. **Iron:** recarga da Muralha de Aço **45 s** (antes 40).
+
+---
+
 ## v0.41 — 5º personagem: One
 
 Escolha o **One** (roxo) na tela de personagem. Para testar sem esperar recargas, use uma partida de **teste** (trapaças: "Sem recarga").

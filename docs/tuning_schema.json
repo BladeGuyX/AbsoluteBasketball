@@ -2592,7 +2592,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 40,
+    "default": 45,
     "sub": "Habilidades"
   },
   {
@@ -2856,7 +2856,7 @@
     "min": 0.5,
     "max": 20,
     "step": 0.25,
-    "default": 4,
+    "default": 3,
     "sub": "Habilidades"
   },
   {
@@ -2878,7 +2878,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 35,
+    "default": 25,
     "sub": "Habilidades"
   },
   {
@@ -2900,7 +2900,7 @@
     "min": 0.5,
     "max": 20,
     "step": 0.25,
-    "default": 4,
+    "default": 3,
     "sub": "Habilidades"
   },
   {
@@ -2911,7 +2911,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 45,
+    "default": 40,
     "sub": "Habilidades"
   },
   {
@@ -2922,25 +2922,25 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 20,
+    "default": 15,
     "sub": "Habilidades"
   },
   {
     "key": "OneCurseStatMult",
     "section": "One",
     "label": "(3) Maldi\u00E7\u00E3o: atributos restantes",
-    "desc": "Fra\u00E7\u00E3o que sobra de todos os atributos de quem est\u00E1 amaldi\u00E7oado (0,5 = perde 50%).",
+    "desc": "Fra\u00E7\u00E3o que sobra de todos os atributos de quem est\u00E1 amaldi\u00E7oado (0,7 = perde 30%).",
     "min": 0.1,
     "max": 1,
     "step": 0.05,
-    "default": 0.5,
+    "default": 0.7,
     "sub": "Habilidades"
   },
   {
     "key": "OneCursePointLoss",
     "section": "One",
     "label": "(3) Maldi\u00E7\u00E3o: pontos a menos",
-    "desc": "Quantos pontos a menos valem as cestas de quem est\u00E1 amaldi\u00E7oado.",
+    "desc": "Quantos pontos a menos valem as cestas de quem est\u00E1 amaldi\u00E7oado (lance livre n\u00E3o muda).",
     "min": 0,
     "max": 3,
     "step": 1,
@@ -2955,7 +2955,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 45,
+    "default": 40,
     "sub": "Habilidades"
   },
   {
@@ -2966,7 +2966,7 @@
     "min": 2,
     "max": 60,
     "step": 0.5,
-    "default": 25,
+    "default": 20,
     "sub": "Habilidades"
   },
   {

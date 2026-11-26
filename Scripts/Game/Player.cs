@@ -1192,13 +1192,13 @@ public partial class Player : CharacterBody3D
         {
             _viewGeoRig = _visual; _viewGeo.Clear(); _viewAlpha = -1f;
             foreach (var n in _visual.FindChildren("*", "GeometryInstance3D", true, false)) _viewGeo.Add((GeometryInstance3D)n);
-            if (GetNodeOrNull<GeometryInstance3D>("TeamRing") is { } ring) _viewGeo.Add(ring);
+            if (_rig is CharacterVisual cvr && cvr.Ring is GeometryInstance3D ring) _viewGeo.Add(ring);
         }
         if (Mathf.IsEqualApprox(alpha, _viewAlpha)) return;
         _viewAlpha = alpha;
         _viewHidden = alpha < 0.01f;
         if (_visual != null) _visual.Visible = !_viewHidden;
-        if (GetNodeOrNull<Node3D>("TeamRing") is { } r) r.Visible = !_viewHidden;
+        if (_rig is CharacterVisual cvv && IsInstanceValid(cvv.Ring)) cvv.Ring.Visible = !_viewHidden;
         if (GetNodeOrNull<Node3D>("AbilityAura") is { } aura) aura.Visible = !_viewHidden;
         if (_nameLabel != null) { _nameLabel.Visible = _nameWanted && !_viewHidden; _nameLabel.Transparency = 1f - alpha; }
         if (_stars != null && _viewHidden) _stars.Visible = false;

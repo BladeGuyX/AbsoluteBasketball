@@ -562,7 +562,7 @@ public sealed class PlayerAbilities
 
     bool OneRealm()
     {
-        if (P.HasBall || Phased || P.Airborne || !P.IsOnFloor()) return false;
+        if (P.HasBall || Phased || M.AnyDomain || P.Airborne || !P.IsOnFloor()) return false; // v0.42: já no Realm/Domínio = não
         P.StealDash = 0; P.ChargingJump = false;
         RealmT = T.OneRealmDuration;
         Sfx.Play3D(M, "fx_realm", P.GlobalPosition + Vector3.Up);
@@ -586,9 +586,10 @@ public sealed class PlayerAbilities
     {
         var t = Tuning.I;
         Player best = null; float bestA = Mathf.DegToRad(t.OneAbductAngle);
+        if (p.M.AnyDomain) return null; // v0.42: no Domínio todo mundo já está no Realm
         foreach (var q in p.M.Players)
         {
-            if (q == p || q.HasBall || q.Ab.AbductT > 0 || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
+            if (q == p || q.HasBall || q.Phased || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
             var to = (q.GlobalPosition - p.GlobalPosition) with { Y = 0 };
             float d = to.Length();
             if (d > t.OneAbductRange) continue;
@@ -622,6 +623,7 @@ public sealed class PlayerAbilities
 
     void OneUlt()
     {
+        if (Phased || M.AnyDomain) return; // v0.42: não dá estando no Realm nem com outro Domínio ativo
         Ult = 0;
         UltT = T.OneUltDuration;
         Sfx.Play3D(M, "fx_domain", P.GlobalPosition + Vector3.Up);
