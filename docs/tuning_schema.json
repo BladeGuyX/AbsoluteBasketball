@@ -1877,7 +1877,7 @@
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.09,
+    "default": 0.08,
     "sub": "Habilidades"
   },
   {
@@ -1899,7 +1899,7 @@
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.075,
+    "default": 0.065,
     "sub": "Habilidades"
   },
   {
@@ -1921,7 +1921,7 @@
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.055,
+    "default": 0.04,
     "sub": "Habilidades"
   },
   {

@@ -4,6 +4,12 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.34 — skill checks da ult do King mais apertados
+
+1. **Sua Derrota é Absoluta:** janelas certas menores. 1º (drible) 0,08 s, 2º (bloqueio) 0,065 s, último (arremesso) 0,04 s. A zona colorida do anel fica mais estreita, principalmente no último. Confira também em Informações / no artifact.
+
+---
+
 ## v0.33 — skill check do bloqueio na ult do King, Não me Decepciona 5 s, partículas no Drible Perfeito
 
 1. **Escolha de personagem e Informações:** embaixo do nome não aparece mais a frase de descrição (ex.: "Precisão absoluta...").

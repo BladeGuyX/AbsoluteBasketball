@@ -425,11 +425,11 @@ public sealed class Tuning
     [Param(SKing, "(3) Drible Perfeito: recarga", "Segundos de recarga do Drible Perfeito.", 1, 90, 0.5f, Sub = Hab)] public float KingDribbleCooldown = 15f;
     [Param(SKing, "Ult: pontos da cesta", "Pontos da cesta da ultimate Sua Derrota é Absoluta.", 1, 20, 1, Sub = Hab)] public float KingUltPoints = 4f;
     [Param(SKing, "Ult: 1º skill check (duração)", "Segundos até o ponteiro chegar na zona no 1º skill check (drible).", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck1Time = 0.85f;
-    [Param(SKing, "Ult: 1º skill check (janela)", "Janela certa (s) do 1º skill check.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck1Window = 0.09f;
+    [Param(SKing, "Ult: 1º skill check (janela)", "Janela certa (s) do 1º skill check.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck1Window = 0.08f;
     [Param(SKing, "Ult: skill check do bloqueio (duração)", "Segundos até o ponteiro chegar na zona no skill check do meio (quando o adversário pula para bloquear). Errou = o King arremessa e toma o toco.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheckBlockTime = 0.72f;
-    [Param(SKing, "Ult: skill check do bloqueio (janela)", "Janela certa (s) do skill check do bloqueio (entre o 1º e o último em dificuldade).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheckBlockWindow = 0.075f;
+    [Param(SKing, "Ult: skill check do bloqueio (janela)", "Janela certa (s) do skill check do bloqueio (entre o 1º e o último em dificuldade).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheckBlockWindow = 0.065f;
     [Param(SKing, "Ult: último skill check (duração)", "Segundos até o ponteiro chegar na zona no último skill check (arremesso). Menor = mais rápido.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck2Time = 0.55f;
-    [Param(SKing, "Ult: último skill check (janela)", "Janela certa (s) do último skill check (o mais difícil).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck2Window = 0.055f;
+    [Param(SKing, "Ult: último skill check (janela)", "Janela certa (s) do último skill check (o mais difícil).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck2Window = 0.04f;
     [Param(SKing, "Presença: aviso na tela", "Segundos que a borda da tela de quem teve o arremesso afetado fica vermelha.", 0, 3, 0.05f, Sub = Adv)] public float KingPresenceFlash = 0.7f;
     [Param(SKing, "Presença: desvio do arremesso", "Quanto (m) o arremesso afetado é desviado para bater no aro e sair.", 0.2f, 3, 0.05f, Sub = Adv)] public float KingPresenceMissOffset = 0.75f;
 
