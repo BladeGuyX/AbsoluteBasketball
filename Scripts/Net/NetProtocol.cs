@@ -73,7 +73,7 @@ public sealed class RosterEntry
 public static class NetProtocol
 {
     /// <summary>Mude sempre que o formato das mensagens mudar (cliente e host precisam da mesma versão).</summary>
-    public const int Version = 10; // v0.38: Iron/Luck ajustados (aposta dobrada no snapshot). v9 = v0.37: Iron (estado novo das habilidades no snapshot). v8 = v0.35: CutKind.UltPose (pose da ultimate). v7: // v0.27: modo de teste (trapaças, jogadores entrando/saindo), personagem no snapshot, enterrada com a Presença
+    public const int Version = 11; // v0.41: One (Realm, Abdução, Maldição no snapshot). v10 = v0.38: Iron/Luck ajustados (aposta dobrada no snapshot). v9 = v0.37: Iron (estado novo das habilidades no snapshot). v8 = v0.35: CutKind.UltPose (pose da ultimate). v7: // v0.27: modo de teste (trapaças, jogadores entrando/saindo), personagem no snapshot, enterrada com a Presença
 }
 
 /// <summary>Escreve mensagens binárias (little endian). Reaproveita o buffer.</summary>

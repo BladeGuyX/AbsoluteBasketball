@@ -43,6 +43,12 @@ public struct PlayerStats
         };
     }
 
+    /// <summary>v0.41: todos os atributos vezes k (Maldição do One, Domínio das Sombras).</summary>
+    public readonly PlayerStats Scaled(float k) => this with
+    {
+        Speed = Speed * k, Agility = Agility * k, Stamina = Stamina * k, Precision = Precision * k, Jump = Jump * k, ShotRange = ShotRange * k,
+    };
+
     // ---- valores finais (Tuning × atributo) ----
     public readonly float WalkSpeed => Tuning.I.WalkSpeed * Speed;
     public readonly float RunSpeed => Tuning.I.RunSpeed * Speed;

@@ -182,6 +182,10 @@ public sealed class CharacterVisual : IPlayerVisual
                     // v0.37: Iron
                     "Aco" or "Gibao" or "Couro" => Mat.ToonOutlined(c, 0.012f),
                     "AcoClaro" or "AcoEscuro" or "CouroEscuro" or "BotaDobra" => Mat.ToonOutlined(c, 0.007f),
+                    // v0.41: One
+                    "Runa" or "OlhoBrilho" or "PupilaBrilho" => Mat.Unshaded(c),
+                    "Capa" => Mat.ToonOutlined(c, 0.014f),
+                    "Roxo" or "Cinto" => Mat.ToonOutlined(c, 0.006f),
                     _ => Mat.Toon(c),
                 };
                 mi.SetSurfaceOverrideMaterial(i, m);

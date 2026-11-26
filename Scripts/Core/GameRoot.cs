@@ -136,6 +136,31 @@ public partial class GameRoot : Node
                 }
                 return;
             }
+            if (args.Contains("--realm")) // v0.41: print do Realm do One (_0: dentro do Realm, _1: Domínio das Sombras ativo)
+            {
+                UserSettings.I.Character = Characters.One;
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Small, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
+                string fp = args[si + 1];
+                GetTree().CreateTimer(6.5).Timeout += () =>
+                {
+                    var lp = _match.LocalPlayer;
+                    if (_match.Ball.Holder == lp) _match.Ball.Drop(lp.GlobalPosition + new Vector3(0, 0.3f, 3f), Vector3.Zero);
+                    int i = 0;
+                    foreach (var q in _match.Players)
+                        if (q != lp) { q.Teleport(lp.GlobalPosition + lp.Forward * (3.5f + i) + lp.Right * (i * 1.6f - 1.6f), q.Yaw, false); i++; }
+                };
+                GetTree().CreateTimer(7.0).Timeout += () => Input.ActionPress(Act.Ab1);
+                GetTree().CreateTimer(7.1).Timeout += () => Input.ActionRelease(Act.Ab1);
+                GetTree().CreateTimer(7.8).Timeout += () => GetViewport().GetTexture().GetImage().SavePng(fp.Replace(".png", "_0.png"));
+                GetTree().CreateTimer(9.0).Timeout += () => { _match.LocalPlayer.Ab.Ult = 1f; Input.ActionPress(Act.Ult); };
+                GetTree().CreateTimer(9.1).Timeout += () => Input.ActionRelease(Act.Ult);
+                GetTree().CreateTimer(13.5).Timeout += () =>
+                {
+                    GetViewport().GetTexture().GetImage().SavePng(fp.Replace(".png", "_1.png"));
+                    GameRoot.QuitClean(this);
+                };
+                return;
+            }
             if (args.Contains("--cheats") || args.Contains("--picker"))
             {
                 bool pick = args.Contains("--picker");
@@ -238,7 +263,7 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : args.Contains("--luck") || args.Contains("--iron") ? CutKind.UltPose : CutKind.KingUlt, CutShotChar = args.Contains("--iron") ? Characters.Iron : Characters.Luck, CutShotMiss = args.Contains("--miss"), CutShotBlockMiss = args.Contains("--toco"),
+            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : args.Contains("--luck") || args.Contains("--iron") || args.Contains("--one") ? CutKind.UltPose : CutKind.KingUlt, CutShotChar = args.Contains("--iron") ? Characters.Iron : args.Contains("--one") ? Characters.One : Characters.Luck, CutShotMiss = args.Contains("--miss"), CutShotBlockMiss = args.Contains("--toco"),
                 ScreenshotPath = args[cs + 1], Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
             return;
         }

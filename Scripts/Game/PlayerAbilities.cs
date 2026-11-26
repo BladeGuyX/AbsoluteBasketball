@@ -38,6 +38,15 @@ public sealed class PlayerAbilities
     public float TiredT;                          // Iron 3: parado no fim da Investida (cansado; bateu na parede = Stun)
     public float UltT;                            // Iron ult: Indestrutível (s restantes)
     public bool BlockCatch;                       // Iron ult: pegou a bola no bloqueio (imune a roubo até poder driblar)
+    public float RealmT;                          // One 1: dentro do próprio Realm (s restantes)
+    public float AbductT;                         // abduzido por um One (s restantes no Realm; só anda e corre)
+    public float CurseT;                          // amaldiçoado por um One (s restantes)
+    // (One ult: Domínio das Sombras usa UltT)
+    /// <summary>v0.41: no Realm (sozinho ou abduzido): atravessa os jogadores, não interage com eles nem com a bola.</summary>
+    public bool Phased => RealmT > 0 || AbductT > 0;
+    public bool Domain => UltT > 0 && Char == Characters.One;
+    /// <summary>One mais rápido: no Realm (até abduzido) ou com o Domínio das Sombras dele ativo.</summary>
+    public bool RealmSpeed => Char == Characters.One && (RealmT > 0 || AbductT > 0 || UltT > 0);
     public bool Charging => ChargeT > 0;
     public bool Indestructible => UltT > 0 && Char == Characters.Iron;
     readonly System.Collections.Generic.HashSet<Player> _chargeHits = new();
@@ -59,6 +68,8 @@ public sealed class PlayerAbilities
     public void OnRoundReset()
     {
         EyeArmed = false; PerfectDribble = false; DashT = 0; SkyJump = false; BonkT = 0; TiredT = 0; BlockCatch = false; EndCharge();
+        if (RealmT > 0) { RealmT = 0; if (M != null) StartCd(0); }
+        AbductT = 0;
     }
 
     // =====================================================================
@@ -66,6 +77,9 @@ public sealed class PlayerAbilities
     {
         // v0.39: no modo Indestrutível as recargas correm IronUltCdSpeedup mais rápido
         float cdRate = Indestructible ? 1f + Mathf.Max(0f, T.IronUltCdSpeedup) : 1f;
+        // v0.41: Domínio das Sombras de um One adversário = recargas (e a barra da ultimate) mais lentas
+        float slow = M != null && M.DomainAgainst(P) != null ? Mathf.Clamp(1f - T.OneUltEnemyCdSlow, 0.05f, 1f) : 1f;
+        cdRate *= slow;
         for (int i = 0; i < 3; i++) if (Cd[i] > 0) Cd[i] = Mathf.Max(0, Cd[i] - dt * cdRate);
         if (EyeT > 0) EyeT -= dt;
         if (PresenceT > 0) PresenceT -= dt;
@@ -93,12 +107,17 @@ public sealed class PlayerAbilities
         if (BonkT > 0) BonkT = Mathf.Max(0, BonkT - dt);
         if (TiredT > 0) TiredT = Mathf.Max(0, TiredT - dt);
         if (UltT > 0) UltT = Mathf.Max(0, UltT - dt);
+        if (CurseT > 0) CurseT = Mathf.Max(0, CurseT - dt);
+        if (AbductT > 0) { AbductT = Mathf.Max(0, AbductT - dt); if (AbductT <= 0 && RealmT <= 0) P.PushOutOfPlayers(); }
+        if (RealmT > 0) { RealmT = Mathf.Max(0, RealmT - dt); if (RealmT <= 0) ExitRealm(); }
         if (BlockCatch && (!P.HasBall || (!P.Airborne && P.LandLock <= 0))) BlockCatch = false;
         if (!Enabled) return;
-        if (M.Phase == MatchPhase.Playing && ModeT <= 0 && UltT <= 0) Ult = Mathf.Min(1f, Ult + dt / Mathf.Max(T.UltChargeTime, 1f));
+        if (M.Phase == MatchPhase.Playing && ModeT <= 0 && UltT <= 0) Ult = Mathf.Min(1f, Ult + dt * slow / Mathf.Max(T.UltChargeTime, 1f));
 
-        bool can = M.CanAct && P.Stun <= 0 && TiredT <= 0 && !Charging && P.Flight == FlightKind.None && P.RimHang <= 0 && !P.InScriptedMove;
+        bool can = M.CanAct && P.Stun <= 0 && TiredT <= 0 && !Charging && P.Flight == FlightKind.None && P.RimHang <= 0 && !P.InScriptedMove && AbductT <= 0;
         if (!can) return;
+        // v0.41: no Realm, apertar o Realm de novo sai dele
+        if (Char == Characters.One && RealmT > 0 && inp.WasPressed(Btn.Ab1)) { ExitRealm(); inp.Pressed &= ~Btn.Ab1; }
         for (int s = 0; s < 3; s++)
             if (inp.WasPressed(SlotBtn(s)) && !Characters.NeedsTarget(Char, s)) TryUse(s, inp);
         if (inp.WasPressed(Btn.Ult) && !Characters.NeedsTarget(Char, 3)) TryUlt();
@@ -134,10 +153,12 @@ public sealed class PlayerAbilities
             (Characters.Iron, 0) => IronWall(),
             (Characters.Iron, 1) => IronBonk(inp.AimYaw),
             (Characters.Iron, 2) => IronCharge(inp.AimYaw),
+            (Characters.One, 0) => OneRealm(),
+            (Characters.One, 1) => OneAbduct(inp.AimYaw),
             _ => false,
         };
         if (!ok) return;
-        StartCd(slot);
+        if (!(Char == Characters.One && slot == 0)) StartCd(slot); // o Realm começa a recarga só ao sair
         M.LogEvent("ABILITY", P);
     }
 
@@ -146,6 +167,7 @@ public sealed class PlayerAbilities
         if (Char == Characters.Luck) { LuckUlt(); return; }
         if (Ult < 0.999f) return;
         if (Char == Characters.Iron) { IronUlt(); return; }
+        if (Char == Characters.One) { OneUlt(); return; }
         if (Char == Characters.King && CanStartCutscene() && M.StartCutscene(CutKind.KingUlt, P, null)) { Ult = 0; M.LogEvent("ULT", P); }
     }
 
@@ -158,6 +180,12 @@ public sealed class PlayerAbilities
             BetTarget = tgt.Id; BetT = T.LuckBetDuration; StartCd(1);
             Sfx.Play3D(M, "fx_bet", tgt.GlobalPosition + Vector3.Up * 2.4f);
             M.LogEvent("ABILITY", P, tgt);
+        }
+        else if (Char == Characters.One && slot == 2 && Cd[2] <= 0)
+        {
+            tgt.Ab.CurseT = T.OneCurseDuration; StartCd(2);
+            Sfx.Play3D(M, "fx_curse", tgt.GlobalPosition + Vector3.Up * 2.3f);
+            M.LogEvent("CURSE", P, tgt);
         }
         else if (Char == Characters.Bolt && slot == 3 && Ult >= 0.999f && CanStartCutscene() && M.StartCutscene(CutKind.BoltDuel, P, tgt))
         {
@@ -530,11 +558,83 @@ public sealed class PlayerAbilities
     }
 
     // =====================================================================
+    // One (v0.41)
+
+    bool OneRealm()
+    {
+        if (P.HasBall || Phased || P.Airborne || !P.IsOnFloor()) return false;
+        P.StealDash = 0; P.ChargingJump = false;
+        RealmT = T.OneRealmDuration;
+        Sfx.Play3D(M, "fx_realm", P.GlobalPosition + Vector3.Up);
+        M.LogEvent("REALM", P);
+        return true;
+    }
+
+    /// <summary>Sai do Realm na hora (apertou de novo, pulou, tentou roubar ou acabou o tempo). A recarga começa agora.</summary>
+    public void ExitRealm()
+    {
+        RealmT = 0;
+        if (M == null) return;
+        StartCd(0);
+        Sfx.Play3D(M, "fx_realm", P.GlobalPosition + Vector3.Up);
+        M.LogEvent("REALM_OUT", P);
+        if (!Phased) P.PushOutOfPlayers();
+    }
+
+    /// <summary>Jogador sem a bola (aliado ou adversário) a até OneAbductRange, o mais perto do centro do olhar (Abdução).</summary>
+    public static Player AbductCandidate(Player p, float aimYaw)
+    {
+        var t = Tuning.I;
+        Player best = null; float bestA = Mathf.DegToRad(t.OneAbductAngle);
+        foreach (var q in p.M.Players)
+        {
+            if (q == p || q.HasBall || q.Ab.AbductT > 0 || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
+            var to = (q.GlobalPosition - p.GlobalPosition) with { Y = 0 };
+            float d = to.Length();
+            if (d > t.OneAbductRange) continue;
+            float a = d < 0.05f ? 0f : Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(to) - aimYaw));
+            if (a <= bestA) { bestA = a; best = q; }
+        }
+        return best;
+    }
+
+    bool OneAbduct(float aimYaw)
+    {
+        var q = AbductCandidate(P, aimYaw);
+        if (q == null) return false;
+        q.CancelShot(false); q.CancelPass();
+        q.StealDash = 0; q.ChargingJump = false;
+        q.Ab.DashT = 0;
+        if (q.Ab.Charging) q.Ab.EndCharge();
+        q.Ab.AbductT = T.OneAbductDuration;
+        Sfx.Play3D(M, "fx_abduct", q.GlobalPosition + Vector3.Up);
+        M.LogEvent("ABDUCT", P, q);
+        return true;
+    }
+
+    /// <summary>Teste (--smoke-abilities): Realm (0) ou Abdução (1) direto (bonecos não usam habilidades).</summary>
+    public bool TestOne(int slot, float yaw)
+    {
+        bool ok = slot == 0 ? OneRealm() : OneAbduct(yaw);
+        if (ok && slot == 1) StartCd(1);
+        return ok;
+    }
+
+    void OneUlt()
+    {
+        Ult = 0;
+        UltT = T.OneUltDuration;
+        Sfx.Play3D(M, "fx_domain", P.GlobalPosition + Vector3.Up);
+        M.LogEvent("ULT", P);
+        M.StartUltPose(P); // cena: a quadra é engolida pelas sombras (o tempo do domínio não corre durante ela)
+    }
+
+    // =====================================================================
     // Rede
 
     public struct NetData
     {
-        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, BetT, DashT, ModeT, ModeBonus, WallT, BonkT, ChargeT, TiredT, UltT;
+        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, BetT, DashT, ModeT, ModeBonus, WallT, BonkT, ChargeT, TiredT, UltT, RealmT, AbductT, CurseT;
         public byte Flags, BetTarget, ModeWins;
     }
 
@@ -542,7 +642,7 @@ public sealed class PlayerAbilities
     {
         Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
         DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
-        WallT = WallT, BonkT = BonkT, ChargeT = ChargeT, TiredT = TiredT, UltT = UltT,
+        WallT = WallT, BonkT = BonkT, ChargeT = ChargeT, TiredT = TiredT, UltT = UltT, RealmT = RealmT, AbductT = AbductT, CurseT = CurseT,
         Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0) | (DoubleNext ? 32 : 0)),
     };
 
@@ -550,14 +650,14 @@ public sealed class PlayerAbilities
     {
         w.F(d.Cd0); w.F(d.Cd1); w.F(d.Cd2); w.F(d.Ult); w.F(d.EyeT); w.F(d.PresenceT); w.F(d.JinxFlash); w.F(d.BetT); w.F(d.DashT);
         w.F(d.ModeT); w.F(d.ModeBonus); w.U8(d.Flags); w.U8(d.BetTarget); w.U8(d.ModeWins);
-        w.F(d.WallT); w.F(d.BonkT); w.F(d.ChargeT); w.F(d.TiredT); w.F(d.UltT);
+        w.F(d.WallT); w.F(d.BonkT); w.F(d.ChargeT); w.F(d.TiredT); w.F(d.UltT); w.F(d.RealmT); w.F(d.AbductT); w.F(d.CurseT);
     }
 
     public static NetData Read(NetReader r) => new()
     {
         Cd0 = r.F(), Cd1 = r.F(), Cd2 = r.F(), Ult = r.F(), EyeT = r.F(), PresenceT = r.F(), JinxFlash = r.F(), BetT = r.F(), DashT = r.F(),
         ModeT = r.F(), ModeBonus = r.F(), Flags = r.U8(), BetTarget = r.U8(), ModeWins = r.U8(),
-        WallT = r.F(), BonkT = r.F(), ChargeT = r.F(), TiredT = r.F(), UltT = r.F(),
+        WallT = r.F(), BonkT = r.F(), ChargeT = r.F(), TiredT = r.F(), UltT = r.F(), RealmT = r.F(), AbductT = r.F(), CurseT = r.F(),
     };
 
     public void Apply(in NetData d)
@@ -567,5 +667,6 @@ public sealed class PlayerAbilities
         EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; NoCd = (d.Flags & 8) != 0;
         WallT = d.WallT; BonkT = d.BonkT; ChargeT = d.ChargeT; TiredT = d.TiredT; UltT = d.UltT; BlockCatch = (d.Flags & 16) != 0;
         DoubleNext = (d.Flags & 32) != 0;
+        RealmT = d.RealmT; AbductT = d.AbductT; CurseT = d.CurseT;
     }
 }

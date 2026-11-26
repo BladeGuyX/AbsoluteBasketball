@@ -96,7 +96,9 @@ public partial class Player : CharacterBody3D
     public bool HasBall => M?.Ball?.Holder == this;
     public bool IsDribbling => DribbleActive > 0;
     /// <summary>v0.37: na Investida o Iron não pega a bola.</summary>
-    public bool CanCatch => Ab == null || !Ab.Charging;
+    public bool CanCatch => Ab == null || (!Ab.Charging && !Ab.Phased);
+    /// <summary>v0.41: no Realm do One (sozinho ou abduzido): atravessa os jogadores e não interage com eles nem com a bola.</summary>
+    public bool Phased => Ab != null && Ab.Phased;
     /// <summary>Pode ter a bola roubada? (não se estiver driblando, no ar ou carregando arremesso; v0.37: nem o Iron que pegou a bola no bloqueio)</summary>
     public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass && Flight == FlightKind.None && (Ab == null || !Ab.BlockCatch);
     public Vector3 Forward => ShotMath.Dir(Yaw);
@@ -122,6 +124,7 @@ public partial class Player : CharacterBody3D
             Modulate = Palette.Team[Team].Lightened(0.35f),
             Visible = !IsLocalHuman,
         };
+        _nameWanted = !IsLocalHuman;
         AddChild(_nameLabel);
         _stars = new Node3D { Position = new Vector3(0, 2.15f, 0), Visible = false };
         var starMat = Mat.Unshaded(new Color("ffd23f"));
@@ -141,6 +144,15 @@ public partial class Player : CharacterBody3D
     public void UpdateStats()
     {
         St = PlayerStats.For(CharacterId, Ab?.ModeBonus ?? 0f, M == null || M.UseStars);
+        // v0.41: Maldição do One (atributos pela metade) e Domínio das Sombras de um One adversário (−20%)
+        if (Ab != null)
+        {
+            float k = 1f;
+            if (Ab.CurseT > 0) k *= Mathf.Clamp(Tuning.I.OneCurseStatMult, 0.05f, 1f);
+            if (M != null && M.DomainAgainst(this) != null) k *= Mathf.Clamp(Tuning.I.OneUltEnemyStatMult, 0.05f, 1f);
+            if (k < 0.999f) St = St.Scaled(k);
+            if (Ab.RealmSpeed) St.Speed *= 1f + Mathf.Max(0f, Tuning.I.OneRealmSpeedBonus);
+        }
         // v0.37: Iron Indestrutível corre como alguém de IronUltSpeedStars estrelas (se as dele forem menos)
         if (Ab != null && Ab.Indestructible)
             St.Speed = Mathf.Max(St.Speed, PlayerStats.Mult(Mathf.Clamp(Mathf.RoundToInt(Tuning.I.IronUltSpeedStars), 1, 5), Tuning.I.StarSpeedStep));
@@ -176,6 +188,8 @@ public partial class Player : CharacterBody3D
     public void ServerTick(PlayerInput inp, float dt)
     {
         var t = Tuning.I;
+        // v0.41: abduzido pelo One = só anda e corre (nem habilidades)
+        if (Ab.AbductT > 0) { inp.Held &= Btn.Sprint; inp.Pressed = Btn.None; inp.Target = 0; }
         LastInput = inp;
         UpdateStats();
         TickTimers(dt);
@@ -187,6 +201,13 @@ public partial class Player : CharacterBody3D
         if (inp.Emote > 0 && inp.Emote <= Expressions.Count) { Emote = inp.Emote; EmoteT = t.EmoteDuration; }
         else if (EmoteT > 0) { EmoteT -= dt; if (EmoteT <= 0) Emote = 0; }
         Ab.Tick(inp, dt);
+        // v0.41: no Realm, pular ou tentar roubar tira o One de lá na hora (e a ação acontece normalmente)
+        if (Ab.RealmT > 0 && Ab.AbductT <= 0 && (inp.WasPressed(Btn.Jump) || inp.WasPressed(Btn.Steal))) Ab.ExitRealm();
+        // atravessa os jogadores: Investida do Iron (v0.37) ou no Realm (v0.41)
+        if (_unghostTicks > 0) _unghostTicks--;
+        bool ghost = Ab.Charging || Ab.Phased || _unghostTicks > 0; // saiu do Realm: espera a física ver a posição nova
+        CollisionLayer = ghost ? 0u : 2u;
+        CollisionMask = ghost ? 1u : 3u;
 
         if (RimHang > 0)
         {
@@ -375,6 +396,30 @@ public partial class Player : CharacterBody3D
         }
         if (on && !Airborne) { Airborne = true; _airTime = 0.08f; _jumpVel = Vector3.Zero; }
         return on;
+    }
+
+    /// <summary>v0.41: saiu do Realm dentro de alguém → empurrado só o bastante para os corpos não se sobreporem.</summary>
+    int _unghostTicks;
+    public void PushOutOfPlayers()
+    {
+        if (M == null) return;
+        _unghostTicks = 2;
+        const float minD = 0.74f; // 2 × raio da cápsula + folga
+        for (int pass = 0; pass < 3; pass++)
+        {
+            bool moved = false;
+            foreach (var q in M.Players)
+            {
+                if (q == this || q.Phased) continue;
+                var d = (GlobalPosition - q.GlobalPosition) with { Y = 0 };
+                if (d.Length() >= minD || Mathf.Abs(GlobalPosition.Y - q.GlobalPosition.Y) > 1.7f) continue;
+                var dir = d.LengthSquared() > 1e-4f ? d.Normalized() : -Forward;
+                var to = q.GlobalPosition + dir * minD;
+                GlobalPosition = M.Geo.ClampInside(to with { Y = GlobalPosition.Y }, 0.4f);
+                moved = true;
+            }
+            if (!moved) break;
+        }
     }
 
     /// <summary>Valor inválido (NaN/infinito) nunca chega na física: volta para um lugar seguro.</summary>
@@ -735,7 +780,7 @@ public partial class Player : CharacterBody3D
             st.Mood = (ended && M.Winner == Team) || (_celebrateT > 0 && !ended) ? 1 : ended ? 2 : 0;
         }
         if (st.HasBall) st.BallPos = HeldBallPosition();
-        _stars.Visible = Stun > 0;
+        _stars.Visible = Stun > 0 && !_viewHidden;
         if (_stars.Visible) _stars.RotateY(dt * 5f);
         _rig.Animate(st, dt);
     }
@@ -1129,5 +1174,34 @@ public partial class Player : CharacterBody3D
     /// <summary>Animação de soltar o arremesso (usada no lance livre automático).</summary>
     public void PlayReleaseAnim() => _releaseT = ReleaseAnimTime;
 
-    public void SetNameVisible(bool v) { if (_nameLabel != null) _nameLabel.Visible = v; }
+    public void SetNameVisible(bool v) { _nameWanted = v; if (_nameLabel != null) _nameLabel.Visible = v && !_viewHidden; }
+    bool _nameWanted = true;
+
+    // ---- v0.41: como ESTA tela vê o jogador (Realm / Domínio das Sombras do One) ----
+    float _viewAlpha = 1f;
+    bool _viewHidden;
+    readonly System.Collections.Generic.List<GeometryInstance3D> _viewGeo = new();
+    Node _viewGeoRig;
+    public bool ViewHidden => _viewHidden;
+
+    /// <summary>1 = normal, entre 0 e 1 = transparente ("de outra dimensão"), 0 = invisível (nem sombra, nome ou efeitos).</summary>
+    public void ApplyView(float alpha)
+    {
+        alpha = Mathf.Clamp(alpha, 0f, 1f);
+        if (_visual != null && _viewGeoRig != _visual)
+        {
+            _viewGeoRig = _visual; _viewGeo.Clear(); _viewAlpha = -1f;
+            foreach (var n in _visual.FindChildren("*", "GeometryInstance3D", true, false)) _viewGeo.Add((GeometryInstance3D)n);
+            if (GetNodeOrNull<GeometryInstance3D>("TeamRing") is { } ring) _viewGeo.Add(ring);
+        }
+        if (Mathf.IsEqualApprox(alpha, _viewAlpha)) return;
+        _viewAlpha = alpha;
+        _viewHidden = alpha < 0.01f;
+        if (_visual != null) _visual.Visible = !_viewHidden;
+        if (GetNodeOrNull<Node3D>("TeamRing") is { } r) r.Visible = !_viewHidden;
+        if (GetNodeOrNull<Node3D>("AbilityAura") is { } aura) aura.Visible = !_viewHidden;
+        if (_nameLabel != null) { _nameLabel.Visible = _nameWanted && !_viewHidden; _nameLabel.Transparency = 1f - alpha; }
+        if (_stars != null && _viewHidden) _stars.Visible = false;
+        foreach (var g in _viewGeo) if (IsInstanceValid(g)) g.Transparency = _viewHidden ? 0f : 1f - alpha;
+    }
 }

@@ -4,6 +4,23 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.41 — 5º personagem: One
+
+Escolha o **One** (roxo) na tela de personagem. Para testar sem esperar recargas, use uma partida de **teste** (trapaças: "Sem recarga").
+1. **Visual:** cabelo preto bagunçado, capa preta com forro roxo e gola alta, gema roxa no peito, runas roxas na túnica, botas roxas. Roda de expressões (Q / B): Calmo, Focado, Sorriso sinistro, Olhar frio (olhos brilhando), Risada sombria, Surpreso.
+2. **(1) Realm** (só sem a bola): a tela fica escura e roxa, você fica 20% mais rápido e vê todo mundo transparente. Atravesse um jogador andando: passa por dentro. Passe perto da bola solta: não pega.
+3. Saia do Realm de cada jeito: apertando **1** de novo, **pulando** (o pulo acontece) e **tentando roubar** (o roubo acontece). Sem apertar nada, sai sozinho em 4 s. A recarga (35 s) começa só quando sai.
+4. Saia do Realm em cima de alguém: você é empurrado só o bastante para fora (o outro não é jogado longe).
+5. Com um amigo online (ou olhando os bots): o **adversário não te vê** no Realm; o **aliado** te vê transparente.
+6. **(2) Abdução:** olhe para um jogador sem a bola a até 5 m (o anel dele no chão fica claro) e aperte **2**: ele some em partículas roxas por 4 s. Abduzido, ele só anda e corre (nada de pular, roubar, passar ou habilidades), não vê ninguém de fora e não pega a bola. Em quem está com a bola não funciona.
+7. Abduza alguém estando no seu Realm: vocês dois se veem normalmente.
+8. **(3) Maldição:** abre o menu de alvo; escolha um adversário. Caveirinha em cima dele (todo mundo vê) por 20 s: ele fica bem mais lento (metade dos atributos) e a cesta dele vale **1 ponto a menos** (de 2 = 1).
+9. **Ultimate — Domínio das Sombras (4):** cena com os olhos do One brilhando e uma sombra roxa saindo dos pés e engolindo a quadra inteira. Depois, por 25 s: tela levemente roxa para todos, o One mais rápido, e o **time adversário não vê ninguém do time do One** (só a bola, que parece flutuar), fica 20% mais fraco e as recargas e a barra da ult dele andam pela metade.
+10. Bots com o One usam as habilidades sozinhos (Maldição em quem marca/ataca, Abdução, Realm para chegar em quem tem a bola, ult).
+11. Online: os dois na v0.41 (protocolo novo).
+
+---
+
 ## v0.40 — arremesso sai mais cedo
 
 1. Aperte e solte o arremesso bem rápido: agora ele sai **0,5 s** depois do aperto (antes 0,8 s). Segurando mais, sai ao soltar, como antes.

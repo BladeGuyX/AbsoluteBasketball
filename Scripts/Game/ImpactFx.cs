@@ -120,7 +120,7 @@ public partial class ImpactFx : Node3D
     // ------------------------------------------------------------------ v0.26: habilidades
 
     static readonly Color Red = new(1f, 0.18f, 0.15f), Green = new(0.3f, 1f, 0.45f), Cyan = new(0.45f, 0.92f, 1f), Gold = new(1f, 0.85f, 0.3f),
-        Silver = new(0.85f, 0.9f, 0.97f);
+        Silver = new(0.85f, 0.9f, 0.97f), Purple = new(0.68f, 0.38f, 1f), Dark = new(0.18f, 0.06f, 0.3f);
 
     void Ability(string name, Vector3 pos)
     {
@@ -169,6 +169,11 @@ public partial class ImpactFx : Node3D
                 if (M?.Cam != null) M.Cam.Shake(0.25f * (1f - Mathf.Clamp((M.Cam.Cam.GlobalPosition.DistanceTo(pos) - 4f) / 20f, 0, 1)));
                 break;
             case "fx_ironon": Ring(pos with { Y = 0.05f }, Silver, 3f, 0.6f); Burst(pos, Silver, 1.2f, 30); Burst(pos, Gold, 0.8f, 14); Sfx.PlayLocal3D(this, "clang", pos, -4f, 0.8f); break;
+            // ---- v0.41: One ----
+            case "fx_realm": Ring(pos with { Y = 0.05f }, Purple, 1.3f, 0.45f); Burst(pos, Purple, 0.9f, 26); Burst(pos, Dark, 0.7f, 16); Sfx.PlayLocal3D(this, "realm", pos, -3f); break;
+            case "fx_abduct": Ring(pos, Purple, 1.1f, 0.4f, true); Burst(pos, Purple, 1.2f, 40); Burst(pos, Dark, 0.9f, 20); Sfx.PlayLocal3D(this, "realm", pos, -1f, 0.75f); break;
+            case "fx_curse": Ring(pos, Purple, 0.9f, 0.45f, true); Burst(pos, Purple, 0.7f, 18); Sfx.PlayLocal3D(this, "curse", pos, -2f); break;
+            case "fx_domain": Ring(pos with { Y = 0.05f }, Purple, 8f, 0.9f); Burst(pos, Purple, 1.6f, 40); Burst(pos, Dark, 1.3f, 30); break;
             case "fx_thunder":
                 Bolt(pos + Vector3.Up * 22f, pos, 0.5f);
                 Ring(pos, Cyan, 6f, 0.5f);

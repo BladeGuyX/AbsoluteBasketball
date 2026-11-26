@@ -3,7 +3,7 @@ using Godot;
 namespace AB;
 
 /// <summary>Ícone desenhado (sem imagem) de cada habilidade — ver <see cref="AbilityIcons"/>.</summary>
-public enum AbIcon { Eye, Aura, PerfectDribble, Crown, Dice, Target, Dash, Clover, Lightning, Swap, Tower, Duel, Wall, Bonk, Charge, Shield }
+public enum AbIcon { Eye, Aura, PerfectDribble, Crown, Dice, Target, Dash, Clover, Lightning, Swap, Tower, Duel, Wall, Bonk, Charge, Shield, Realm, Abduct, Skull, Shadow }
 
 /// <summary>Uma habilidade (slots 0–2) ou a ultimate (slot 3) de um personagem.</summary>
 public sealed class AbilityDef
@@ -20,7 +20,7 @@ public sealed class AbilityDef
 /// </summary>
 public static class Characters
 {
-    public const int King = 0, Luck = 1, Bolt = 2, Iron = 3;
+    public const int King = 0, Luck = 1, Bolt = 2, Iron = 3, One = 4;
     public static readonly string[] StatNames = { "Velocidade", "Agilidade", "Estamina", "Precisão", "Salto" };
 
     public sealed class Def
@@ -32,7 +32,7 @@ public static class Characters
         public AbilityDef[] Abilities; // 0..2 = habilidades (teclas 1, 2, 3), 3 = ultimate (4)
     }
 
-    static readonly Color KingRed = new("e8313a"), LuckGreen = new("3ccf6e"), BoltCyan = new("3fd7ff"), IronSilver = new("c3cad3");
+    static readonly Color KingRed = new("e8313a"), LuckGreen = new("3ccf6e"), BoltCyan = new("3fd7ff"), IronSilver = new("c3cad3"), OnePurple = new("a066f5");
 
     public static readonly Def[] All =
     {
@@ -119,6 +119,27 @@ public static class Characters
                     Full = "Ultimate. Por {IronUltDuration} s o Iron fica imune a todas as habilidades dos adversários, corre como alguém de {IronUltSpeedStars} estrelas de velocidade, tem estamina infinita e as recargas das habilidades dele correm {%IronUltCdSpeedup} mais rápido. Nem efeitos indiretos pegam nele (a Muralha de Aço adversária não barra a bola que ele lança, o Arranha-Céu não aumenta o bloqueio contra ele). Se ele bloquear um arremesso no pulo, pega a bola no ar (fica imune a roubo até pousar e poder driblar); bloquear uma enterrada não é falta: ele fica com a bola." },
             },
         },
+        new()
+        {
+            Name = "One", Model = "res://assets/models/one.glb", Color = OnePurple,
+            FaceLabels = new[] { "", "Calmo", "Focado", "Sorriso sinistro", "Olhar frio", "Risada sombria", "Surpreso" },
+            Tagline = "Vem de outra dimensão. Ninguém vê de onde ele veio.",
+            Abilities = new AbilityDef[]
+            {
+                new() { Name = "Realm", Icon = AbIcon.Realm, Color = OnePurple,
+                    Short = "Entra numa dimensão sombria: invisível e intocável.",
+                    Full = "Só sem a bola. O One entra no Realm por até {OneRealmDuration} s: fica {%OneRealmSpeedBonus} mais rápido, os adversários não o veem (os aliados o veem transparente) e ele vê todo mundo transparente. Lá ele atravessa os jogadores e não pode interagir com eles nem com a bola (mas pode usar as outras habilidades). Sai na hora apertando a habilidade de novo, pulando ou tentando roubar (a ação acontece normalmente). Se sair dentro de alguém, é empurrado só o bastante para fora. Recarga: {OneRealmCooldown} s (depois de sair)." },
+                new() { Name = "Abdução", Icon = AbIcon.Abduct, Color = OnePurple,
+                    Short = "Puxa um jogador sem a bola para o Realm.",
+                    Full = "O jogador sem a bola (aliado ou adversário) a até {OneAbductRange} m mais perto de onde você está olhando some em partículas roxas e fica {OneAbductDuration} s no Realm: só pode andar e correr (nem habilidades), não interage com ninguém nem com a bola e não vê quem está fora. Se o One também estiver no Realm, os dois se veem normalmente. Outro One abduzido mantém o bônus de velocidade do Realm. Recarga: {OneAbductCooldown} s." },
+                new() { Name = "Maldição", Icon = AbIcon.Skull, Color = OnePurple,
+                    Short = "Escolha um adversário: atributos pela metade e cestas valem menos.",
+                    Full = "Abre um menu para escolher um adversário. Por {OneCurseDuration} s ele fica com {%OneCurseStatMult} de todos os atributos e as cestas dele valem {OneCursePointLoss} ponto(s) a menos. Todo mundo vê uma caveirinha em cima dele. Recarga: {OneCurseCooldown} s." },
+                new() { Name = "Domínio das Sombras", Icon = AbIcon.Shadow, Color = new Color("ffd23f"),
+                    Short = "A quadra vira o Realm: o time do One fica invisível para o adversário.",
+                    Full = "Ultimate. Uma cena mostra a quadra sendo engolida pelas sombras e todos vão para o Realm por {OneUltDuration} s (todo mundo continua jogando e interagindo normalmente). Só o One que usou fica {%OneRealmSpeedBonus} mais rápido. O time adversário fica com {%OneUltEnemyStatMult} dos atributos, as recargas e a barra da ultimate deles correm {%OneUltEnemyCdSlow} mais devagar e eles não veem nenhum jogador do time do One — só a bola (que parece flutuar na mão de quem eles não veem)." },
+            },
+        },
     };
 
     public static int Count => All.Length;
@@ -132,7 +153,7 @@ public static class Characters
     public static bool Available(int id) => ResourceLoader.Exists(Get(id).Model);
 
     /// <summary>Estrelas (1–5) de cada atributo: Velocidade, Agilidade, Estamina, Precisão, Salto (vêm do Tuning).</summary>
-    static readonly int[][] _starCache = new int[4][];
+    static readonly int[][] _starCache = new int[8][];
     static int _starRev = -1;
     static Tuning _starTuning;
 
@@ -151,6 +172,7 @@ public static class Characters
         {
             Luck => new[] { t.LuckStarSpeed, t.LuckStarAgility, t.LuckStarStamina, t.LuckStarPrecision, t.LuckStarJump },
             Bolt => new[] { t.BoltStarSpeed, t.BoltStarAgility, t.BoltStarStamina, t.BoltStarPrecision, t.BoltStarJump },
+            One => new[] { t.OneStarSpeed, t.OneStarAgility, t.OneStarStamina, t.OneStarPrecision, t.OneStarJump },
             Iron => new[] { t.IronStarSpeed, t.IronStarAgility, t.IronStarStamina, t.IronStarPrecision, t.IronStarJump },
             _ => new[] { t.KingStarSpeed, t.KingStarAgility, t.KingStarStamina, t.KingStarPrecision, t.KingStarJump },
         };
@@ -169,6 +191,7 @@ public static class Characters
             (Luck, 0) => t.LuckRiskyCooldown, (Luck, 1) => t.LuckBetCooldown, (Luck, 2) => t.LuckDashCooldown,
             (Bolt, 0) => t.BoltDribbleCooldown, (Bolt, 1) => t.BoltSwapCooldown, (Bolt, 2) => t.BoltSkyCooldown,
             (Iron, 0) => t.IronWallCooldown, (Iron, 1) => t.IronBonkCooldown, (Iron, 2) => t.IronChargeCooldown,
+            (One, 0) => t.OneRealmCooldown, (One, 1) => t.OneAbductCooldown, (One, 2) => t.OneCurseCooldown,
             _ => 10f,
         };
     }
@@ -189,9 +212,12 @@ public static class Characters
     }
 
     /// <summary>A habilidade abre o menu de escolher um adversário (Luck 2, ultimate do Bolt).</summary>
-    public static bool NeedsTarget(int id, int slot) => (Clamp(id) == Luck && slot == 1) || (Clamp(id) == Bolt && slot == 3);
+    public static bool NeedsTarget(int id, int slot) => (Clamp(id) == Luck && slot == 1) || (Clamp(id) == Bolt && slot == 3) || (Clamp(id) == One && slot == 2);
 
     /// <summary>v0.37: o Iron no modo Indestrutível não sofre habilidades de adversários (<paramref name="by"/>).</summary>
+    /// <summary>v0.41: também quem está no Realm do One (sozinho ou abduzido) não sofre habilidades de quem está fora (aliado ou não);
+    /// de dentro do Realm dá para usar habilidades em quem está fora.</summary>
     public static bool Immune(Player target, Player by) =>
-        target != null && by != null && target.Team != by.Team && target.Ab != null && target.Ab.UltT > 0 && target.CharacterId == Iron;
+        target != null && by != null && target != by && target.Ab != null &&
+        ((target.Team != by.Team && target.Ab.UltT > 0 && target.CharacterId == Iron) || (target.Phased && !by.Phased));
 }

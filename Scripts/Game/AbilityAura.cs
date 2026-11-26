@@ -12,8 +12,8 @@ namespace AB;
 public partial class AbilityAura : Node3D
 {
     public Player P;
-    CpuParticles3D _red, _green, _sky, _eye, _steel, _gold;
-    Node3D _clover, _pick;
+    CpuParticles3D _red, _green, _sky, _eye, _steel, _gold, _shadow;
+    Node3D _clover, _pick, _skull;
     float _t, _swapK;
 
     public override void _Ready()
@@ -25,6 +25,21 @@ public partial class AbilityAura : Node3D
         _eye = Particles(new Color(1f, 0.25f, 0.2f, 1f), new Color(1f, 0f, 0f, 0f), 10, 0.5f, new Vector3(0, 1.85f, 0), 0.15f, 0.4f);
         _steel = Particles(new Color(0.95f, 0.97f, 1f, 0.95f), new Color(0.55f, 0.62f, 0.72f, 0f), 30, 0.8f, new Vector3(0, 1.0f, 0), 0.5f, 1.2f); // v0.37: Iron Indestrutível
         _gold = Particles(new Color(1f, 0.85f, 0.3f, 0.95f), new Color(1f, 0.6f, 0.1f, 0f), 14, 0.7f, new Vector3(0, 1.1f, 0), 0.4f, 0.8f); // v0.38: próxima cesta vale o dobro
+
+        _shadow = Particles(new Color(0.62f, 0.3f, 1f, 0.9f), new Color(0.15f, 0.02f, 0.3f, 0f), 26, 1.0f, new Vector3(0, 0.9f, 0), 0.45f, 0.9f); // v0.41: One no Realm / Domínio
+
+        // v0.41: caveirinha da Maldição do One (todo mundo vê)
+        _skull = new Node3D { Position = new Vector3(0, 2.75f, 0), Visible = false };
+        var bone = Mat.Unshaded(new Color("efe9f7"));
+        var hole = Mat.Unshaded(new Color("2a0f44"));
+        _skull.AddChild(Mat.MeshNode(new SphereMesh { Radius = 0.15f, Height = 0.28f, RadialSegments = 14, Rings = 7 }, bone, Vector3.Zero, false));
+        _skull.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.17f, 0.09f, 0.14f) }, bone, new Vector3(0, -0.13f, -0.02f), false));
+        for (int s = -1; s <= 1; s += 2)
+            _skull.AddChild(Mat.MeshNode(new SphereMesh { Radius = 0.045f, Height = 0.09f, RadialSegments = 10, Rings = 5 }, hole, new Vector3(s * 0.055f, -0.01f, -0.12f), false));
+        _skull.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.03f, 0.04f, 0.02f) }, hole, new Vector3(0, -0.075f, -0.135f), false));
+        for (int i = -1; i <= 1; i++)
+            _skull.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.012f, 0.05f, 0.02f) }, hole, new Vector3(i * 0.04f, -0.14f, -0.09f), false));
+        AddChild(_skull);
 
         _clover = new Node3D { Position = new Vector3(0, 2.75f, 0), Visible = false };
         var g = Mat.Unshaded(new Color("3ccf6e"));
@@ -78,6 +93,9 @@ public partial class AbilityAura : Node3D
         _eye.Emitting = a.EyeT > 0 || a.EyeArmed;
         _steel.Emitting = a.Indestructible;
         _gold.Emitting = a.DoubleNext;
+        _shadow.Emitting = a.Phased || a.Domain;
+        _skull.Visible = a.CurseT > 0;
+        if (_skull.Visible) { _skull.Rotation = new Vector3(0, Mathf.Sin(_t * 1.6f) * 0.6f, 0); _skull.Position = new Vector3(0, 2.75f + 0.06f * Mathf.Sin(_t * 3f), 0); }
 
         // marcado pelo "Não me Decepciona" de algum Luck adversário — v0.27: só o time do Luck vê (o alvo não sabe)
         var lp = P.M.LocalPlayer;
@@ -93,6 +111,9 @@ public partial class AbilityAura : Node3D
         // v0.37: alvo da Pancada (Iron com ela pronta), também só nesta tela
         swap |= lp != null && lp != P && lp.CharacterId == Characters.Iron && P.M.AbilitiesOn && !TargetPicker.IsOpen && lp.Ab.Cd[1] <= 0
                 && P.M.Cam != null && P.M.CanAct && PlayerAbilities.BonkCandidate(lp, P.M.Cam.Yaw) == P;
+        // v0.41: alvo da Abdução (One com ela pronta), só nesta tela
+        swap |= lp != null && lp != P && lp.CharacterId == Characters.One && P.M.AbilitiesOn && !TargetPicker.IsOpen && lp.Ab.Cd[1] <= 0
+                && P.M.Cam != null && P.M.CanAct && PlayerAbilities.AbductCandidate(lp, P.M.Cam.Yaw) == P;
         _swapK = Mathf.MoveToward(_swapK, swap ? 1f : 0f, (float)delta * 10f);
         P.SetRingHighlight(_swapK);
 

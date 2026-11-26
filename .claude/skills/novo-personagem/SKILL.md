@@ -5,7 +5,7 @@ description: Adicionar um personagem jogável novo ao Absolute Basketball de pon
 
 # Novo personagem
 
-Personagens atuais: 0 King (`rei.glb`), 1 Luck (`ametista.glb`), 2 Bolt (`raio.glb`), 3 Iron (`iron.glb`, v0.37 — bom exemplo completo: habilidade que mexe na física da bola, movimento próprio, imunidade e cena com adereço). Leia `docs/ARTE.md` ("Novos personagens")
+Personagens atuais: 0 King (`rei.glb`), 1 Luck (`ametista.glb`), 2 Bolt (`raio.glb`), 3 Iron (`iron.glb`, v0.37 — bom exemplo completo: habilidade que mexe na física da bola, movimento próprio, imunidade e cena com adereço). 4 One (`one.glb`, v0.41 — estado visto diferente por tela: `RealmView`; jogador "fora de fase" `Player.Phased`; cena da ult com shader em vez de adereço). Leia `docs/ARTE.md` ("Novos personagens")
 e a seção v0.26 do `docs/GDD.md`. Pergunte ao usuário o que faltar das 3 habilidades + ultimate (é decisão dele).
 
 ## 1. Modelo (skill `modelo-blender`)

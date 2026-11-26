@@ -306,6 +306,18 @@ public sealed class BotBrain
                     if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
                 }
                 break;
+            case Characters.One:
+            {
+                // v0.41: Maldição em quem está marcando de perto; Abdução de quem está na frente (sem a bola)
+                var mark = Opps.Where(q => !q.Phased).OrderBy(q => Flat(q.GlobalPosition - me).Length()).FirstOrDefault();
+                if (a.Cd[2] <= 0 && mark != null && open < 2.5f && Roll()) { inp.Target = (byte)mark.Id; inp.TargetSlot = 2; return true; }
+                if (a.Cd[1] <= 0 && open < 2.5f)
+                {
+                    var tg = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(rim - me));
+                    if (tg != null && tg.Team != P.Team && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
+                }
+                break;
+            }
         }
         return false;
     }
@@ -324,7 +336,7 @@ public sealed class BotBrain
             if (a.ModeT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
             if (a.ModeT > 0 && a.ModeT < 3f && R.Randf() < GambleChance) { inp.Pressed |= Btn.Ult; return; }
         }
-        if (P.CharacterId == Characters.Iron && a.UltT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
+        if (P.CharacterId is Characters.Iron or Characters.One && a.UltT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
         var h = M.Ball.Holder;
         if (h == null || h.Team == P.Team || M.Ball.State != BallState.Held) return;
         var rel = Flat(h.GlobalPosition - P.GlobalPosition);
@@ -349,6 +361,16 @@ public sealed class BotBrain
                 if (a.Cd[1] <= 0 && bk != null && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(bk.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
                 // investida em quem tem a bola, se ele estiver na frente a uma distância boa
                 if (a.Cd[2] <= 0 && dist > 3f && dist < 9f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
+                break;
+            }
+            case Characters.One:
+            {
+                // v0.41: Maldição em quem tem a bola perto da nossa cesta; Abdução de quem pode receber;
+                // Realm para atravessar até quem tem a bola (o roubo tira ele de lá)
+                if (a.Cd[2] <= 0 && toRim < 13f && roll) { inp.Target = (byte)h.Id; inp.TargetSlot = 2; break; }
+                var ab = PlayerAbilities.AbductCandidate(P, P.Yaw);
+                if (a.Cd[1] <= 0 && ab != null && ab.Team != P.Team && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(ab.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
+                if (a.Cd[0] <= 0 && a.RealmT <= 0 && !a.Phased && dist > 4f && dist < 10f && P.IsOnFloor() && roll) inp.Pressed |= Btn.Ab1;
                 break;
             }
             case Characters.Bolt:

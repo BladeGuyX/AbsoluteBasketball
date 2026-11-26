@@ -172,6 +172,14 @@ public static class Sfx
         // muralha: rangido metálico subindo + "chiing"
         Streams["wall"] = Make(1.0f, t => (Mathf.Sin(Tau * (180 + 380 * t) * t) * 0.35f * Mathf.Min(1f, t / 0.05f) * Mathf.Exp(-t * 2.5f)
             + Bell(t - 0.25f, 1568f) * 0.35f + Bell(t - 0.25f, 2093f) * 0.2f) * 0.8f);
+        // v0.41 (One): Realm = "vuuum" grave descendo com tremor; maldição = dois tons graves desafinados; domínio = ronco longo
+        Streams["realm"] = Make(0.7f, t => (Mathf.Sin(Tau * (320 - 360 * t) * t) * 0.5f * (0.6f + 0.4f * Mathf.Sin(Tau * 18 * t))
+            + Noise() * 0.12f * Mathf.Exp(-t * 6)) * Mathf.Min(1f, t / 0.04f) * Mathf.Exp(-t * 3.2f) * 0.8f);
+        Streams["curse"] = Make(1.0f, t => (Mathf.Sin(Tau * (150 - 50 * t) * t) * 0.5f + Mathf.Sin(Tau * (158 - 55 * t) * t) * 0.45f
+            + Mathf.Sin(Tau * 311 * t) * 0.15f * Mathf.Exp(-t * 4)) * Mathf.Min(1f, t / 0.03f) * Mathf.Exp(-t * 2.6f) * 0.55f);
+        Streams["domain"] = Make(2.2f, t => (Mathf.Sin(Tau * (55 + 12 * t) * t) * 0.6f + Mathf.Sin(Tau * (82 + 20 * t) * t) * 0.35f
+            + Mathf.Sin(Tau * (116.5f + 30 * t) * t) * 0.2f + Noise() * 0.18f * Mathf.Min(1f, t / 1.2f))
+            * Mathf.Min(1f, t / 0.4f) * Mathf.Min(1f, (2.2f - t) / 0.5f) * 0.6f);
         // cutscenes: entrada (subida + impacto), golpe, chicote de vento, choque elétrico, trovão
         Streams["cut_start"] = Make(0.9f, t => (Mathf.Sin(Tau * (120 + 500 * t * t) * t) * 0.3f * Mathf.Min(1f, t / 0.5f) * (t < 0.6f ? 1f : 0f))
             + (t > 0.6f ? (Mathf.Sin(Tau * 60 * t) * 0.9f + Noise() * 0.5f) * Mathf.Exp(-(t - 0.6f) * 9) : 0f));

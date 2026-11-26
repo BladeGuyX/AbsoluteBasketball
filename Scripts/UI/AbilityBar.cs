@@ -85,6 +85,8 @@ public partial class AbilityBar : Control
             (Characters.King, 2) or (Characters.King, 3) or (Characters.Luck, 0) or (Characters.Bolt, 0) or (Characters.Bolt, 3) => p.HasBall,
             (Characters.Bolt, 2) or (Characters.Iron, 2) => !p.HasBall,
             (Characters.Iron, 1) => p.M != null && p.M.Cam != null && PlayerAbilities.BonkCandidate(p, p.M.Cam.Yaw) != null,
+            (Characters.One, 0) => !p.HasBall || p.Ab.RealmT > 0,
+            (Characters.One, 1) => p.M != null && p.M.Cam != null && PlayerAbilities.AbductCandidate(p, p.M.Cam.Yaw) != null,
             _ => true,
         };
     }
@@ -101,6 +103,8 @@ public partial class AbilityBar : Control
             (Characters.Iron, 0) => Mathf.Max(0, a.WallT) / Mathf.Max(t.IronWallDuration, 0.1f),
             (Characters.Iron, 2) => a.Charging ? 1f - Mathf.Clamp(a.ChargeT / Mathf.Max(t.IronChargeDuration, 0.1f), 0, 1) : 0f,
             (Characters.Iron, 3) => Mathf.Clamp(Mathf.Max(0, a.UltT) / Mathf.Max(t.IronUltDuration, 0.1f), 0, 1),
+            (Characters.One, 0) => Mathf.Clamp(Mathf.Max(0, a.RealmT) / Mathf.Max(t.OneRealmDuration, 0.1f), 0, 1),
+            (Characters.One, 3) => Mathf.Clamp(Mathf.Max(0, a.UltT) / Mathf.Max(t.OneUltDuration, 0.1f), 0, 1),
             _ => 0f,
         };
     }

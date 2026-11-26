@@ -64,6 +64,7 @@ public sealed class Tuning
     const string SLuck = "Luck";
     const string SBolt = "Bolt";
     const string SIron = "Iron";
+    const string SOne = "One";
     const string Star = "Estrelas", Hab = "Habilidades", Adv = "Avançado";
 
     // ---------------- Movimento ----------------
@@ -518,6 +519,29 @@ public sealed class Tuning
     [Param(SIron, "Investida: raio do atropelo", "Distância (m) entre o Iron e um jogador para atropelar.", 0.3f, 3, 0.05f, Sub = Adv)] public float IronChargeHitRadius = 1.05f;
     [Param(SIron, "Investida: empurrão para o lado", "Quantos metros quem é atropelado é jogado para o lado.", 0, 5, 0.1f, Sub = Adv)] public float IronChargeKnock = 1.6f;
     [Param(SIron, "Pancada: ângulo do olhar", "Prefere o adversário mais perto do centro do olhar; acima deste ângulo (graus) ninguém é escolhido.", 10, 180, 5, Sub = Adv)] public float IronBonkAngle = 120f;
+
+    // ---------------- One (v0.41) ----------------
+    [Param(SOne, "Velocidade", "Estrelas de Velocidade do One.", 1, 5, 1, Sub = Star)] public float OneStarSpeed = 3f;
+    [Param(SOne, "Agilidade", "Estrelas de Agilidade do One.", 1, 5, 1, Sub = Star)] public float OneStarAgility = 3f;
+    [Param(SOne, "Estamina", "Estrelas de Estamina do One.", 1, 5, 1, Sub = Star)] public float OneStarStamina = 3f;
+    [Param(SOne, "Precisão", "Estrelas de Precisão do One.", 1, 5, 1, Sub = Star)] public float OneStarPrecision = 3f;
+    [Param(SOne, "Salto", "Estrelas de Salto do One.", 1, 5, 1, Sub = Star)] public float OneStarJump = 3f;
+    [Param(SOne, "(1) Realm: duração máxima", "Segundos máximos dentro do Realm (sai antes apertando de novo, pulando ou tentando roubar).", 0.5f, 20, 0.25f, Sub = Hab)] public float OneRealmDuration = 4f;
+    [Param(SOne, "(1) Realm: bônus de velocidade", "Quanto mais rápido o One fica no Realm (0,2 = 20%). Vale também para o One abduzido e para o One que usou a ultimate.", 0, 2, 0.01f, Sub = Hab)] public float OneRealmSpeedBonus = 0.2f;
+    [Param(SOne, "(1) Realm: recarga", "Segundos de recarga do Realm (contam a partir da saída).", 1, 120, 0.5f, Sub = Hab)] public float OneRealmCooldown = 35f;
+    [Param(SOne, "(2) Abdução: alcance", "Distância máxima (m) até o jogador abduzido.", 0.5f, 15, 0.25f, Sub = Hab)] public float OneAbductRange = 5f;
+    [Param(SOne, "(2) Abdução: duração", "Segundos que o jogador abduzido fica no Realm (só anda e corre, não vê quem está fora).", 0.5f, 20, 0.25f, Sub = Hab)] public float OneAbductDuration = 4f;
+    [Param(SOne, "(2) Abdução: recarga", "Segundos de recarga da Abdução.", 1, 120, 0.5f, Sub = Hab)] public float OneAbductCooldown = 45f;
+    [Param(SOne, "(3) Maldição: duração", "Segundos que a Maldição dura no adversário escolhido.", 1, 60, 0.5f, Sub = Hab)] public float OneCurseDuration = 20f;
+    [Param(SOne, "(3) Maldição: atributos restantes", "Fração que sobra de todos os atributos de quem está amaldiçoado (0,5 = perde 50%).", 0.1f, 1, 0.05f, Sub = Hab)] public float OneCurseStatMult = 0.5f;
+    [Param(SOne, "(3) Maldição: pontos a menos", "Quantos pontos a menos valem as cestas de quem está amaldiçoado.", 0, 3, 1, Sub = Hab)] public float OneCursePointLoss = 1f;
+    [Param(SOne, "(3) Maldição: recarga", "Segundos de recarga da Maldição.", 1, 120, 0.5f, Sub = Hab)] public float OneCurseCooldown = 45f;
+    [Param(SOne, "Ult: duração", "Segundos do Domínio das Sombras.", 2, 60, 0.5f, Sub = Hab)] public float OneUltDuration = 25f;
+    [Param(SOne, "Ult: atributos restantes do adversário", "Fração que sobra dos atributos do time adversário durante o Domínio (0,8 = −20%).", 0.1f, 1, 0.05f, Sub = Hab)] public float OneUltEnemyStatMult = 0.8f;
+    [Param(SOne, "Ult: recargas do adversário mais lentas", "Quanto mais devagar as recargas (e a barra da ultimate) do time adversário correm durante o Domínio (0,5 = 50% mais devagar).", 0, 0.95f, 0.05f, Sub = Hab)] public float OneUltEnemyCdSlow = 0.5f;
+    [Param(SOne, "Ult: duração da cena", "Segundos da cena da quadra sendo engolida pelas sombras (o jogo fica congelado durante ela).", 1, 5, 0.1f, Sub = Adv)] public float OneUltPoseDuration = 2.8f;
+    [Param(SOne, "Abdução: ângulo do olhar", "Prefere o jogador mais perto do centro do olhar; acima deste ângulo (graus) ninguém é escolhido.", 10, 180, 5, Sub = Adv)] public float OneAbductAngle = 60f;
+    [Param(SOne, "Realm: transparência de quem vê", "Opacidade (0–1) dos jogadores vistos 'de outra dimensão' (One no Realm vendo quem está fora; aliados vendo o One no Realm).", 0.05f, 1, 0.05f, Sub = Adv)] public float OneGhostAlpha = 0.35f;
 
     // ---------------- Bots ----------------
     [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]

@@ -327,3 +327,12 @@ Implementação (Claude): muralha = `CourtGeo.Wall[cesta]` + `ThreeDist` (mesma 
 
 ## Revisões do usuário (v0.40)
 - Arremesso: o tempo mínimo até sair passa a ser 0,5 s.
+
+## v0.41 — 5º personagem: One (especificação do usuário)
+Atributos 3/3/3/3/3.
+1. **Realm** — só sem a bola. Entra numa dimensão: 20% mais rápido; nenhum adversário o vê; ele vê aliados e adversários transparentes e os aliados o veem transparente; atmosfera sombria e roxa; não colide com jogadores (atravessa) e não interage com eles nem com a bola. Sai a qualquer momento apertando a habilidade de novo, ao pular ou tentar roubar (a ação acontece normalmente) ou quando acabam os 4 s. Pode usar habilidades lá. Ao sair dentro de alguém, é empurrado só o suficiente (não é arremessado). Recarga 35 s.
+2. **Abdução** — jogador (aliado ou adversário) sem a bola a até 5 m, o mais perto da direção da câmera, é puxado para o Realm (some em partículas roxas) por 4 s: só anda e corre (nem habilidades), não vê ninguém de fora. Se o One também estiver no Realm, os dois se veem normalmente. Vários Ones dividem o mesmo Realm; One abduzido mantém os 20%. As saídas são independentes. Recarga 45 s.
+3. **Maldição** — menu de alvo (adversário): −50% em todos os atributos e cestas valem 1 ponto a menos por 20 s; caveirinha em cima dele, visível para todos. Recarga 45 s.
+4. **Ult: Domínio das Sombras** — cutscene da quadra sendo consumida pelas sombras; todos vão para o Realm por 25 s (só o One que usou ganha os 20%). Todos jogam e interagem normalmente, mas o time adversário tem −20% nos atributos, recargas 50% mais lentas e não vê nenhum jogador do time do One (vê a bola normalmente, mesmo flutuando).
+
+Implementação (Claude): `Ab.RealmT`/`AbductT`/`CurseT` (snapshot, `NetProtocol.Version` 11); `Player.Phased` = sem colisão com jogadores (`CollisionLayer` 0), não pega a bola (`CanCatch`), não bloqueia nem intercepta, imune a habilidades de quem está fora (`Characters.Immune`; de dentro dá para usar habilidades em quem está fora). Recarga do Realm conta a partir da saída. Abduzido não vê quem está fora; quem está fora não vê adversário abduzido (aliado vê transparente). Maldição vale também em lance livre (1 → 0). "Recargas 50% mais lentas" = correm na metade da velocidade, também a barra da ultimate. O Iron Indestrutível não sofre o Domínio (nem a perda de atributos/recargas nem a invisibilidade). Cena da ult: olhos brilhando, braços abertos, sombra roxa com tentáculos saindo dos pés e cobrindo a quadra, câmera subindo.

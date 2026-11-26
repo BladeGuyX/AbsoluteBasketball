@@ -95,7 +95,7 @@ public static class Passing
 
             foreach (var q in M.Players)
             {
-                if (q == from || q == to || q.Team == from.Team) continue;
+                if (q == from || q == to || q.Team == from.Team || q.Phased) continue; // v0.41: no Realm não intercepta
                 var rel = pos - q.GlobalPosition;
                 float hd = new Vector2(rel.X, rel.Z).Length();
                 if (q.Airborne && hd < t.BlockRadius + t.BallRadius && rel.Y > -0.2f && rel.Y < t.BlockReach) return false;

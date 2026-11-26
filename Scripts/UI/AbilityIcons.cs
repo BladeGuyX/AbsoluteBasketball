@@ -151,6 +151,60 @@ public static class AbilityIcons
                 ci.DrawLine(P(-0.38f, -0.1f), P(0.38f, -0.1f), A(new Color(0.55f, 0.6f, 0.68f)), lw * 0.7f, true);
                 break;
             }
+            // ---- v0.41: One ----
+            case AbIcon.Realm:
+            {
+                // portal (espiral roxa) com um vulto meio transparente entrando
+                var lilac = A(new Color("d9b8ff"));
+                for (int i = 0; i < 3; i++)
+                {
+                    float rr = r * (0.18f + i * 0.17f);
+                    ci.DrawArc(c, rr, i * 1.3f, i * 1.3f + 4.6f, 24, A(new Color(0.85f, 0.7f, 1f, 1f - i * 0.25f)), lw * 0.8f, true);
+                }
+                ci.DrawCircle(P(0.02f, -0.05f), r * 0.12f, A(new Color(1, 1, 1, 0.45f)));
+                ci.DrawColoredPolygon(new[] { P(-0.12f, 0.36f), P(-0.08f, 0.08f), P(0.12f, 0.08f), P(0.16f, 0.36f) }, A(new Color(1, 1, 1, 0.35f)));
+                ci.DrawCircle(c, r * 0.05f, lilac);
+                break;
+            }
+            case AbIcon.Abduct:
+            {
+                // feixe puxando um bonequinho para dentro de um anel roxo
+                ci.DrawColoredPolygon(new[] { P(-0.18f, -0.42f), P(0.18f, -0.42f), P(0.42f, 0.5f), P(-0.42f, 0.5f) }, A(new Color(0.75f, 0.55f, 1f, 0.35f)));
+                ci.DrawArc(P(0, -0.45f), r * 0.24f, 0, Mathf.Tau, 24, A(new Color("d9b8ff")), lw * 0.8f, true);
+                ci.DrawCircle(P(0, 0.02f), r * 0.11f, w);
+                ci.DrawLine(P(0, 0.12f), P(0, 0.34f), w, lw * 0.9f, true);
+                ci.DrawLine(P(-0.16f, 0.2f), P(0.16f, 0.2f), w, lw * 0.7f, true);
+                for (int i = -1; i <= 1; i += 2) ci.DrawLine(P(i * 0.3f, 0.45f), P(i * 0.18f, -0.05f), A(new Color(1, 1, 1, 0.55f)), lw * 0.5f, true);
+                break;
+            }
+            case AbIcon.Skull:
+            {
+                var dark = A(new Color("2a0f44"));
+                ci.DrawCircle(P(0, -0.12f), r * 0.4f, w);
+                ci.DrawRect(new Rect2(P(-0.22f, 0.1f), new Vector2(0.44f, 0.28f) * r), w, true);
+                ci.DrawCircle(P(-0.15f, -0.1f), r * 0.11f, dark);
+                ci.DrawCircle(P(0.15f, -0.1f), r * 0.11f, dark);
+                ci.DrawColoredPolygon(new[] { P(0, 0.02f), P(-0.05f, 0.12f), P(0.05f, 0.12f) }, dark);
+                for (int i = -1; i <= 1; i++) ci.DrawLine(P(i * 0.1f, 0.22f), P(i * 0.1f, 0.38f), dark, lw * 0.45f, true);
+                break;
+            }
+            case AbIcon.Shadow:
+            {
+                // quadra (retângulo) sendo engolida por uma mancha escura com olhos roxos
+                ci.DrawRect(new Rect2(P(-0.6f, -0.38f), new Vector2(1.2f, 0.76f) * r), A(new Color("e0a35a")), true);
+                ci.DrawLine(P(0, -0.38f), P(0, 0.38f), A(new Color(1, 1, 1, 0.8f)), lw * 0.4f, true);
+                var blob = new Vector2[18];
+                for (int i = 0; i < 18; i++)
+                {
+                    float a = i * Mathf.Tau / 18f;
+                    float rr = 0.5f + 0.12f * Mathf.Sin(a * 5f + 0.7f);
+                    blob[i] = P(Mathf.Cos(a) * rr * 1.1f, Mathf.Sin(a) * rr * 0.85f);
+                }
+                ci.DrawColoredPolygon(blob, A(new Color(0.1f, 0.03f, 0.18f, 0.95f)));
+                ci.DrawCircle(P(-0.14f, -0.04f), r * 0.07f, A(new Color("c97cff")));
+                ci.DrawCircle(P(0.14f, -0.04f), r * 0.07f, A(new Color("c97cff")));
+                break;
+            }
         }
     }
 }

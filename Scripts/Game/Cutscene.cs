@@ -95,7 +95,7 @@ public partial class Cutscene : Node3D
                 if (Cross(prev, StageT, LuckLandAt)) Sfx.Play2D(M, "dice", -2);
                 if (Cross(prev, StageT, LuckCheerAt)) Sfx.Play2D(M, "chime", -6);
             }
-            if (StageT >= Mathf.Max(0.3f, t.UltPoseDuration)) Finish(true);
+            if (StageT >= Mathf.Max(0.3f, PoseDuration)) Finish(true);
             return;
         }
         if (Kind == CutKind.KingUlt)
@@ -331,6 +331,7 @@ public partial class Cutscene : Node3D
         if (Kind == CutKind.UltPose && ActorChars[0] == Characters.Luck)
             for (int i = 0; i < 2; i++) { _dice[i] = MakeDie(); _dice[i].Visible = false; AddChild(_dice[i]); }
         if (Kind == CutKind.UltPose && ActorChars[0] == Characters.Iron) { _anvil = MakeAnvil(); AddChild(_anvil); }
+        if (Kind == CutKind.UltPose && ActorChars[0] == Characters.One) { _shadow = MakeShadowFloor(); AddChild(_shadow); _domSnd = false; }
         _poseFx = false; _anvilHit = false; _anvilLand = false;
         AddChild(_ball);
         _beamMesh = new ImmediateMesh();
@@ -356,7 +357,7 @@ public partial class Cutscene : Node3D
         _visStage = -1;
         foreach (var c in GetChildren()) c.QueueFree();
         for (int i = 0; i < 3; i++) _act[i] = null;
-        _cam = null; _ball = null; _ov = null; _beam = null; _dice[0] = _dice[1] = null; _anvil = null;
+        _cam = null; _ball = null; _ov = null; _beam = null; _dice[0] = _dice[1] = null; _anvil = null; _shadow = null; _shadowMat = null;
         if (M != null)
         {
             foreach (var p in M.Players) p.Visible = true;
@@ -754,6 +755,7 @@ public partial class Cutscene : Node3D
         L.Pos = pos; L.Yaw = yaw; L.St = Base();
         if (ActorChars[0] == Characters.Luck) LuckPose(L, pos, yaw, u);
         else if (ActorChars[0] == Characters.Iron) IronPose(L, pos, yaw, u);
+        else if (ActorChars[0] == Characters.One) OnePose(L, pos, yaw, u);
         else
         {
             // genérico (personagem novo ainda sem cena própria): comemoração com a câmera fechando
@@ -919,6 +921,99 @@ public partial class Cutscene : Node3D
         if (u < IronHitAt) Cam(c0, l0.Lerp(lHit, Smooth(u / IronHitAt)), 58);
         else if (u < IronShoutAt) { float k = Smooth((u - IronHitAt) / (IronShoutAt - IronHitAt)); Cam(c0.Lerp(c1, k), lHit.Lerp(l1, k), Mathf.Lerp(58, 52, k)); }
         else { float k = Smooth((u - IronShoutAt) / 0.5f); Cam(c1.Lerp(c2, k), l1.Lerp(l2, k), Mathf.Lerp(52, 44, k)); }
+    }
+
+    // =====================================================================
+    // v0.41 — One (Domínio das Sombras): os olhos dele brilham, ele abre os braços e uma mancha de sombra roxa sai dos
+    // pés e engole a quadra inteira (com os outros jogadores parados nela); a câmera sobe para mostrar tudo.
+
+    /// <summary>Duração da pose da ultimate do personagem que está nela (o One tem a cena mais longa).</summary>
+    float PoseDuration => ActorChars[0] == Characters.One ? Tuning.I.OneUltPoseDuration : Tuning.I.UltPoseDuration;
+
+    public const float OneSpreadAt = 0.55f, OneCoverAt = 2.0f;
+    MeshInstance3D _shadow;
+    ShaderMaterial _shadowMat;
+    bool _domSnd;
+
+    const string ShadowShader = @"
+shader_type spatial;
+render_mode unshaded, cull_disabled, shadows_disabled;
+uniform vec2 center = vec2(0.0);
+uniform float radius = 0.0;
+uniform float time = 0.0;
+varying vec3 wp;
+float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float noise(vec2 p) {
+    vec2 i = floor(p), f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1, 0)), u.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), u.x), u.y);
+}
+void vertex() { wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz; }
+void fragment() {
+    vec2 d = wp.xz - center;
+    float r = length(d);
+    float a = atan(d.y, d.x);
+    // borda irregular com 'tentáculos' que avançam na frente
+    float edge = radius + 0.9 * sin(a * 7.0 + time * 2.3) + 0.6 * sin(a * 13.0 - time * 3.1) + 1.2 * (noise(vec2(a * 3.0, time * 0.8)) - 0.5) * min(radius * 0.15, 3.0);
+    float inside = 1.0 - smoothstep(edge - 0.7, edge, r);
+    float rim = smoothstep(edge - 2.2, edge - 0.2, r) * inside;
+    // veias escuras girando por dentro
+    float veins = smoothstep(0.55, 0.8, noise(vec2(a * 4.0 + time * 0.4, r * 0.35 - time * 0.9)));
+    vec3 col = mix(vec3(0.006, 0.001, 0.016), vec3(0.045, 0.008, 0.1), veins * 0.8);
+    col = mix(col, vec3(0.45, 0.14, 0.95), rim * 0.9);
+    if (inside < 0.5) discard;
+    ALBEDO = col;
+}";
+
+    MeshInstance3D MakeShadowFloor()
+    {
+        _shadowMat = new ShaderMaterial { Shader = new Shader { Code = ShadowShader } };
+        var mi = new MeshInstance3D
+        {
+            Name = "Sombras",
+            Mesh = new PlaneMesh { Size = new Vector2(160, 160) },
+            MaterialOverride = _shadowMat,
+            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off,
+            Position = new Vector3(0, 0.035f, 0),
+        };
+        return mi;
+    }
+
+    void OnePose(Actor L, Vector3 pos, float yaw, float u)
+    {
+        var f = Dir(yaw); var r = Right(yaw);
+        float dur = Mathf.Max(0.3f, PoseDuration);
+        float spreadK = Mathf.Clamp((u - OneSpreadAt) / Mathf.Max(0.3f, OneCoverAt - OneSpreadAt), 0, 1);
+        float radius = 60f * spreadK * spreadK * (0.4f + 0.6f * spreadK) + 1.5f * Smooth(u / OneSpreadAt);
+
+        // corpo: olhar frio (olhos brilhando) e braços abertos; no fim, o sorriso sinistro
+        L.St.Emote = u < OneCoverAt ? Expressions.Bravo : Expressions.SorrisoFrio;
+        L.St.Defending = u >= 0.25f;
+
+        if (_shadow != null)
+        {
+            _shadow.GlobalPosition = new Vector3(pos.X, 0.035f, pos.Z);
+            _shadowMat.SetShaderParameter("center", new Vector2(pos.X, pos.Z));
+            _shadowMat.SetShaderParameter("radius", radius);
+            _shadowMat.SetShaderParameter("time", _time);
+        }
+        _ov.Vignette = Mathf.Lerp(0.4f, 0.75f, spreadK);
+
+        // som e efeitos só nesta tela
+        if (!_domSnd) { _domSnd = true; Sfx.PlayLocal3D(this, "domain", pos + Vector3.Up, 2f); Sfx.PlayLocal3D(this, "realm", pos + Vector3.Up, -2f, 0.6f); }
+        if (u >= OneCoverAt && !_poseFx) { _poseFx = true; _ov.Flash(new Color("c597ff"), 0.5f); _shake = 0.6f; Sfx.PlayLocal3D(this, "curse", pos + Vector3.Up, 0f, 0.7f); }
+
+        // câmera: perto e baixa no rosto → sobe e se afasta mostrando a quadra sendo engolida → fica no alto
+        var c0 = pos + f * 2.6f + r * 0.5f + Vector3.Up * 1.25f;
+        var l0 = pos + Vector3.Up * 1.25f;
+        var c1 = pos + f * 7f - r * 4f + Vector3.Up * 8f;
+        var l1 = pos + f * 2.5f + Vector3.Up * 0.2f;
+        if (u < OneSpreadAt + 0.15f) Cam(c0.Lerp(c0 + f * 0.4f, Smooth(u / (OneSpreadAt + 0.15f))), l0, 48);
+        else
+        {
+            float k = Smooth((u - OneSpreadAt - 0.15f) / Mathf.Max(0.3f, dur - OneSpreadAt - 0.5f));
+            Cam(c0.Lerp(c1, k), l0.Lerp(l1, k), Mathf.Lerp(48, 62, k));
+        }
     }
 
     // =====================================================================

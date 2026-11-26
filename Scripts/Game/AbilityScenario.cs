@@ -56,7 +56,8 @@ public sealed class AbilityScenario
         P.Ab.EyeT = 0; P.Ab.PresenceT = 0; P.Ab.BetT = 0; P.Ab.BetTarget = 0; P.Ab.ModeT = 0; P.Ab.ModeBonus = 0;
         P.Ab.UltT = 0; P.Ab.WallT = 0; P.Ab.TiredT = 0; P.Ab.BonkT = 0; P.Ab.BlockCatch = false; P.Ab.EndCharge();
         P.UpdateStats();
-        foreach (var q in M.Players) { q.Stun = 0; q.StealFail = 0; }
+        P.Ab.RealmT = 0;
+        foreach (var q in M.Players) { q.Stun = 0; q.StealFail = 0; q.Ab.AbductT = 0; q.Ab.CurseT = 0; q.UpdateStats(); }
         P.Stamina = P.St.StaminaMax;
     }
 
@@ -300,6 +301,7 @@ public sealed class AbilityScenario
 
         // ---------------- v0.37: Iron ----------------
         foreach (var r in IronTests()) yield return r;
+        foreach (var r in OneTests()) yield return r;
 
         // ---------------- v0.27: modo de teste (trapaças: bot entra com nome do personagem, troca e sai) ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
@@ -508,6 +510,140 @@ public sealed class AbilityScenario
         if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} recarga={cdShort} ({ran:0.00}s) enterrada={dunkBlocked} investida={chargeImmune} (empurrado {moved:0.00} m) muralha={wallPass}");
         Rec("indestrutivel", ok);
         P.Ab.UltT = 0; P.UpdateStats();
+    }
+
+    // =====================================================================
+    // v0.41 — One
+    IEnumerable<int> OneTests()
+    {
+        var t = Tuning.I;
+        var e0 = Enemies[0]; var e1 = Enemies[1]; var ally = Ally;
+        float s = CourtGeo.HoopSign(CourtGeo.AttackHoop(P.Team));
+        float g = Mathf.Clamp(t.OneGhostAlpha, 0.05f, 1f);
+        int n;
+
+        // ---- (1) Realm: invisível para o adversário, transparente para o aliado, atravessa, não pega a bola, sai ao roubar ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        if (M.Ball.Holder != null) M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        Reset(Characters.One);
+        Place(P, -s * 3f, 0, new Vector3(s, 0, 0)); Place(e0, -s * 1.5f, 0, null); Place(e1, s * 8f, 8f); Place(ally, s * 8f, -8f);
+        yield return 0;
+        float baseSpeed = P.St.Speed;
+        _inp.Pressed |= Btn.Ab1; yield return 0;
+        yield return 0;
+        bool inRealm = P.Phased && P.Ab.RealmT > t.OneRealmDuration - 0.2f && P.Ab.Cd[0] <= 0 && P.CollisionLayer == 0;
+        bool faster = Mathf.Abs(P.St.Speed - baseSpeed * (1f + t.OneRealmSpeedBonus)) < 0.01f;
+        bool sight = RealmView.Alpha(M, e0, P) == 0f && Mathf.IsEqualApprox(RealmView.Alpha(M, ally, P), g) && Mathf.IsEqualApprox(RealmView.Alpha(M, P, e0), g)
+                     && RealmView.Alpha(M, e0, ally) == 1f;
+        // atravessa o adversário andando para a frente
+        n = 0;
+        while (n++ < 50) { _inp.Move = new Vector2(s, 0); yield return 0; }
+        bool through = (P.GlobalPosition.X - e0.GlobalPosition.X) * s > 0.4f;
+        // não pega a bola
+        M.Ball.Drop(P.GlobalPosition + Vector3.Up * 1.0f, Vector3.Zero);
+        foreach (var _ in Wait(0.4f)) yield return 0;
+        bool noBall = M.Ball.Holder != P && P.Phased;
+        // tentar roubar tira do Realm (e o roubo acontece)
+        int st0 = Ev("STEAL_TRY");
+        _inp.Pressed |= Btn.Steal; _inp.Held |= Btn.Steal; yield return 0;
+        bool exitSteal = !P.Phased && P.Ab.Cd[0] > t.OneRealmCooldown - 0.1f && Ev("STEAL_TRY") > st0;
+        // saiu dentro de alguém: empurrado só para fora
+        foreach (var _ in Wait(1.2f)) yield return 0;
+        if (M.Ball.Holder != null) M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        else M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        Reset(Characters.One);
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 2f, 0, null);
+        yield return 0;
+        _inp.Pressed |= Btn.Ab1; yield return 0;
+        P.GlobalPosition = e0.GlobalPosition with { Y = P.GlobalPosition.Y } + new Vector3(0, 0, 0.1f);
+        yield return 0;
+        _inp.Pressed |= Btn.Ab1; yield return 0; // de novo = sai
+        var e0At = e0.GlobalPosition;
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        bool e0Still = ((e0.GlobalPosition - e0At) with { Y = 0 }).Length() < 0.05f && P.CollisionLayer == 2;
+        float sep = ((P.GlobalPosition - e0.GlobalPosition) with { Y = 0 }).Length();
+        bool pushed = !P.Phased && sep >= 0.7f && sep < 0.85f && e0Still;
+        bool ok1 = inRealm && faster && sight && through && noBall && exitSteal && pushed;
+        if (!ok1) GD.Print($"[ABIL] realm: entrou={inRealm} rápido={faster} visão={sight} atravessou={through} sem_bola={noBall} saiu_roubando={exitSteal} empurrado={pushed} ({sep:0.00} m)");
+        Rec("realm", ok1);
+
+        // ---- (2) Abdução: some no Realm por X s, não vê quem está fora, não pega a bola; não vale em quem tem a bola ----
+        foreach (var _ in Wait(0.3f)) yield return 0;
+        Reset(Characters.One);
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 3f, 0.3f, null); Place(e1, -s * 8f, 8f); Place(ally, -s * 3f, -1f);
+        M.Ball.GiveTo(e1);
+        yield return 0;
+        int ab0 = Ev("ABDUCT");
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab2; yield return 0;
+        bool abducted = Ev("ABDUCT") > ab0 && e0.Phased && e0.Ab.AbductT > t.OneAbductDuration - 0.1f && P.Ab.Cd[1] > 0;
+        bool blind = RealmView.Alpha(M, e0, ally) == 0f && RealmView.Alpha(M, e0, P) == 0f && RealmView.Alpha(M, e1, e0) == Mathf.Clamp(t.OneGhostAlpha, 0.05f, 1f)
+                     && RealmView.Alpha(M, P, e0) == 0f;
+        M.Ball.Drop(e0.GlobalPosition + Vector3.Up * 1.0f, Vector3.Zero);
+        foreach (var _ in Wait(0.4f)) yield return 0;
+        bool noCatch = M.Ball.Holder != e0;
+        foreach (var _ in Wait(t.OneAbductDuration)) yield return 0;
+        bool back = !e0.Phased;
+        Reset(Characters.One);
+        M.Ball.GiveTo(e0);
+        yield return 0;
+        bool notHolder = PlayerAbilities.AbductCandidate(P, ShotMath.YawOf(new Vector3(s, 0, 0))) == null;
+        bool ok2 = abducted && blind && noCatch && back && notHolder;
+        if (!ok2) GD.Print($"[ABIL] abducao: abduziu={abducted} cego={blind} sem_bola={noCatch} voltou={back} nao_no_dono={notHolder}");
+        Rec("abducao", ok2);
+
+        // ---- (3) Maldição: atributos pela metade e cesta valendo 1 a menos ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.One);
+        var rimE = M.Geo.RimCenter[CourtGeo.AttackHoop(e0.Team)];
+        float sgE = CourtGeo.HoopSign(CourtGeo.AttackHoop(e0.Team));
+        Place(e0, rimE.X - sgE * 3.5f, 0.3f, rimE); Place(P, 0, 8f); Place(e1, 0, -8f); Place(ally, -sgE * 8f, 0);
+        M.Ball.GiveTo(e0);
+        yield return 0; yield return 0;
+        float eSpeed = e0.St.Speed;
+        _inp.Target = (byte)e0.Id; _inp.TargetSlot = 2; yield return 0;
+        yield return 0; yield return 0;
+        bool cursed = e0.Ab.CurseT > t.OneCurseDuration - 0.2f && P.Ab.Cd[2] > 0 && Mathf.Abs(e0.St.Speed - eSpeed * t.OneCurseStatMult) < 0.01f;
+        int sc0 = M.Score[e0.Team];
+        e0.TestShot();
+        n = 0; while (M.Score[e0.Team] == sc0 && Ev("SCORE_CURSED") == 0 && n++ < 240) yield return 0;
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int gained = M.Score[e0.Team] - sc0;
+        bool less = Ev("SCORE_CURSED") > 0 && gained == Mathf.Max(0, Mathf.RoundToInt(t.PointsInside) - Mathf.RoundToInt(t.OneCursePointLoss));
+        bool ok3 = cursed && less;
+        if (!ok3) GD.Print($"[ABIL] maldicao: amaldiçoou={cursed} (vel {eSpeed:0.00}→{e0.St.Speed:0.00}) pontos={gained} evento={Ev("SCORE_CURSED")}");
+        Rec("maldicao", ok3);
+
+        // ---- Ult: Domínio das Sombras (cena, time do One invisível para o adversário, −20%, recargas mais lentas) ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.One);
+        if (M.Ball.Holder != null) M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 5f, 3f); Place(e1, -s * 5f, -3f); Place(ally, -s * 6f, 5f);
+        yield return 0;
+        float e0Base = e0.St.Speed, pBase = P.St.Speed, allyBase = ally.St.Speed;
+        P.Ab.Ult = 1f;
+        _inp.Pressed |= Btn.Ult; yield return 0;
+        bool posed = M.Phase == MatchPhase.Cutscene && M.Cut.Kind == CutKind.UltPose;
+        n = 0; while (M.Cut.Active && n++ < 600) yield return 0;
+        yield return 0; yield return 0;
+        bool on = P.Ab.Domain && P.Ab.UltT > t.OneUltDuration - 0.3f && P.Ab.Ult <= 0.01f;
+        bool stats = Mathf.Abs(e0.St.Speed - e0Base * t.OneUltEnemyStatMult) < 0.01f && Mathf.Abs(P.St.Speed - pBase * (1f + t.OneRealmSpeedBonus)) < 0.01f
+                     && Mathf.Abs(ally.St.Speed - allyBase) < 0.01f;
+        bool hidden = RealmView.Alpha(M, e0, P) == 0f && RealmView.Alpha(M, e0, ally) == 0f && RealmView.Alpha(M, P, e0) == 1f && RealmView.Alpha(M, ally, P) == 1f
+                      && RealmView.Alpha(M, e0, e1) == 1f;
+        e0.Ab.Cd[0] = 10f; ally.Ab.Cd[0] = 10f;
+        foreach (var _ in Wait(1f)) yield return 0;
+        float eRan = 10f - e0.Ab.Cd[0], aRan = 10f - ally.Ab.Cd[0];
+        bool slow = Mathf.Abs(eRan - (1f - t.OneUltEnemyCdSlow)) < 0.05f && Mathf.Abs(aRan - 1f) < 0.05f;
+        // o adversário ainda interage normalmente: pega a bola solta
+        M.Ball.Drop(e0.GlobalPosition + Vector3.Up * 1.0f, Vector3.Zero);
+        n = 0; while (M.Ball.Holder != e0 && n++ < 60) yield return 0;
+        bool interacts = M.Ball.Holder == e0;
+        e0.Ab.Cd[0] = 0; ally.Ab.Cd[0] = 0;
+        bool ok4 = posed && on && stats && hidden && slow && interacts;
+        if (!ok4) GD.Print($"[ABIL] dominio: pose={posed} ativo={on} atributos={stats} invisível={hidden} recargas={slow} ({eRan:0.00}/{aRan:0.00}) interage={interacts}");
+        Rec("dominio_das_sombras", ok4);
+        P.Ab.UltT = 0;
+        foreach (var q in M.Players) q.UpdateStats();
     }
 
     IEnumerable<int> KingUlt(bool win, bool failBlock = false)

@@ -147,6 +147,7 @@ public partial class Match : Node3D
         AddChild(Cam);
         _preview = new TrajectoryPreview { Name = "Trajectory" };
         AddChild(_preview);
+        AddChild(new RealmView { M = this, Name = "RealmView" }); // v0.41: quem esta tela vê (Realm/Domínio do One) + clima roxo
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
         AddChild(new ImpactFx { M = this, Name = "ImpactFx" });
@@ -405,8 +406,9 @@ public partial class Match : Node3D
 
         bool cut = Phase == MatchPhase.Cutscene;
         if (cut) _cutInputs.Clear();
-        foreach (var p in Players)
+        foreach (var p in Players.ToArray()) // cópia: o modo de teste pode pôr/tirar jogadores no meio do loop
         {
+            if (!IsInstanceValid(p) || !Players.Contains(p)) continue;
             PlayerInput inp = default;
             if (p == LocalPlayer)
             {
@@ -488,6 +490,8 @@ public partial class Match : Node3D
         {
             // Luck (modo apostador): as cestas dele valem mais
             if (thrower.CharacterId == Characters.Luck) pts += thrower.Ab.ModePoints;
+            // v0.41: amaldiçoado pelo One = cestas valem menos
+            if (thrower.Ab.CurseT > 0) { pts = Mathf.Max(0, pts - Mathf.RoundToInt(t.OneCursePointLoss)); LogEvent("SCORE_CURSED", thrower); }
             thrower.Ab.AddUlt(t.UltBonusScore);
             // Luck "Não me Decepciona": a cesta do adversário marcado vai para o time do Luck
             foreach (var q in Players)
@@ -578,7 +582,7 @@ public partial class Match : Node3D
         var t = Tuning.I;
         foreach (var p in Players)
         {
-            if (!p.Airborne || p.Team == Ball.ThrowTeam) continue;
+            if (!p.Airborne || p.Team == Ball.ThrowTeam || p.Phased) continue;
             var rel = Ball.GlobalPosition - p.GlobalPosition;
             float hd = new Vector2(rel.X, rel.Z).Length();
             bool sky = p.Ab.SkyJump && !Characters.Immune(Ball.LastThrower, p); // v0.26: Arranha-Céu do Bolt = área de bloqueio bem maior (v0.39: não vale contra o Iron Indestrutível)
@@ -624,7 +628,7 @@ public partial class Match : Node3D
             var hand = f.GlobalPosition + Vector3.Up * t.DunkHandReach + f.Forward * 0.35f;
             foreach (var p in Players)
             {
-                if (!p.Airborne || p.Flight != FlightKind.None || p.Team == f.Team) continue;
+                if (!p.Airborne || p.Flight != FlightKind.None || p.Team == f.Team || p.Phased) continue;
                 var rel = hand - p.GlobalPosition;
                 float hd = new Vector2(rel.X, rel.Z).Length();
                 bool handHit = hd <= t.BlockRadius + t.BallRadius + 0.2f && rel.Y >= 0.8f && rel.Y <= t.BlockReach + t.BallRadius;
@@ -901,6 +905,19 @@ public partial class Match : Node3D
         foreach (var p in Players)
             if (p.CharacterId == Characters.Iron && p.Ab.WallT > 0) Geo.Wall[CourtGeo.DefendHoop(p.Team)] = true;
     }
+
+    /// <summary>v0.41: One adversário com o Domínio das Sombras ativo contra <paramref name="p"/> (null = nenhum).
+    /// O Iron Indestrutível não sofre o Domínio.</summary>
+    public Player DomainAgainst(Player p)
+    {
+        if (!AbilitiesOn || p?.Ab == null || p.Ab.Indestructible) return null;
+        foreach (var q in Players)
+            if (q.Team != p.Team && q.Ab != null && q.Ab.Domain) return q;
+        return null;
+    }
+
+    /// <summary>v0.41: algum Domínio das Sombras ativo (a quadra toda fica no Realm).</summary>
+    public bool AnyDomain => AbilitiesOn && Players.Any(q => q.Ab != null && q.Ab.Domain);
 
     /// <summary>v0.35: pose curta avisando que <paramref name="owner"/> usou a ultimate (para ults que não são cutscene).</summary>
     public bool StartUltPose(Player owner) => StartCutscene(CutKind.UltPose, owner, null);
