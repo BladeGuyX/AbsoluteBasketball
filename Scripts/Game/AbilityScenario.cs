@@ -231,6 +231,7 @@ public sealed class AbilityScenario
         _inp.Pressed |= Btn.Ult; yield return 0;
         bool lost = P.Ab.ModeT <= 0 && P.Stun > t.LuckGambleStun - 0.1f;
         t.LuckGambleLoseChance = keepLose; t.LuckGambleLoseStep = keepStep;
+        if (!(modeOn && won && lost)) GD.Print($"[ABIL] sorte_infinita: modo={modeOn} ganhou={won} perdeu={lost} ModeT={P.Ab.ModeT} stun={P.Stun}");
         Rec("sorte_infinita", modeOn && won && lost);
 
         // ---------------- Bolt 1: Drible Relâmpago ----------------
@@ -241,9 +242,10 @@ public sealed class AbilityScenario
         M.Ball.GiveTo(P);
         foreach (var _ in Wait(0.1f)) yield return 0;
         _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab1; yield return 0;
+        bool stunned = e0.Stun > t.BoltDribbleStun * 0.8f; // atordoado na hora do drible
         foreach (var _ in Wait(0.5f)) yield return 0;
         bool past = (P.GlobalPosition.X - e0.GlobalPosition.X) * s > t.BoltDribbleAhead - 0.8f;
-        Rec("drible_relampago", past && e0.Stun > 0.5f && M.Ball.Holder == P && Ev("BOLT_DRIBBLE") > 0);
+        Rec("drible_relampago", past && stunned && M.Ball.Holder == P && Ev("BOLT_DRIBBLE") > 0);
 
         // ---------------- Bolt 2: Swap (v0.27: troca na hora ao apertar) ----------------
         Reset(Characters.Bolt);

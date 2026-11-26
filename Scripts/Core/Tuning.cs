@@ -157,7 +157,7 @@ public sealed class Tuning
     [Param(SShot, "Alcance máximo", "Distância máxima (m) do arremesso, disponível desde o início (não depende de segurar). Para usar, suba a câmera.", 2, 40, 0.1f)]
     public float ShotRangeMax = 14f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
-    public float ShotAutoReleaseTime = 2.5f;
+    public float ShotAutoReleaseTime = 1.5f;
     [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
@@ -413,7 +413,8 @@ public sealed class Tuning
     [Param(SKing, "Salto", "Estrelas de Salto do King.", 1, 5, 1, Sub = Star)] public float KingStarJump = 2f;
     [Param(SKing, "(1) Olho do Rei: duração", "Segundos que o Olho do Rei fica ativo esperando o próximo passe/arremesso.", 1, 20, 0.5f, Sub = Hab)] public float KingEyeDuration = 7f;
     [Param(SKing, "(1) Olho do Rei: recarga", "Segundos de recarga do Olho do Rei.", 1, 90, 0.5f, Sub = Hab)] public float KingEyeCooldown = 25f;
-    [Param(SKing, "(1) Olho do Rei: multiplicador de alcance", "Multiplica o alcance do arremesso e do passe rápido (e a velocidade do passe carregado) quando o efeito é gasto.", 1, 4, 0.05f, Sub = Hab)] public float KingEyeRangeMult = 1.9f;
+    [Param(SKing, "(1) Olho do Rei: multiplicador de alcance", "Multiplica o alcance do arremesso e do passe rápido (e a velocidade do passe carregado) quando o efeito é gasto.", 1, 4, 0.05f, Sub = Hab)] public float KingEyeRangeMult = 1.6f;
+    [Param(SKing, "(1) Olho do Rei: alcance máximo (fração da quadra)", "O arremesso com o Olho do Rei nunca passa desta fração do comprimento da quadra (0,5 = meia quadra).", 0.2f, 1, 0.05f, Sub = Hab)] public float KingEyeMaxCourtFrac = 0.5f;
     [Param(SKing, "(2) Presença Implacável: duração", "Segundos que a Presença Implacável fica ativa.", 1, 20, 0.5f, Sub = Hab)] public float KingPresenceDuration = 5f;
     [Param(SKing, "(2) Presença Implacável: raio", "Adversário a até esta distância (m) do King que soltar um arremesso erra com certeza.", 1, 20, 0.5f, Sub = Hab)] public float KingPresenceRadius = 7f;
     [Param(SKing, "(2) Presença Implacável: recarga", "Segundos de recarga da Presença Implacável.", 1, 90, 0.5f, Sub = Hab)] public float KingPresenceCooldown = 35f;
@@ -436,12 +437,12 @@ public sealed class Tuning
     [Param(SLuck, "Salto", "Estrelas de Salto do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarJump = 2f;
     [Param(SLuck, "(1) Arremesso Arriscado: chance de errar", "Chance (0–1) do Arremesso Arriscado errar.", 0, 1, 0.01f, Sub = Hab)] public float LuckRiskyMissChance = 0.3f;
     [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 30f;
-    [Param(SLuck, "(2) Não me Decepciona: duração", "Segundos em que a cesta do adversário escolhido conta para o time do Luck.", 1, 60, 0.5f, Sub = Hab)] public float LuckBetDuration = 15f;
-    [Param(SLuck, "(2) Não me Decepciona: recarga", "Segundos de recarga do Não me Decepciona.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 40f;
+    [Param(SLuck, "(2) Não me Decepciona: duração", "Segundos em que a cesta do adversário escolhido conta para o time do Luck.", 1, 60, 0.5f, Sub = Hab)] public float LuckBetDuration = 7f;
+    [Param(SLuck, "(2) Não me Decepciona: recarga", "Segundos de recarga do Não me Decepciona.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 50f;
     [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.8f;
     [Param(SLuck, "(3) Impulso Descuidado: atordoamento do tropeço", "Segundos atordoado quando o Luck tropeça.", 0, 10, 0.25f, Sub = Hab)] public float LuckTripStun = 2.5f;
-    [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 10f;
-    [Param(SLuck, "Ult: duração", "Segundos do modo apostador (Sorte Infinita).", 2, 40, 0.5f, Sub = Hab)] public float LuckModeDuration = 15f;
+    [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 12f;
+    [Param(SLuck, "Ult: duração", "Segundos do modo apostador (Sorte Infinita).", 2, 40, 0.5f, Sub = Hab)] public float LuckModeDuration = 12f;
     [Param(SLuck, "Ult: bônus nos atributos", "Bônus (fração) em todos os valores dos atributos de estrela no modo apostador. 0,15 = +15%.", 0, 1, 0.01f, Sub = Hab)] public float LuckModeBonus = 0.15f;
     [Param(SLuck, "Ult: pontos a mais por cesta", "Pontos a mais em cada cesta do Luck no modo apostador (cada aposta ganha soma mais este valor).", 0, 5, 1, Sub = Hab)] public float LuckModePoints = 1f;
     [Param(SLuck, "Ult: chance de perder a 1ª aposta", "Chance (0–1) de perder ao apostar (apertar a ultimate de novo) pela 1ª vez.", 0, 1, 0.01f, Sub = Hab)] public float LuckGambleLoseChance = 0.5f;
@@ -463,9 +464,9 @@ public sealed class Tuning
     [Param(SBolt, "Salto", "Estrelas de Salto do Bolt.", 1, 5, 1, Sub = Star)] public float BoltStarJump = 3f;
     [Param(SBolt, "(1) Drible Relâmpago: alcance", "Distância máxima (m) até o adversário que o Bolt está olhando.", 1, 15, 0.5f, Sub = Hab)] public float BoltDribbleRange = 5f;
     [Param(SBolt, "(1) Drible Relâmpago: distância na frente", "Quantos metros o Bolt sai na frente do adversário driblado.", 0.5f, 10, 0.25f, Sub = Hab)] public float BoltDribbleAhead = 3f;
-    [Param(SBolt, "(1) Drible Relâmpago: atordoamento", "Segundos que o adversário driblado fica atordoado.", 0, 10, 0.25f, Sub = Hab)] public float BoltDribbleStun = 2f;
+    [Param(SBolt, "(1) Drible Relâmpago: atordoamento", "Segundos que o adversário driblado fica atordoado.", 0, 10, 0.25f, Sub = Hab)] public float BoltDribbleStun = 1f;
     [Param(SBolt, "(1) Drible Relâmpago: recarga", "Segundos de recarga do Drible Relâmpago.", 1, 90, 0.5f, Sub = Hab)] public float BoltDribbleCooldown = 25f;
-    [Param(SBolt, "(2) Swap: recarga", "Segundos de recarga do Swap.", 1, 90, 0.5f, Sub = Hab)] public float BoltSwapCooldown = 40f;
+    [Param(SBolt, "(2) Swap: recarga", "Segundos de recarga do Swap.", 1, 90, 0.5f, Sub = Hab)] public float BoltSwapCooldown = 45f;
     [Param(SBolt, "(3) Arranha-Céu: impulso", "Velocidade vertical (m/s) do pulo. Altura ≈ v²/(2·gravidade dos jogadores).", 5, 40, 0.5f, Sub = Hab)] public float BoltSkyJumpVel = 16f;
     [Param(SBolt, "(3) Arranha-Céu: raio do atordoamento", "Adversários a até esta distância (m) quando ele pula ficam atordoados.", 0, 10, 0.25f, Sub = Hab)] public float BoltSkyStunRadius = 3.25f;
     [Param(SBolt, "(3) Arranha-Céu: atordoamento", "Segundos atordoado de quem estava perto.", 0, 10, 0.25f, Sub = Hab)] public float BoltSkyStun = 2f;
@@ -566,9 +567,11 @@ public sealed class Tuning
             if (File.Exists(path))
             {
                 var t = JsonSerializer.Deserialize<Tuning>(File.ReadAllText(path), JsonOpts);
-                if (t != null) I = t;
+                int moved = 0;
+                if (t != null) { moved = FollowNewDefaults(t); I = t; }
                 Revision++;
                 TrySave(); // acrescenta campos novos mantendo os valores do usuário
+                if (moved > 0) GD.Print($"[TUNING] {moved} valor(es) não mexidos seguiram os padrões novos desta versão");
                 return "Tuning carregado (" + path + ")";
             }
             TrySave();
@@ -581,9 +584,39 @@ public sealed class Tuning
         }
     }
 
+    /// <summary>v0.31: padrões da versão que gravou o tuning.json (fica ao lado dele).</summary>
+    static string DefaultsPath => Path.Combine(Path.GetDirectoryName(FilePath) ?? "", "tuning.defaults.json");
+
+    /// <summary>v0.31: o tuning.json guarda TODOS os valores, então padrões novos de uma versão nova nunca chegavam (o arquivo
+    /// velho sobrepunha). Agora cada valor do arquivo que ainda é igual ao padrão da versão que o gravou (o usuário não mexeu)
+    /// passa a seguir o padrão desta versão. Valores mexidos pelo usuário continuam.</summary>
+    static int FollowNewDefaults(Tuning t)
+    {
+        try
+        {
+            if (!File.Exists(DefaultsPath)) return 0;
+            var old = JsonSerializer.Deserialize<Tuning>(File.ReadAllText(DefaultsPath), JsonOpts);
+            if (old == null) return 0;
+            var cur = new Tuning();
+            int n = 0;
+            foreach (var f in typeof(Tuning).GetFields(BindingFlags.Public | BindingFlags.Instance))
+            {
+                if (f.FieldType != typeof(float) || f.GetCustomAttribute<ParamAttribute>() == null) continue;
+                float v = (float)f.GetValue(t), o = (float)f.GetValue(old), c = (float)f.GetValue(cur);
+                if (Mathf.Abs(v - o) < 1e-5f && Mathf.Abs(c - o) >= 1e-5f) { f.SetValue(t, c); n++; }
+            }
+            return n;
+        }
+        catch (Exception e) { GD.PushWarning("tuning.defaults.json inválido: " + e.Message); return 0; }
+    }
+
     static void TrySave()
     {
-        try { File.WriteAllText(FilePath, JsonSerializer.Serialize(I, JsonOpts)); }
+        try
+        {
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(I, JsonOpts));
+            File.WriteAllText(DefaultsPath, JsonSerializer.Serialize(new Tuning(), JsonOpts));
+        }
         catch (Exception e) { GD.PushWarning("Não foi possível salvar tuning.json: " + e.Message); }
     }
 

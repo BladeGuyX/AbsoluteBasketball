@@ -10,3 +10,4 @@ art_source/previews/
 dist/
 Build.rar
 __pycache__/
+tuning.defaults.json

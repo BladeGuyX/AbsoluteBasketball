@@ -102,6 +102,7 @@ public partial class GameRoot : Node
         int si = Array.IndexOf(args, "--screenshot");
         if (si >= 0 && si + 1 < args.Length)
         {
+            Match.NoFocusPause = true; // v0.31: a janela do print pode abrir sem foco
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
             // v0.27: prints das telas novas: --info, --setup, --cheats (partida de teste com o menu de trapaças), --picker (menu de alvo)
@@ -109,7 +110,7 @@ public partial class GameRoot : Node
             {
                 StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Small, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true });
                 GetTree().CreateTimer(7.0).Timeout += () => { _match.Cam.Pitch = Mathf.DegToRad(8f); Input.ActionPress(Act.Shoot); };
-                GetTree().CreateTimer(7.9).Timeout += () =>
+                GetTree().CreateTimer(args.Contains("--late") ? 8.3 : 7.5).Timeout += () =>
                 {
                     GetViewport().GetTexture().GetImage().SavePng(args[si + 1]);
                     Input.ActionRelease(Act.Shoot);

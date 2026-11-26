@@ -46,7 +46,7 @@ public partial class MainMenu : Control
         _box.AddChild(Centered(chr));
         _update = UiKit.Btn("", () => Updater.I?.Activate(), UiKit.Grey, 440);
         _box.AddChild(Centered(_update));
-        _box.AddChild(Centered(UiKit.Btn("Sair", () => GameRoot.QuitClean(this), UiKit.Red, 440)));
+        _box.AddChild(Centered(UiKit.Btn("Sair", () => ConfirmDialog.Ask(this, "Fechar o jogo?", "Sair do jogo", () => GameRoot.QuitClean(this)), UiKit.Red, 440)));
         RefreshUpdate();
         play.CallDeferred(Control.MethodName.GrabFocus);
     }

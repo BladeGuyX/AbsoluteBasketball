@@ -4,6 +4,21 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.31 — balanceamento aplicado de verdade, carga do arremesso na bola, corrida que travava, confirmação ao sair
+
+**Atenção:** o balanceamento da v0.29 "não aplicava" porque o `Build	uning.json` (salvo do artifact) guardava os valores antigos e
+sobrepunha os padrões novos. Ele foi renomeado para `tuning.old.json`. A partir de agora o jogo grava também um
+`tuning.defaults.json`: em versões novas, todo valor que você não mexeu segue o padrão novo sozinho.
+
+1. Valores (confira em Informações → abas dos personagens): Olho do Rei 25 s e alcance 1,6× **limitado a meia quadra**; Presença 35 s; Drible Relâmpago atordoa 1 s; Swap 45 s; arremesso automático em 1,5 s; Não me Decepciona dura 7 s e recarrega em 50 s; Sorte Infinita 12 s; Impulso Descuidado 12 s; ultimate enche em 205 s, bônus menores; ult do King 4, Duelo 6.
+2. Segure o arremesso: um véu vermelho aparece no meio da bola e cresce até cobrir a bola toda — quando cobre, sai o arremesso automático (1,5 s). Online, todo mundo vê na bola de quem está carregando.
+3. Corrida: jogando no teclado com um controle conectado, o personagem não deve mais correr sozinho (o gatilho esquerdo do controle só vale quando você está usando o controle). Com "Corrida: alternar" ligado, a corrida desliga quando a estamina acaba.
+4. Bolt (2) Swap em alguém carregando um arremesso: ele continua carregando, só que no lugar novo (a linha da trajetória muda).
+5. "Sair" no menu principal, "Sair para o menu"/"Encerrar partida online" na pausa, "Menu principal"/"Sair" no fim da partida e "Sair do lobby": abre "Tem certeza?" com Cancelar (selecionado) e Sair. Esc cancela.
+6. O conserto do botão "Atualizar" da v0.30 (outro chat) também vai nesta release.
+
+---
+
 ## v0.30 — botão "Atualizar" consertado
 
 O botão nunca instalava (desde a v0.12): o jogo fechava e o instalador morria em silêncio. **Quem está na v0.29 ou antes precisa baixar a v0.30 à mão uma vez** (Releases no GitHub, extrair por cima); depois disso o botão funciona.

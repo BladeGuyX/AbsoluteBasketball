@@ -16,6 +16,10 @@ O usuário ajusta valores no artifact de tuning e salva o `tuning.json` em `Buil
    Se um valor tem texto em `Characters.cs` com `{CampoDoTuning}`, ele já se atualiza sozinho.
 4. Confira de novo: regenere o esquema e rode o diff → deve dar **0 valores diferentes**.
 5. Regenere e publique o artifact (passo 5 da skill `entrega`), com a versão nova no rótulo.
+5b. **Renomeie `Build	uning.json` para `Build	uning.old.json`** depois de aplicar (os valores já viraram padrão). Se ficar lá,
+   ele sobrepõe os padrões das próximas versões — foi o que fez o balanceamento da v0.29 "não aplicar" para o usuário.
+   (v0.31: o jogo também grava `tuning.defaults.json` e valores não mexidos passam a seguir os padrões novos, mas só a partir
+   de arquivos gravados pela v0.31+.)
 6. Roteiro de testes: liste os valores que mudaram ("agora são o padrão: ...").
 7. **Sempre release** (pedido do usuário): siga a skill `entrega` (versão, commit, `tools\release.ps1`).
 

@@ -234,7 +234,7 @@ public sealed class BotBrain
         float dist = new Vector2(rim.X - rel.X, rim.Z - rel.Z).Length();
         inp.AimYaw = yaw + _yawErr;
         float range = P.St.ShotRangeMax;
-        float ext = P.Ab.EyeArmed || P.Ab.EyeT > 0 ? range * Mathf.Max(T.KingEyeRangeMult, 1f) : -1f; // Olho do Rei: mira além
+        float ext = P.Ab.EyeArmed || P.Ab.EyeT > 0 ? PlayerAbilities.EyeShotRange(P, range) : -1f; // Olho do Rei: mira além
         inp.AimPitch = ShotMath.PitchForDistance(Mathf.Max(0.5f, dist + _distErr), range, ext);
     }
 
@@ -263,7 +263,7 @@ public sealed class BotBrain
         {
             case Characters.King:
             {
-                float far = P.St.ShotRangeMax * Mathf.Max(T.KingEyeRangeMult, 1f) * 0.8f;
+                float far = PlayerAbilities.EyeShotRange(P, P.St.ShotRangeMax) * 0.8f;
                 if (a.Cd[2] <= 0 && open < 1.8f && Roll()) { inp.Pressed |= Btn.Ab3; return true; }
                 if (a.EyeT > 0 && d < far) { StartShot(ref inp); return true; }
                 if (a.Cd[0] <= 0 && d > ShootRange() + 1.5f && d < far && open >= T.BotOpenDistance && Roll()) { inp.Pressed |= Btn.Ab1; return true; }

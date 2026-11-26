@@ -1104,10 +1104,13 @@ public partial class Match : Node3D
         if (_shotIdx >= 4 || _shotT > 40f) { Cfg.ScreenshotPath = null; GameRoot.QuitClean(this); }
     }
 
+    /// <summary>Prints de teste (--screenshot): a janela pode abrir sem foco; não pausar.</summary>
+    public static bool NoFocusPause;
+
     /// <summary>Janela perdeu o foco (alt-tab): pausa a partida offline.</summary>
     public void OnFocusLost()
     {
-        if (IsOnline) return; // online não pausa: o jogo continua para os outros
+        if (IsOnline || NoFocusPause) return; // online não pausa: o jogo continua para os outros
         if (Automated || Phase == MatchPhase.Ended || _pause == null || _pause.IsOpen) return;
         _pause.Open();
     }

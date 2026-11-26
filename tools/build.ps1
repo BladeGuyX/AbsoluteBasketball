@@ -21,6 +21,7 @@ try {
     if (-not $SkipSmoke) {
         # testes sempre com os valores padrão do código (o tuning.json da raiz guarda valores antigos)
         if (Test-Path tuning.json) { Remove-Item tuning.json -Force }
+        if (Test-Path tuning.defaults.json) { Remove-Item tuning.defaults.json -Force }
         Write-Host "== smoke test ==" -ForegroundColor Cyan
         & $godot --headless --path . -- --smoke-test 2>&1 | Select-String "SMOKE|SCORE|ERROR" | Out-Host
         if ($LASTEXITCODE -ne 0) { throw "smoke test falhou" }

@@ -117,7 +117,7 @@ public partial class LobbyMenu : Control
         var bar = new HBoxContainer();
         bar.AddThemeConstantOverride("separation", 14);
         main.AddChild(bar);
-        bar.AddChild(UiKit.Btn("Sair do lobby", () => ns.Leave(toMenu: true), UiKit.Red, 230));
+        bar.AddChild(UiKit.Btn("Sair do lobby", () => ConfirmDialog.Ask(this, ns.IsHost ? "O lobby fecha para todos." : "Você sai do lobby.", "Sair do lobby", () => ns.Leave(toMenu: true)), UiKit.Red, 230));
         _wait = UiKit.Lbl("Aguardando o host começar...", 20, UiKit.Muted);
         _wait.Visible = !ns.IsHost;
         _wait.SizeFlagsVertical = SizeFlags.ShrinkCenter;

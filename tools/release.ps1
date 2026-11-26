@@ -31,7 +31,7 @@ if (-not (Test-Path "Build\AbsoluteBasketball.exe")) { throw "Build\AbsoluteBask
 New-Item -ItemType Directory -Force dist | Out-Null
 $zip = "dist\AbsoluteBasketball-windows.zip"
 if (Test-Path $zip) { Remove-Item $zip }
-$items = Get-ChildItem Build -Force | Where-Object { $_.Name -notin @("tuning.json", "tuning.old.json", ".gdignore") }
+$items = Get-ChildItem Build -Force | Where-Object { $_.Name -notin @("tuning.json", "tuning.old.json", "tuning.defaults.json", ".gdignore") }
 Compress-Archive -Path $items.FullName -DestinationPath $zip -CompressionLevel Optimal
 Write-Host ("zip: {0:0.0} MB" -f ((Get-Item $zip).Length / 1MB))
 

@@ -20,6 +20,7 @@ artifact de tuning atualizado, `CLAUDE.md` atualizado e roteiro de testes em `do
 | — | **v0.28:** painel do "Não me Decepciona" com largura mínima (título/dica não vazam com 1 adversário); ult do King sem os sons "whoosh" depois dos skill checks. | ✅ |
 | — | **v0.29:** estamina e cargas de drible novas (`StaminaHud`), menus Online/Lobby em cartões alinhados, "Jogar de novo" online consertado (input do cliente era ignorado: número de pacote velho alto), raio do duelo como linha fina + brilho/faíscas sutis, zona do skill check do Duelo não cresce mais, mensagem da aposta sem o prefixo, Arranha-Céu bloqueia menos para os lados, balanceamento (ultimate, King, Luck, Bolt). | ✅ |
 | — | **v0.30:** botão "Atualizar" consertado: o `Updater` passava `-ExeArgs ""` ao PowerShell; a Godot tira o argumento vazio e o PowerShell fechava com erro antes de instalar (só o `--update-test`, que passa `--print-version`, funcionava). Agora só passa `-ExeArgs` no teste. | ✅ |
+| — | **v0.31:** balanceamento aplicado de verdade (tuning.json velho sobrepunha; agora `tuning.defaults.json` faz valores não mexidos seguirem os padrões novos), véu vermelho de carga do arremesso na bola, corrida que ficava ligada sozinha (gatilho do controle / modo alternar), Swap mantém a carga, Olho do Rei até meia quadra, "Tem certeza?" ao sair, valores novos. | ✅ |
 | 8 | Áudio e polimento: música, sons reais, partículas, replays de cesta, menus finais | |
 
 ## Arquitetura (resumo)

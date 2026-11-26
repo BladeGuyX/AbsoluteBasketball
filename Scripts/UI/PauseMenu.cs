@@ -33,7 +33,8 @@ public partial class PauseMenu : Control
         vb.AddChild(UiKit.Btn("Configurações", OpenSettings, 420));
         if (M == null || !M.IsOnline) vb.AddChild(UiKit.Btn("Reiniciar partida", () => GameRoot.I.Rematch(), UiKit.Grey, 420));
         vb.AddChild(UiKit.Btn(M != null && M.IsHost ? "Encerrar partida online" : M != null && M.IsClient ? "Sair da partida online" : "Sair para o menu",
-            () => GameRoot.I.LeaveToMenu(), UiKit.Red, 420));
+            () => ConfirmDialog.Ask(this, M != null && M.IsHost ? "A partida acaba para todos e vocês voltam ao menu." : M != null && M.IsClient ? "Você sai da partida online (um bot assume o seu lugar)." : "A partida atual será perdida.",
+                "Sair", () => GameRoot.I.LeaveToMenu()), UiKit.Red, 420));
         if (M != null && M.IsOnline) vb.AddChild(UiKit.Lbl("Online o jogo não pausa.", 20, UiKit.Muted, HorizontalAlignment.Center));
     }
 

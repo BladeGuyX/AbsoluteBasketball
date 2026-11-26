@@ -94,13 +94,13 @@ public partial class Hud : CanvasLayer
             _rematchBtn.Disabled = !M.IsHost;
             vb.AddChild(_rematchBtn);
             if (M.IsHost) vb.AddChild(UiKit.Btn("Voltar ao lobby", () => NetSession.I.HostBackToLobby()));
-            vb.AddChild(UiKit.Btn(M.IsHost ? "Encerrar e ir ao menu" : "Sair", () => GameRoot.I.LeaveToMenu()));
+            vb.AddChild(UiKit.Btn(M.IsHost ? "Encerrar e ir ao menu" : "Sair", () => ConfirmDialog.Ask(this, M.IsHost ? "A sessão online acaba para todos." : "Você sai da sessão online.", "Sair", () => GameRoot.I.LeaveToMenu()), UiKit.Red));
         }
         else
         {
             _rematchBtn = UiKit.Btn("Jogar de novo", () => GameRoot.I.Rematch());
             vb.AddChild(_rematchBtn);
-            vb.AddChild(UiKit.Btn("Menu principal", () => GameRoot.I.ShowMainMenu()));
+            vb.AddChild(UiKit.Btn("Menu principal", () => ConfirmDialog.Ask(this, "Voltar ao menu principal?", "Sair", () => GameRoot.I.ShowMainMenu()), UiKit.Red));
         }
         panel.AddChild(vb);
         _endPanel.AddChild(panel);

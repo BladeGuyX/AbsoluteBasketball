@@ -65,6 +65,50 @@ public partial class Ball : Node3D
     {
         _trail = new BallTrail { B = this, Name = "Trail" };
         AddChild(_trail);
+        AddChargeGlow();
+    }
+
+    // ---- v0.31: carga do arremesso na bola ----
+    // Um véu vermelho (não muito forte) por cima da bola: começa como um pontinho no lado virado para a câmera e cresce até
+    // cobrir a bola inteira no instante do arremesso automático (ShotCharge / ShotAutoReleaseTime). Lê o estado replicado,
+    // então todo mundo vê (host e clientes).
+    MeshInstance3D _charge;
+    ShaderMaterial _chargeMat;
+    const string ChargeShader = @"shader_type spatial;
+render_mode unshaded, blend_mix, depth_draw_never, cull_back, shadows_disabled;
+uniform float fill = 0.0;
+uniform vec4 tint : source_color = vec4(0.85, 0.02, 0.06, 0.62);
+void fragment() {
+    float d = dot(normalize(NORMAL), vec3(0.0, 0.0, 1.0));   // 1 = virado para a câmera, 0 = borda
+    float t = 1.0 - fill * 1.08;
+    float a = smoothstep(t - 0.05, t + 0.05, d);
+    float edge = smoothstep(t - 0.06, t, d) - smoothstep(t, t + 0.06, d); // linha mais forte na frente da onda
+    float full = smoothstep(0.97, 1.0, fill);                          // perto do automático: pisca de leve
+    ALBEDO = mix(tint.rgb, vec3(1.0, 0.75, 0.7), edge * 0.8);
+    ALPHA = clamp(tint.a * a * (1.0 - 0.25 * full * (0.5 + 0.5 * sin(TIME * 30.0))) + edge * 0.45, 0.0, 1.0) * step(0.001, fill);
+}";
+
+    void AddChargeGlow()
+    {
+        float r = Tuning.I.BallRadius;
+        _chargeMat = new ShaderMaterial { Shader = new Shader { Code = ChargeShader }, RenderPriority = 2 };
+        _charge = new MeshInstance3D
+        {
+            Name = "ChargeGlow", Mesh = new SphereMesh { Radius = r * 1.035f, Height = r * 2.07f, RadialSegments = 32, Rings = 16 },
+            MaterialOverride = _chargeMat, CastShadow = GeometryInstance3D.ShadowCastingSetting.Off, Visible = false,
+        };
+        AddChild(_charge);
+    }
+
+    public override void _Process(double delta)
+    {
+        if (_charge == null) return;
+        var h = Holder;
+        bool on = h != null && GodotObject.IsInstanceValid(h) && h.ChargingShot;
+        _charge.Visible = on;
+        if (!on) return;
+        float k = Mathf.Clamp(h.ShotCharge / Mathf.Max(Tuning.I.ShotAutoReleaseTime, 0.05f), 0, 1);
+        _chargeMat.SetShaderParameter("fill", Mathf.Max(k, 0.04f));
     }
 
     public void GiveTo(Player p)

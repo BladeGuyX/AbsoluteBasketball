@@ -143,6 +143,14 @@ public sealed class PlayerAbilities
 
     public float EyeMult => EyeArmed ? Mathf.Max(T.KingEyeRangeMult, 1f) : 1f;
 
+    /// <summary>v0.31: alcance do arremesso com o Olho do Rei — multiplicado, mas no máximo ~meia quadra (KingEyeMaxCourtFrac).</summary>
+    public static float EyeShotRange(Player p, float range)
+    {
+        float r = range * Mathf.Max(Tuning.I.KingEyeRangeMult, 1f);
+        if (p.M?.Geo != null) r = Mathf.Min(r, p.M.Geo.Length * Tuning.I.KingEyeMaxCourtFrac);
+        return Mathf.Max(r, range);
+    }
+
     bool KingPresence()
     {
         PresenceT = T.KingPresenceDuration;

@@ -444,7 +444,7 @@ public partial class Player : CharacterBody3D
     public ShotMath.ShotPlan PlanShot(float yaw, float pitch)
     {
         float range = St.ShotRangeMax;
-        float ext = Ab.EyeArmed ? range * Ab.EyeMult : -1f;
+        float ext = Ab.EyeArmed ? PlayerAbilities.EyeShotRange(this, range) : -1f;
         return ShotMath.Plan(GlobalPosition, Team, yaw, pitch, M.Geo, range, ext);
     }
 
@@ -763,13 +763,15 @@ public partial class Player : CharacterBody3D
         Relocate(p);
     }
 
-    /// <summary>Teleporte que mantém o estado (Swap do Bolt).</summary>
+    /// <summary>Teleporte que mantém o estado (Swap do Bolt). v0.31: quem estava carregando arremesso/passe continua
+    /// carregando, só que no lugar novo (a prévia é recalculada no fim do tick).</summary>
     public void Relocate(Vector3 pos)
     {
         GlobalPosition = pos;
         Velocity = Vector3.Zero;
         _moveDur = 0;
-        CancelShot(false); CancelPass(); ChargingJump = false; StealDash = 0;
+        ChargingJump = false; StealDash = 0;
+        _shotPlanValid = false;
         ResetPhysicsInterpolation();
     }
 

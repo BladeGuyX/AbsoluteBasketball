@@ -124,14 +124,48 @@ public sealed class LocalInputReader
         B(Act.Dribble, Btn.Dribble); B(Act.Steal, Btn.Steal); B(Act.Variation, Btn.Variation);
 
         // corrida: segurar ou alternar
+        // v0.31: (1) só vale o botão do dispositivo em uso — o gatilho esquerdo de um controle conectado (com folga ou parado
+        // meio apertado) contava como "segurando correr" mesmo jogando no teclado; (2) no modo alternar, a corrida desliga
+        // quando a estamina acaba (antes voltava a correr sozinha assim que a estamina recarregava)
+        bool held = SprintHeld();
+        bool just = held && !_sprintWas;
+        _sprintWas = held;
         if (UserSettings.I.SprintToggle)
         {
-            if (Input.IsActionJustPressed(Act.Sprint)) _sprintToggled = !_sprintToggled;
+            if (just) _sprintToggled = !_sprintToggled;
             if (mv.LengthSquared() < 0.01f) _sprintToggled = false;
+            if (cam.Target != null && GodotObject.IsInstanceValid(cam.Target) && cam.Target.Stamina <= 0.01f) _sprintToggled = false;
             if (_sprintToggled) inp.Held |= Btn.Sprint;
         }
-        else if (Input.IsActionPressed(Act.Sprint)) inp.Held |= Btn.Sprint;
-        if (Input.IsActionJustPressed(Act.Sprint)) inp.Pressed |= Btn.Sprint;
+        else if (held) inp.Held |= Btn.Sprint;
+        if (just) inp.Pressed |= Btn.Sprint;
         return inp;
+    }
+
+    bool _sprintWas;
+
+    /// <summary>Correr apertado agora: tecla/mouse do teclado, ou o botão/gatilho do controle só quando o controle é o
+    /// dispositivo em uso (e o gatilho precisa passar de 60%).</summary>
+    static bool SprintHeld()
+    {
+        if (BindPressed(InputSetup.GetKb(Act.Sprint))) return true;
+        return InputDevice.Gamepad && BindPressed(InputSetup.GetPad(Act.Sprint));
+    }
+
+    static bool BindPressed(Bind b)
+    {
+        if (b == null) return false;
+        switch (b.Kind)
+        {
+            case "key": return Input.IsPhysicalKeyPressed((Key)b.Code) || Input.IsKeyPressed((Key)b.Code);
+            case "mouse": return Input.IsMouseButtonPressed((MouseButton)b.Code);
+            case "joybutton":
+                foreach (int d in Input.GetConnectedJoypads()) if (Input.IsJoyButtonPressed(d, (JoyButton)b.Code)) return true;
+                return false;
+            case "joyaxis":
+                foreach (int d in Input.GetConnectedJoypads()) if (Input.GetJoyAxis(d, (JoyAxis)b.Code) * Mathf.Sign(b.Axis == 0 ? 1 : b.Axis) > 0.6f) return true;
+                return false;
+        }
+        return Input.IsActionPressed(Act.Sprint);
     }
 }
