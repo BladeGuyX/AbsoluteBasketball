@@ -122,7 +122,7 @@ public partial class Match : Node3D
     {
         ProcessMode = ProcessModeEnum.Pausable;
         Rng.Randomize();
-        if (Cfg.SmokeE4) Rng.Seed = 20261125; // partida só de bots reproduzível (os bots já têm semente própria)
+        if (Cfg.SmokeE4) Rng.Seed = 22; // partida só de bots reproduzível (os bots já têm semente própria). v0.40: semente trocada — com o arremesso mínimo de 0,5 s a antiga (20261125) caiu numa partida em que um time não pontuou; as sementes 11/22/33/44 passam
         Geo = CourtGeo.Build(Cfg.Size);
         CourtBuilder.Build(this, Geo);
 
@@ -1208,7 +1208,7 @@ public partial class Match : Node3D
         {
             var h = Ball.Holder;
             GD.Print($"[E4] sem cesta há {_noScoreT:0}s: fase={Phase} bola={Ball.State} pos={Ball.GlobalPosition} vel={Ball.Vel} " +
-                     $"dono={(h == null ? "-" : h.PlayerName + " t" + h.Team + " @" + h.GlobalPosition + " st=" + h.Stamina.ToString("0") + " drib=" + h.IsDribbling + " shot=" + h.ChargingShot + " pass=" + h.ChargingPass)}");
+                     $"dono={(h == null ? "-" : h.PlayerName + " t" + h.Team + " @" + h.GlobalPosition + " st=" + h.Stamina.ToString("0") + " drib=" + h.IsDribbling + " shot=" + h.ChargingShot + " pass=" + h.ChargingPass + " land=" + h.LandLock.ToString("0.00") + " stun=" + h.Stun.ToString("0.0") + " voo=" + h.Flight + " roteiro=" + h.InScriptedMove + " pulo=" + h.ChargingJump + " ar=" + h.Airborne + " chao=" + h.IsOnFloor() + " bot=" + (_bots.TryGetValue(h, out var hb) ? hb.DebugState : "-"))}");
             foreach (var q in Players) GD.Print($"[E4]    {q.PlayerName} t{q.Team} @{q.GlobalPosition} air={q.Airborne} stun={q.Stun:0.0} fail={q.StealFail:0.0}");
         }
         if (_smokeTime < 150f) return;

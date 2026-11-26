@@ -25,7 +25,9 @@ public sealed class BotBrain
     // passe em andamento
     bool _passing; float _passT; Player _passTo; bool _passHigh; float _passYawErr;
     // infiltração / enterrada
-    bool _driving; float _dunkPressAt = -1;
+    bool _driving; float _dunkPressAt = -1, _driveT;
+    /// <summary>Diagnóstico do --smoke-e4 (bot travado).</summary>
+    public string DebugState => $"arremessando={_shooting} passando={_passing} infiltrando={_driving} segurando={_hold:0.0}s pensar={_think:0.00}";
     Vector3 _sideStep;
     // defesa
     Player _threat; float _threatT; bool _threatDecided;
@@ -134,7 +136,10 @@ public sealed class BotBrain
 
         if (_driving)
         {
-            if (LaneBlocked(me, rim, 1.2f, 2.0f)) _driving = false;
+            // v0.40: parou perto do aro sem conseguir enterrar (virado para o lado, encurralado...) → desiste e decide de novo
+            _driveT += dt;
+            if (_driveT > 2.5f) { _driving = false; _driveT = 0; _think = 0; }
+            else if (LaneBlocked(me, rim, 1.2f, 2.0f)) _driving = false;
             else
             {
                 // não precisa correr para enterrar (v0.7): corre se tiver estamina
@@ -170,7 +175,7 @@ public sealed class BotBrain
         // infiltração para enterrar
         if (d <= T.DunkRange + 5f && !LaneBlocked(me, rim, 1.4f, 0f) && R.Randf() < T.BotDunkChance)
         {
-            _driving = true;
+            _driving = true; _driveT = 0;
             return false;
         }
         // passe para alguém melhor
@@ -180,7 +185,7 @@ public sealed class BotBrain
             if (to != null) { StartPass(ref inp, to, high); return true; }
         }
         // v0.37: Muralha de Aço do Iron adversário de pé e eu do lado de fora → entra com a bola em vez de arremessar
-        if (M.Geo.Wall[AttackHoop] && M.Geo.IsThree(me, AttackHoop)) { _driving = true; return false; }
+        if (M.Geo.Wall[AttackHoop] && M.Geo.IsThree(me, AttackHoop)) { _driving = true; _driveT = 0; return false; }
         // arremesso
         bool impatient = _hold > T.BotMaxHoldTime;
         if (d <= ShootRange() && (open >= T.BotOpenDistance || impatient || d < 4f || R.Randf() < T.BotContestedShotChance))

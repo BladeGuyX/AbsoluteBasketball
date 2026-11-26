@@ -324,3 +324,6 @@ Implementação (Claude): muralha = `CourtGeo.Wall[cesta]` + `ThreeDist` (mesma 
 ## Revisões do usuário (v0.39) — prevalecem sobre as anteriores
 - Arremesso: só pode sair no mínimo 0,8 s depois de apertar o botão (apertou e soltou rápido = fica 0,8 s mirando).
 - Iron: Investida dura 1 s a menos (2 s) e atordoa 1 s a mais (4 s). Indestrutível: as recargas correm 15% mais rápido enquanto ativa (no lugar de encurtar as recargas). A ult não deixa o Iron ser afetado por NENHUMA habilidade adversária, nem indiretamente (Investida, Muralha de Aço, área maior do Arranha-Céu...).
+
+## Revisões do usuário (v0.40)
+- Arremesso: o tempo mínimo até sair passa a ser 0,5 s.

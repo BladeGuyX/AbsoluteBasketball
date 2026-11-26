@@ -160,7 +160,7 @@ public sealed class Tuning
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
     public float ShotAutoReleaseTime = 1.5f;
     [Param(SShot, "Tempo mínimo mirando", "Depois de apertar o arremesso, ele só sai depois deste tempo (s), mesmo soltando o botão antes (apertou e soltou rápido = fica mirando até completar). Vale também no pulo.", 0, 3, 0.05f)]
-    public float ShotMinChargeTime = 0.8f;
+    public float ShotMinChargeTime = 0.5f;
     [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]

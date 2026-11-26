@@ -4,6 +4,13 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.40 — arremesso sai mais cedo
+
+1. Aperte e solte o arremesso bem rápido: agora ele sai **0,5 s** depois do aperto (antes 0,8 s). Segurando mais, sai ao soltar, como antes.
+2. No pulo: soltando cedo, arremessa no ar ao completar os 0,5 s.
+
+---
+
 ## v0.39 — arremesso com tempo mínimo, Iron ajustado
 
 1. **Arremesso (todos):** aperte e solte o arremesso bem rápido: o jogador continua mirando (véu vermelho na bola crescendo) e o arremesso só sai **0,8 s** depois do aperto. Segurando mais que isso, sai ao soltar, como antes. O automático continua em 1,5 s.
