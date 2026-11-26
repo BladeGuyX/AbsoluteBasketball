@@ -102,7 +102,6 @@ public partial class Cutscene : Node3D
                     if (StageT >= KStealDur) Finish(false);
                     break;
                 case KBreak:
-                    if (Cross(prev, StageT, 0.05f)) Sfx.Play2D(M, "cut_whoosh", -3);
                     if (StageT >= KBreakDur) Next(KRun);
                     break;
                 case KRun:
@@ -112,7 +111,6 @@ public partial class Cutscene : Node3D
                     if (StageT >= KBlockDur) { Next(KSpin); A.Start(Jit(t.KingUltCheck2Time), t.KingUltCheck2Window, KSpinMove + 0.15f); }
                     break;
                 case KSpin:
-                    if (Cross(prev, StageT, 0.02f)) Sfx.Play2D(M, "cut_whoosh", -2, 1.2f);
                     A.Tick(dt, io, go);
                     if (A.Done && A.Since >= Linger) Next(A.Ok ? KScore : KRimOut);
                     break;

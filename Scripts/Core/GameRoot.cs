@@ -121,7 +121,7 @@ public partial class GameRoot : Node
             {
                 bool pick = args.Contains("--picker");
                 UserSettings.I.Character = pick ? Characters.Luck : Characters.Bolt;
-                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Medium, AllyDummies = 1, EnemyDummies = 3 });
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Medium, AllyDummies = 1, EnemyDummies = args.Contains("--one") ? 1 : 3 });
                 GetTree().CreateTimer(4.5).Timeout += () => { if (pick) _match.DebugOpenPicker(); else _match.DebugOpenCheats(); };
                 GetTree().CreateTimer(5.5).Timeout += () =>
                 {

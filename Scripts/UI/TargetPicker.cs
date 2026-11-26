@@ -171,6 +171,12 @@ public partial class TargetPicker : Control
         int rows = (n + perRow - 1) / perRow;
         float cw = 250 * s * pop, ch = 300 * s * pop, gap = 22 * s;
         float pw = perRow * cw + (perRow - 1) * gap + 80 * s;
+        // v0.28: com poucos adversários o painel fica pelo menos da largura do título e da dica (antes o texto vazava)
+        string hintTxt = Hint();
+        float titleW = 110 * s + Mathf.Max(fb.GetStringSize(ab.Name, HorizontalAlignment.Left, -1, (int)(34 * s)).X,
+                                           f.GetStringSize("Clique no adversário escolhido", HorizontalAlignment.Left, -1, (int)(20 * s)).X) + 80 * s;
+        float hintW = f.GetStringSize(hintTxt, HorizontalAlignment.Left, -1, (int)(17 * s)).X + 110 * s;
+        pw = Mathf.Max(pw, Mathf.Max(titleW, hintW));
         float ph = rows * ch + (rows - 1) * gap + 230 * s;
         var center = Size / 2 + new Vector2(0, -20 * s);
         _panel = new Rect2(center - new Vector2(pw, ph) / 2, new Vector2(pw, ph));
@@ -237,12 +243,14 @@ public partial class TargetPicker : Control
         int cs = (int)(22 * s);
         var csz = fb.GetStringSize("Cancelar", HorizontalAlignment.Left, -1, cs);
         DrawString(fb, new Vector2(center.X - csz.X / 2, by + 32 * s), "Cancelar", HorizontalAlignment.Left, -1, cs, new Color(1, 1, 1, a));
-        string hint = InputDevice.Gamepad ? "← → escolher · " + InputDevice.Glyph(Act.Shoot) + " confirmar · " + InputDevice.Glyph(Act.Pass) + " cancelar"
-                                          : "clique para escolher · Esc ou botão direito cancela";
+        string hint = hintTxt;
         int fs = (int)(17 * s);
         var sz = f.GetStringSize(hint, HorizontalAlignment.Left, -1, fs);
         DrawString(f, new Vector2(center.X - sz.X / 2, _panel.End.Y - 8 * s), hint, HorizontalAlignment.Left, -1, fs, new Color(0.7f, 0.76f, 0.88f, a));
     }
+
+    static string Hint() => InputDevice.Gamepad ? "← → escolher · " + InputDevice.Glyph(Act.Shoot) + " confirmar · " + InputDevice.Glyph(Act.Pass) + " cancelar"
+                                                : "clique para escolher · Esc ou botão direito cancela";
 
     void DrawStyled(Rect2 r, Color c, float radius, bool bottom = true)
     {

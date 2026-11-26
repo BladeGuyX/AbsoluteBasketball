@@ -4,6 +4,13 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.28 — correções
+
+1. Luck (2) "Não me Decepciona" com só 1 adversário em quadra (ex.: Jogar local com 1 adversário): o painel fica largo o bastante — título, "Clique no adversário escolhido" e a dica de baixo ficam dentro dele.
+2. King ult (Sua Derrota é Absoluta): depois de acertar o 1º skill check (passa pelo defensor) e no giro em volta do bloqueio não toca mais o "vooosh". Os outros sons (entrada, impacto, cesta) continuam.
+
+---
+
 ## v0.27 — menus novos, modo de teste com trapaças, ajustes nas habilidades e valores do seu artifact
 
 **Menus e visual**
