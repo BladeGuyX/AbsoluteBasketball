@@ -118,6 +118,24 @@ public partial class GameRoot : Node
                 };
                 return;
             }
+            if (args.Contains("--fire")) // v0.33: print do fogo do Drible Perfeito (King aperta a habilidade 3)
+            {
+                UserSettings.I.Character = Characters.King;
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Small, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true });
+                GetTree().CreateTimer(7.0).Timeout += () => Input.ActionPress(Act.Ab3);
+                GetTree().CreateTimer(7.1).Timeout += () => Input.ActionRelease(Act.Ab3);
+                string fp = args[si + 1];
+                for (int k = 0; k < 3; k++)
+                {
+                    int kk = k;
+                    GetTree().CreateTimer(7.35 + 0.3 * k).Timeout += () =>
+                    {
+                        GetViewport().GetTexture().GetImage().SavePng(fp.Replace(".png", $"_{kk}.png"));
+                        if (kk == 2) GameRoot.QuitClean(this);
+                    };
+                }
+                return;
+            }
             if (args.Contains("--cheats") || args.Contains("--picker"))
             {
                 bool pick = args.Contains("--picker");
@@ -220,7 +238,7 @@ public partial class GameRoot : Node
         {
             DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
             DisplayServer.WindowSetSize(new Vector2I(1600, 900));
-            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : CutKind.KingUlt, CutShotMiss = args.Contains("--miss"),
+            StartMatch(new MatchConfig { CutShot = args.Contains("--duel") ? CutKind.BoltDuel : CutKind.KingUlt, CutShotMiss = args.Contains("--miss"), CutShotBlockMiss = args.Contains("--toco"),
                 ScreenshotPath = args[cs + 1], Size = CourtSize.Small, TargetScore = 99, AllyDummies = 1, EnemyDummies = 2, TrainingDummies = true });
             return;
         }

@@ -116,7 +116,8 @@ public partial class CharacterSelect : Control
             _cards[i].Modulate = i == _sel ? Colors.White : new Color(0.78f, 0.8f, 0.86f, 0.85f);
         _name.Text = d.Name;
         _name.AddThemeColorOverride("font_color", d.Color.Darkened(0.15f));
-        _tag.Text = d.Tagline + (AbilitiesOn ? "" : "   (modo sem habilidades: só os atributos valem)");
+        _tag.Text = AbilitiesOn ? "" : "Modo sem habilidades: só os atributos valem."; // v0.33: sem a descrição do personagem
+        _tag.Visible = !AbilitiesOn;
         foreach (var c in _stats.GetChildren()) c.QueueFree();
         var stars = Characters.Stars(_sel);
         for (int i = 0; i < 5; i++)

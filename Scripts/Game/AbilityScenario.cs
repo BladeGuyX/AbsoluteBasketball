@@ -150,6 +150,7 @@ public sealed class AbilityScenario
         // ---------------- King ult: cutscene (acerta tudo = 7 pontos; erra = bola do adversário) ----------------
         foreach (var r in KingUlt(true)) yield return r;
         foreach (var r in KingUlt(false)) yield return r;
+        foreach (var r in KingUlt(false, true)) yield return r;
 
         // ---------------- Luck 1: Arremesso Arriscado ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
@@ -295,7 +296,7 @@ public sealed class AbilityScenario
         Done = true;
     }
 
-    IEnumerable<int> KingUlt(bool win)
+    IEnumerable<int> KingUlt(bool win, bool failBlock = false)
     {
         foreach (var _ in WaitPlaying()) yield return 0;
         Reset(Characters.King);
@@ -308,10 +309,19 @@ public sealed class AbilityScenario
         _inp.Pressed |= Btn.Ult; yield return 0;
         bool started = M.Phase == MatchPhase.Cutscene && M.Cut.Kind == CutKind.KingUlt;
         int n = 0;
-        while (M.Cut.Active && n++ < 1200) { CutPress(M.Cut.CheckFor(P), win); yield return 0; }
+        bool sawBlocked = false;
+        while (M.Cut.Active && n++ < 1200)
+        {
+            // failBlock: acerta o 1º e erra o do bloqueio (v0.33)
+            bool hit = failBlock ? M.Cut.Stage == Cutscene.KCheck1 : win;
+            sawBlocked |= M.Cut.Stage == Cutscene.KBlocked;
+            CutPress(M.Cut.CheckFor(P), hit);
+            yield return 0;
+        }
         int gained = M.Score[P.Team] - sc;
         bool ok = win ? gained == Mathf.RoundToInt(Tuning.I.KingUltPoints) : gained == 0 && M.Ball.Holder != null && M.Ball.Holder.Team != P.Team;
-        Rec(win ? "ult_king_acertou" : "ult_king_errou", started && ok && P.Ab.Ult < 0.01f);
+        if (failBlock) ok &= sawBlocked;
+        Rec(failBlock ? "ult_king_toco" : win ? "ult_king_acertou" : "ult_king_errou", started && ok && P.Ab.Ult < 0.01f);
     }
 
     IEnumerable<int> Duel(bool win)

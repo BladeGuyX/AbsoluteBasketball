@@ -1881,25 +1881,47 @@
     "sub": "Habilidades"
   },
   {
-    "key": "KingUltCheck2Time",
+    "key": "KingUltCheckBlockTime",
     "section": "King",
-    "label": "Ult: 2\u00BA skill check (dura\u00E7\u00E3o)",
-    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no 2\u00BA skill check (arremesso). Menor = mais r\u00E1pido.",
+    "label": "Ult: skill check do bloqueio (dura\u00E7\u00E3o)",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no skill check do meio (quando o advers\u00E1rio pula para bloquear). Errou = o King arremessa e toma o toco.",
     "min": 0.3,
     "max": 3,
     "step": 0.05,
-    "default": 0.6,
+    "default": 0.72,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheckBlockWindow",
+    "section": "King",
+    "label": "Ult: skill check do bloqueio (janela)",
+    "desc": "Janela certa (s) do skill check do bloqueio (entre o 1\u00BA e o \u00FAltimo em dificuldade).",
+    "min": 0.02,
+    "max": 0.5,
+    "step": 0.005,
+    "default": 0.075,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "KingUltCheck2Time",
+    "section": "King",
+    "label": "Ult: \u00FAltimo skill check (dura\u00E7\u00E3o)",
+    "desc": "Segundos at\u00E9 o ponteiro chegar na zona no \u00FAltimo skill check (arremesso). Menor = mais r\u00E1pido.",
+    "min": 0.3,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.55,
     "sub": "Habilidades"
   },
   {
     "key": "KingUltCheck2Window",
     "section": "King",
-    "label": "Ult: 2\u00BA skill check (janela)",
-    "desc": "Janela certa (s) do 2\u00BA skill check (um pouco mais dif\u00EDcil que o 1\u00BA).",
+    "label": "Ult: \u00FAltimo skill check (janela)",
+    "desc": "Janela certa (s) do \u00FAltimo skill check (o mais dif\u00EDcil).",
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
-    "default": 0.06,
+    "default": 0.055,
     "sub": "Habilidades"
   },
   {
@@ -2009,7 +2031,7 @@
     "min": 1,
     "max": 60,
     "step": 0.5,
-    "default": 7,
+    "default": 5,
     "sub": "Habilidades"
   },
   {

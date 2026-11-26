@@ -426,8 +426,10 @@ public sealed class Tuning
     [Param(SKing, "Ult: pontos da cesta", "Pontos da cesta da ultimate Sua Derrota é Absoluta.", 1, 20, 1, Sub = Hab)] public float KingUltPoints = 4f;
     [Param(SKing, "Ult: 1º skill check (duração)", "Segundos até o ponteiro chegar na zona no 1º skill check (drible).", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck1Time = 0.85f;
     [Param(SKing, "Ult: 1º skill check (janela)", "Janela certa (s) do 1º skill check.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck1Window = 0.09f;
-    [Param(SKing, "Ult: 2º skill check (duração)", "Segundos até o ponteiro chegar na zona no 2º skill check (arremesso). Menor = mais rápido.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck2Time = 0.6f;
-    [Param(SKing, "Ult: 2º skill check (janela)", "Janela certa (s) do 2º skill check (um pouco mais difícil que o 1º).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck2Window = 0.06f;
+    [Param(SKing, "Ult: skill check do bloqueio (duração)", "Segundos até o ponteiro chegar na zona no skill check do meio (quando o adversário pula para bloquear). Errou = o King arremessa e toma o toco.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheckBlockTime = 0.72f;
+    [Param(SKing, "Ult: skill check do bloqueio (janela)", "Janela certa (s) do skill check do bloqueio (entre o 1º e o último em dificuldade).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheckBlockWindow = 0.075f;
+    [Param(SKing, "Ult: último skill check (duração)", "Segundos até o ponteiro chegar na zona no último skill check (arremesso). Menor = mais rápido.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck2Time = 0.55f;
+    [Param(SKing, "Ult: último skill check (janela)", "Janela certa (s) do último skill check (o mais difícil).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck2Window = 0.055f;
     [Param(SKing, "Presença: aviso na tela", "Segundos que a borda da tela de quem teve o arremesso afetado fica vermelha.", 0, 3, 0.05f, Sub = Adv)] public float KingPresenceFlash = 0.7f;
     [Param(SKing, "Presença: desvio do arremesso", "Quanto (m) o arremesso afetado é desviado para bater no aro e sair.", 0.2f, 3, 0.05f, Sub = Adv)] public float KingPresenceMissOffset = 0.75f;
 
@@ -439,7 +441,7 @@ public sealed class Tuning
     [Param(SLuck, "Salto", "Estrelas de Salto do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarJump = 2f;
     [Param(SLuck, "(1) Arremesso Arriscado: chance de errar", "Chance (0–1) do Arremesso Arriscado errar.", 0, 1, 0.01f, Sub = Hab)] public float LuckRiskyMissChance = 0.3f;
     [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 30f;
-    [Param(SLuck, "(2) Não me Decepciona: duração", "Segundos em que a cesta do adversário escolhido conta para o time do Luck.", 1, 60, 0.5f, Sub = Hab)] public float LuckBetDuration = 7f;
+    [Param(SLuck, "(2) Não me Decepciona: duração", "Segundos em que a cesta do adversário escolhido conta para o time do Luck.", 1, 60, 0.5f, Sub = Hab)] public float LuckBetDuration = 5f;
     [Param(SLuck, "(2) Não me Decepciona: recarga", "Segundos de recarga do Não me Decepciona.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 50f;
     [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.8f;
     [Param(SLuck, "(3) Impulso Descuidado: atordoamento do tropeço", "Segundos atordoado quando o Luck tropeça.", 0, 10, 0.25f, Sub = Hab)] public float LuckTripStun = 2.5f;

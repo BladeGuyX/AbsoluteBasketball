@@ -6,7 +6,7 @@
 /// </summary>
 public static class GameVersion
 {
-    public const string Number = "0.32";
+    public const string Number = "0.33";
     public const string Stage = "Etapa 7";
     public static string Label => $"v{Number} · {Stage}";
 }

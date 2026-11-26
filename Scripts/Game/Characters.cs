@@ -53,7 +53,7 @@ public static class Characters
                     Full = "Só com a bola. Faz na hora um drible (bola com aura vermelha) {KingDribbleExtra} s mais longo que o normal e que não gasta cargas de drible. Quem tentar roubar a bola durante ele cai no chão atordoado por {KingDribbleStun} s. Recarga: {KingDribbleCooldown} s." },
                 new() { Name = "Sua Derrota é Absoluta", Icon = AbIcon.Crown, Color = new Color("ffd23f"),
                     Short = "Cutscene: dribla, dá a volta no bloqueio e arremessa.",
-                    Full = "Ultimate, só com a bola. Começa uma cutscene: no meio da quadra o King tenta driblar um adversário (skill check). Se errar, ele rouba a bola: a rodada reinicia com a bola do time adversário. Se acertar, o King vai para a linha de 3, outro adversário pula para bloquear, o King dá a volta e arremessa pelo lado da cesta (skill check mais difícil). Acertou: cesta de {KingUltPoints} pontos. Errou: a bola bate no aro e sai, e a rodada reinicia com a bola do adversário." },
+                    Full = "Ultimate, só com a bola. Começa uma cutscene: no meio da quadra o King tenta driblar um adversário (skill check). Se errar, ele rouba a bola: a rodada reinicia com a bola do time adversário. Se acertar, o King vai para a linha de 3, outro adversário pula para bloquear (2º skill check: se errar, o King arremessa, toma o toco e a rodada reinicia com a bola do adversário). Se acertar, o King dá a volta nele e arremessa pelo lado da cesta (último skill check, o mais difícil). Acertou: cesta de {KingUltPoints} pontos. Errou: a bola bate no aro e sai, e a rodada reinicia com a bola do adversário." },
             },
         },
         new()

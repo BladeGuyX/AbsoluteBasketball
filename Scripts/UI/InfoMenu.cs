@@ -102,9 +102,12 @@ public partial class InfoMenu : Control
         var head = new HBoxContainer();
         head.AddThemeConstantOverride("separation", 16);
         head.AddChild(UiKit.Section(def.Name, 40, def.Color.Darkened(0.15f)));
-        var tag = UiKit.Lbl(def.Tagline + (AbilitiesOn ? "" : "   (habilidades desligadas nesta partida)"), 20, grey);
-        tag.SizeFlagsVertical = SizeFlags.ShrinkCenter;
-        head.AddChild(tag);
+        if (!AbilitiesOn)
+        {
+            var tag = UiKit.Lbl("(habilidades desligadas nesta partida)", 20, grey);
+            tag.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+            head.AddChild(tag);
+        }
         info.AddChild(head);
         var stars = Characters.Stars(chr);
         var srow = new HBoxContainer();

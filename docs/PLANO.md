@@ -22,6 +22,7 @@ artifact de tuning atualizado, `CLAUDE.md` atualizado e roteiro de testes em `do
 | — | **v0.30:** botão "Atualizar" consertado: o `Updater` passava `-ExeArgs ""` ao PowerShell; a Godot tira o argumento vazio e o PowerShell fechava com erro antes de instalar (só o `--update-test`, que passa `--print-version`, funcionava). Agora só passa `-ExeArgs` no teste. | ✅ |
 | — | **v0.31:** balanceamento aplicado de verdade (tuning.json velho sobrepunha; agora `tuning.defaults.json` faz valores não mexidos seguirem os padrões novos), véu vermelho de carga do arremesso na bola, corrida que ficava ligada sozinha (gatilho do controle / modo alternar), Swap mantém a carga, Olho do Rei até meia quadra, "Tem certeza?" ao sair, valores novos. | ✅ |
 | — | **v0.32:** cenário da praia com modelos do Blender (`make_scenery.py` + `Scenery.cs`), Presença não faz mais a bola "voar", véu de carga preciso, "Sem recarga" por jogador, duelo sem resultado do skill check, alcance por estrela menor, fogo no Drible Perfeito, menu local em cartões. | ✅ |
+| — | **v0.33:** skill check do bloqueio na ult do King (`Cutscene.KBlock` vira skill check; errou → `KBlocked` = toco e bola do adversário; `KingUltCheckBlockTime/Window`, último check mais difícil), descrições dos personagens removidas, Não me Decepciona 5 s, Drible Perfeito com partículas vermelhas estilizadas. Prints: `--screenshot <png> --fire`, `--cut-shot <png> --toco`. | ✅ |
 | 8 | Áudio e polimento: música, sons reais, partículas, replays de cesta, menus finais | |
 
 ## Arquitetura (resumo)

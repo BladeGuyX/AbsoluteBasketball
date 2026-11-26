@@ -27,6 +27,7 @@ public sealed class MatchConfig
     public bool SmokeAbilities;      // --smoke-abilities (v0.26: habilidades, ultimates e cutscenes)
     public CutKind CutShot;          // --cut-shot <png> [--duel] [--miss]: prints da cutscene (v0.26)
     public bool CutShotMiss;
+    public bool CutShotBlockMiss; // v0.33: --toco = erra só o skill check do bloqueio
     /// <summary>v0.26: false = modo sem habilidades (ainda escolhe personagem, mas nenhuma habilidade nem ultimate funciona).</summary>
     public bool Abilities = true;
     /// <summary>v0.27: modo de teste — partida infinita (sem vencedor nem relógio) e aba de trapaças no menu de pausa.</summary>
@@ -1201,7 +1202,8 @@ public partial class Match : Node3D
         var c = Cut.CheckFor(p);
         if (c != null && c.Active && !c.Pressed && c.T >= 0)
         {
-            float at = Cfg.CutShotMiss ? c.Dur * 0.4f : c.Dur - 1f / 120f;
+            bool miss = Cfg.CutShotMiss || (Cfg.CutShotBlockMiss && Cut.Stage == Cutscene.KBlock);
+            float at = miss ? c.Dur * 0.4f : c.Dur - 1f / 120f;
             if (c.T + 1f / 60f >= at) { inp.Pressed |= Btn.Shoot; inp.Held |= Btn.Shoot; }
         }
         return inp;

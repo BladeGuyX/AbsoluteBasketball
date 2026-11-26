@@ -4,6 +4,17 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.33 — skill check do bloqueio na ult do King, Não me Decepciona 5 s, partículas no Drible Perfeito
+
+1. **Escolha de personagem e Informações:** embaixo do nome não aparece mais a frase de descrição (ex.: "Precisão absoluta...").
+2. **Sua Derrota é Absoluta (King) — agora com 3 skill checks:** 1º no drible (igual), **2º quando o adversário pula para bloquear** (o pulo dele fica em câmera lenta e chega no alto junto com a zona certa; um pouco mais difícil que o 1º), 3º no arremesso depois do giro (um pouquinho mais difícil que antes).
+   - Erre o 2º: o King tenta arremessar, toma o toco (clarão vermelho, a bola é rebatida para o lado), a cutscene acaba e a rodada recomeça com a bola do adversário.
+   - Acerte o 2º: a cutscene segue normal (giro em volta do defensor e último skill check).
+3. **Não me Decepciona (Luck):** dura 5 s (a barrinha da habilidade esvazia em 5 s).
+4. **Drible Perfeito (King):** em vez de fogo realista, saem quadradinhos vermelhos girando e subindo da bola (partículas estilizadas, bem vermelhas).
+
+---
+
 ## v0.32 — cenário novo, bola "voando", véu de carga preciso, menu local, ajustes
 
 1. **Cenário:** em volta da quadra agora tem arquibancadas (assentos azuis de um lado, laranja do outro), postes de luz nos cantos, palmeiras, moitas e pedras; atrás das cestas, guarda-sóis com espreguiçadeiras e pranchas de surfe; num dos fundos, o mar com ondas e espuma e uma torre de salva-vidas. A areia tem variação de cor.

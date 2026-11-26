@@ -34,8 +34,9 @@ public partial class Cutscene : Node3D
     public bool Active => Kind != CutKind.None;
 
     // King
-    public const int KIntro = 0, KCheck1 = 1, KSteal = 2, KBreak = 3, KRun = 4, KBlock = 5, KSpin = 6, KScore = 7, KRimOut = 8;
-    const float KIntroDur = 1.7f, KStealDur = 1.6f, KBreakDur = 0.9f, KRunDur = 1.0f, KBlockDur = 0.75f, KSpinMove = 0.55f, KScoreDur = 2.4f, KRimDur = 2.1f;
+    public const int KIntro = 0, KCheck1 = 1, KSteal = 2, KBreak = 3, KRun = 4, KBlock = 5, KSpin = 6, KScore = 7, KRimOut = 8, KBlocked = 9;
+    const float KIntroDur = 1.7f, KStealDur = 1.6f, KBreakDur = 0.9f, KRunDur = 1.0f, KBlockDur = 0.75f, KSpinMove = 0.55f, KScoreDur = 2.4f, KRimDur = 2.1f, KBlockedDur = 2.0f;
+    const float KBlockedHit = 0.32f;
     const float KBallFlight = 1.15f;
     // Bolt
     public const int DIntro = 0, DDuel = 1, DLose = 2, DThunder = 3;
@@ -105,10 +106,20 @@ public partial class Cutscene : Node3D
                     if (StageT >= KBreakDur) Next(KRun);
                     break;
                 case KRun:
-                    if (StageT >= KRunDur) Next(KBlock);
+                    // v0.33: skill check do meio, enquanto o adversário pula para bloquear
+                    if (StageT >= KRunDur) { Next(KBlock); A.Start(Jit(t.KingUltCheckBlockTime), t.KingUltCheckBlockWindow, KBlockDur * 0.4f); }
                     break;
                 case KBlock:
-                    if (StageT >= KBlockDur) { Next(KSpin); A.Start(Jit(t.KingUltCheck2Time), t.KingUltCheck2Window, KSpinMove + 0.15f); }
+                    A.Tick(dt, io, go);
+                    if (A.Done && A.Since >= Linger)
+                    {
+                        if (A.Ok) { Next(KSpin); A.Start(Jit(t.KingUltCheck2Time), t.KingUltCheck2Window, KSpinMove + 0.15f); }
+                        else Next(KBlocked);
+                    }
+                    break;
+                case KBlocked:
+                    if (Cross(prev, StageT, KBlockedHit)) { Sfx.Play2D(M, "cut_hit", -1); Sfx.Play2D(M, "board", -2, 0.8f); }
+                    if (StageT >= KBlockedDur) Finish(false);
                     break;
                 case KSpin:
                     A.Tick(dt, io, go);
@@ -192,7 +203,7 @@ public partial class Cutscene : Node3D
     public SkillCheckState CheckFor(Player p)
     {
         if (!Active || p == null) return null;
-        if (p.Id == OwnerId && (Stage == KCheck1 || Stage == KSpin) && Kind == CutKind.KingUlt) return A;
+        if (p.Id == OwnerId && (Stage == KCheck1 || Stage == KBlock || Stage == KSpin) && Kind == CutKind.KingUlt) return A;
         if (Kind == CutKind.BoltDuel && Stage == DDuel) return p.Id == OwnerId ? A : p.Id == TargetId ? B : null;
         return null;
     }
@@ -240,7 +251,8 @@ public partial class Cutscene : Node3D
     ImmediateMesh _beamMesh;
     CutKind _visKind;
     int _visStage = -1;
-    float _vt, _shake, _time, _flashCooldown;
+    float _vt, _shake, _time, _flashCooldown, _blockReach = KBlockDur;
+    bool _blockHitFx;
     readonly RandomNumberGenerator _fxRng = new();
 
     public override void _Ready()
@@ -358,6 +370,8 @@ public partial class Cutscene : Node3D
             if (stage == KSteal) { _ov.Flash(new Color(1, 0.2f, 0.2f), 0.5f); _shake = 1f; }
             if (stage == KBreak) { _ov.Flash(Colors.White, 0.6f); _ov.ImpactFrame = 0.12f; }
             if (stage == KSpin) _ov.Flash(Colors.White, 0.35f);
+            if (stage == KBlock) _blockReach = KBlockDur;
+            if (stage == KBlocked) _blockHitFx = false;
         }
         else
         {
@@ -510,7 +524,9 @@ public partial class Cutscene : Node3D
             }
             case KBlock:
             {
-                float k = Mathf.Clamp(u / KBlockDur, 0, 1);
+                // v0.33: o pulo do defensor chega no alto junto com a zona do skill check (câmera lenta)
+                if (A.Active) _blockReach = Mathf.Max(0.2f, u + (A.Dur - A.T));
+                float k = Mathf.Clamp(u / _blockReach, 0, 1);
                 // finta de arremesso; o defensor pula para bloquear (em câmera lenta)
                 K.Pos = threeSpot; K.Yaw = YawTo(threeSpot, rim);
                 K.St.Charging = true; K.St.Charge = 0.3f;
@@ -573,6 +589,54 @@ public partial class Cutscene : Node3D
                     Cam(cp, (K.Pos + Vector3.Up * 1.6f).Lerp(rim, 0.35f), 48);
                     _ov.Vignette = 0.6f;
                 }
+                break;
+            }
+            case KBlocked:
+            {
+                // v0.33: errou o skill check do bloqueio: o King arremessa e o defensor dá o toco
+                var toRim = ((rim - threeSpot) with { Y = 0 }).Normalized();
+                var side = new Vector3(-toRim.Z, 0, toRim.X);
+                float jk = Mathf.Clamp(u / 0.28f, 0, 1);
+                float down = Mathf.Clamp((u - 0.5f) / 0.4f, 0, 1);
+                K.Pos = threeSpot + Vector3.Up * (0.55f * Mathf.Sin(jk * Mathf.Pi * 0.5f) * (1f - down));
+                K.Yaw = YawTo(threeSpot, rim);
+                K.St.Airborne = K.Pos.Y > 0.05f; K.St.VelY = down > 0 ? -2f : 2f;
+                K.St.HasBall = u < KBlockedHit; K.St.Charging = u < KBlockedHit; K.St.Charge = 0.6f;
+                K.St.Release = u >= KBlockedHit ? Mathf.Clamp(1f - (u - KBlockedHit) / 0.4f, 0, 1) : 0;
+                K.St.Emote = u < KBlockedHit + 0.15f ? Expressions.Focado : Expressions.Surpreso;
+                var release = K.Pos + Vector3.Up * 2.2f + Dir(K.Yaw) * 0.35f;
+                var hit = d2Spot + Vector3.Up * (1.5f + 2.2f) - toRim * 0.45f; // nas mãos do defensor, no alto do pulo
+                if (u < KBlockedHit) ball = (threeSpot + Vector3.Up * 2.0f + Dir(K.Yaw) * 0.3f).Lerp(release, u / KBlockedHit).Lerp(hit, Smooth(u / KBlockedHit));
+                else
+                {
+                    // a bola volta rebatida para trás e para o lado, quicando
+                    float bt = u - KBlockedHit;
+                    // tapa para baixo e para o lado (longe do King), quica e sai rolando
+                    var outDir = (side * 1f - toRim * 0.25f).Normalized();
+                    ball = hit + outDir * (6.5f * bt / (1f + bt)) + Vector3.Up * (-2.5f * bt - 7f * bt * bt);
+                    float rb = Tuning.I.BallRadius;
+                    if (ball.Y < rb)
+                    {
+                        float tb = bt - 0.42f; // ~quando chega no chão
+                        ball.Y = rb + Mathf.Abs(Mathf.Sin(Mathf.Max(tb, 0) * 6f)) * 1.1f * Mathf.Exp(-tb * 2.2f);
+                    }
+                }
+                if (D2 != null)
+                {
+                    float top = 1.5f;
+                    D2.Pos = d2Spot + Vector3.Up * Mathf.Max(0, top - top * Mathf.Clamp((u - KBlockedHit) / 0.7f, 0, 1));
+                    D2.Yaw = YawTo(d2Spot, threeSpot);
+                    D2.St.Airborne = D2.Pos.Y > 0.05f; D2.St.VelY = u < KBlockedHit ? 0.5f : -2f;
+                    D2.St.Defending = false; D2.St.Release = u >= KBlockedHit ? Mathf.Clamp(1f - (u - KBlockedHit) / 0.3f, 0, 1) : 0;
+                    D2.St.Emote = u > KBlockedHit ? Expressions.SorrisoFrio : Expressions.Bravo;
+                    D2.St.Mood = u > 0.9f ? 1 : 0;
+                }
+                if (u >= KBlockedHit && !_blockHitFx) { _blockHitFx = true; _ov.Flash(new Color(1, 0.2f, 0.2f), 0.5f); _ov.ImpactFrame = 0.1f; _shake = 1.2f; }
+                var mid = (threeSpot + d2Spot) * 0.5f;
+                var cp = mid + Right(face) * 5.0f + Vector3.Up * 1.1f - fwd * 1.0f;
+                float ck = Smooth((u - KBlockedHit) / 1.2f);
+                Cam(cp.Lerp(cp + Right(face) * 1.5f + Vector3.Up * 0.6f - fwd * 1.5f, ck), (mid + Vector3.Up * 2.2f).Lerp(ball, 0.45f * ck), Mathf.Lerp(46, 54, ck));
+                _ov.Vignette = 0.55f;
                 break;
             }
             case KScore:
