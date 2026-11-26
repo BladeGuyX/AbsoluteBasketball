@@ -20,13 +20,14 @@ public static class BallPhys
     public const int Substeps = 4;
 
     /// <param name="assistHoop">Cesta onde valem o aro amigável e a tabelinha (só arremessos na cesta adversária); −1 = física pura.</param>
-    public static BallHit Simulate(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1)
+    /// <param name="wallPass">v0.39: máscara (bit = cesta) de Muralhas de Aço que esta bola atravessa (lançada por um Iron Indestrutível).</param>
+    public static BallHit Simulate(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1, int wallPass = 0)
     {
         var total = new BallHit { ScoredHoop = -1, UpThroughHoop = -1 };
         float h = dt / Substeps;
         for (int i = 0; i < Substeps; i++)
         {
-            var r = Step(ref p, ref v, h, g, assistHoop);
+            var r = Step(ref p, ref v, h, g, assistHoop, wallPass);
             total.Floor |= r.Floor; total.Rim |= r.Rim; total.Board |= r.Board;
             total.Wall |= r.Wall; total.Pole |= r.Pole; total.Steel |= r.Steel;
             total.Impact = Mathf.Max(total.Impact, r.Impact);
@@ -36,7 +37,7 @@ public static class BallPhys
         return total;
     }
 
-    public static BallHit Step(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1)
+    public static BallHit Step(ref Vector3 p, ref Vector3 v, float dt, CourtGeo g, int assistHoop = -1, int wallPass = 0)
     {
         var t = Tuning.I;
         var hit = new BallHit { ScoredHoop = -1, UpThroughHoop = -1 };
@@ -84,7 +85,7 @@ public static class BallPhys
         // v0.37: Muralha de Aço do Iron (parede alta em cima da linha de 3; só a bola bate, jogadores atravessam)
         for (int hoop = 0; hoop < 2; hoop++)
         {
-            if (!g.Wall[hoop] || p.Y > t.IronWallHeight + r) continue;
+            if (!g.Wall[hoop] || p.Y > t.IronWallHeight + r || (wallPass & (1 << hoop)) != 0) continue;
             float fp = g.ThreeDist(prev, hoop, out _);
             float fn = g.ThreeDist(p, hoop, out var grad);
             float side = fp >= g.ThreePt ? 1f : -1f;          // lado de onde a bola veio (fora = +1)

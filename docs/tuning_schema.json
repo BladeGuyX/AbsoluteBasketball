@@ -462,6 +462,17 @@
     "sub": ""
   },
   {
+    "key": "ShotMinChargeTime",
+    "section": "Arremesso",
+    "label": "Tempo m\u00EDnimo mirando",
+    "desc": "Depois de apertar o arremesso, ele s\u00F3 sai depois deste tempo (s), mesmo soltando o bot\u00E3o antes (apertou e soltou r\u00E1pido = fica mirando at\u00E9 completar). Vale tamb\u00E9m no pulo.",
+    "min": 0,
+    "max": 3,
+    "step": 0.05,
+    "default": 0.8,
+    "sub": ""
+  },
+  {
     "key": "ShotPitchBaseDeg",
     "section": "Arremesso",
     "label": "C\u00E2mera: inclina\u00E7\u00E3o do meio",
@@ -2625,7 +2636,7 @@
     "min": 0.5,
     "max": 8,
     "step": 0.1,
-    "default": 3,
+    "default": 2,
     "sub": "Habilidades"
   },
   {
@@ -2636,7 +2647,7 @@
     "min": 0,
     "max": 10,
     "step": 0.25,
-    "default": 3,
+    "default": 4,
     "sub": "Habilidades"
   },
   {
@@ -2684,12 +2695,12 @@
     "sub": "Habilidades"
   },
   {
-    "key": "IronUltCdReduction",
+    "key": "IronUltCdSpeedup",
     "section": "Iron",
-    "label": "Ult: redu\u00E7\u00E3o das recargas",
-    "desc": "Fra\u00E7\u00E3o a menos nas recargas das habilidades usadas durante o modo Indestrut\u00EDvel (0,15 = 15% mais curtas).",
+    "label": "Ult: recargas mais r\u00E1pidas",
+    "desc": "Quanto mais r\u00E1pido as recargas das habilidades do Iron correm enquanto o modo Indestrut\u00EDvel est\u00E1 ativo (0,15 = 15% mais r\u00E1pido).",
     "min": 0,
-    "max": 0.9,
+    "max": 2,
     "step": 0.01,
     "default": 0.15,
     "sub": "Habilidades"

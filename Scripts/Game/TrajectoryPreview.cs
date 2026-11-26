@@ -70,7 +70,7 @@ public partial class TrajectoryPreview : MultiMeshInstance3D
         while (time < Tuning.I.TrajectoryPreviewTime && _path.Count < 400)
         {
             var before = pos;
-            var hit = BallPhys.Simulate(ref pos, ref vel, dt, g, CourtGeo.AttackHoop(p.Team));
+            var hit = BallPhys.Simulate(ref pos, ref vel, dt, g, CourtGeo.AttackHoop(p.Team), PlayerAbilities.WallPassMask(p));
             time += dt;
             _path.Add(pos);
             if (hit.Any || hit.ScoredHoop >= 0)

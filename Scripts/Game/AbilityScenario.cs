@@ -447,11 +447,14 @@ public sealed class AbilityScenario
         n = 0; while ((P.Airborne || P.LandLock > 0) && n++ < 300) yield return 0;
         yield return 0;
         bool released = !P.Ab.BlockCatch;
-        // v0.38: recarga 15% menor no modo; bloquear enterrada não é falta (fica com a bola)
+        // v0.39: recargas correm 15% mais rápido no modo; bloquear enterrada não é falta (fica com a bola)
         Reset(Characters.Iron); P.Ab.UltT = t.IronUltDuration;
         Place(P, rimD.X + inward * 4f, 6f); Place(e1, -s * 10f, 6f); Place(e0, s * 10f, -6f);
         _inp.Pressed |= Btn.Ab1; yield return 0;
-        bool cdShort = Mathf.Abs(P.Ab.Cd[0] - t.IronWallCooldown * (1f - t.IronUltCdReduction)) < 0.05f;
+        float cdA = P.Ab.Cd[0];
+        foreach (var _ in Wait(1f)) yield return 0;
+        float ran = cdA - P.Ab.Cd[0];
+        bool cdShort = Mathf.Abs(cdA - t.IronWallCooldown) < 0.05f && Mathf.Abs(ran - 1f * (1f + t.IronUltCdSpeedup)) < 0.06f;
         foreach (var _ in WaitPlaying()) yield return 0;
         P.Ab.WallT = 0;
         var rimE = M.Geo.RimCenter[CourtGeo.AttackHoop(e0.Team)];
@@ -471,8 +474,38 @@ public sealed class AbilityScenario
         }
         dunkBlocked = dunking && Ev("IRON_DUNK_BLOCK") > db0 && Ev("FOUL") == f0 && M.Ball.Holder == P && M.Phase == MatchPhase.Playing;
         n = 0; while ((P.Airborne || P.LandLock > 0) && n++ < 300) yield return 0;
-        bool ok = posed && on && fast && stamina && immune && control && caught && released && cdShort && dunkBlocked;
-        if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} recarga={cdShort} enterrada={dunkBlocked}");
+        // v0.39: nenhuma habilidade adversária pega nele — Investida de um Iron adversário passa sem atropelar nem empurrar
+        foreach (var _ in WaitPlaying()) yield return 0;
+        if (M.Ball.Holder == P) M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        P.Ab.UltT = t.IronUltDuration; P.Stun = 0;
+        int keepE1 = e1.CharacterId;
+        e1.CharacterId = Characters.Iron; e1.Stun = 0;
+        Place(P, 0, 0, null); Place(e1, -s * 4f, 0, new Vector3(s, 0, 0)); Place(e0, s * 10f, -8f); Place(ally, -s * 10f, 8f);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        var pBefore = P.GlobalPosition;
+        e1.Ab.TestCharge(ShotMath.YawOf(new Vector3(s, 0, 0)));
+        float moved = 0; n = 0;
+        while (e1.Ab.Charging && n++ < 240) { moved = Mathf.Max(moved, ((P.GlobalPosition - pBefore) with { Y = 0 }).Length()); yield return 0; }
+        bool chargeImmune = P.Stun <= 0 && moved < 0.25f && (e1.GlobalPosition.X - P.GlobalPosition.X) * s > 0.5f;
+        e1.Ab.TiredT = 0; e1.Stun = 0; e1.CharacterId = keepE1;
+        // ... e a Muralha de Aço do adversário não barra a bola dele
+        foreach (var _ in WaitPlaying()) yield return 0;
+        int keepE0 = e0.CharacterId;
+        e0.CharacterId = Characters.Iron; e0.Ab.WallT = 5f;
+        int atk = CourtGeo.AttackHoop(P.Team);
+        var rimA = M.Geo.RimCenter[atk];
+        float inA = -CourtGeo.HoopSign(atk);
+        Place(P, rimA.X + inA * (M.Geo.ThreePt + 1.2f), 0.5f, rimA); Place(e0, rimA.X + inA * 2f, 9f); Place(e1, 0, -9f);
+        M.Ball.GiveTo(P);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        bool wallUp = M.Geo.Wall[atk];
+        int stA = Ev("STEEL_HIT"), myA = M.Score[P.Team];
+        P.TestShot();
+        n = 0; while (M.Score[P.Team] == myA && n++ < 200) yield return 0;
+        bool wallPass = wallUp && Ev("STEEL_HIT") == stA && M.Score[P.Team] > myA;
+        e0.Ab.WallT = 0; e0.CharacterId = keepE0;
+        bool ok = posed && on && fast && stamina && immune && control && caught && released && cdShort && dunkBlocked && chargeImmune && wallPass;
+        if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} recarga={cdShort} ({ran:0.00}s) enterrada={dunkBlocked} investida={chargeImmune} (empurrado {moved:0.00} m) muralha={wallPass}");
         Rec("indestrutivel", ok);
         P.Ab.UltT = 0; P.UpdateStats();
     }

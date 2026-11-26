@@ -177,7 +177,8 @@ void fragment() {
 
         var p = GlobalPosition;
         int assist = State == BallState.Shot && ThrowTeam >= 0 ? CourtGeo.AttackHoop(ThrowTeam) : -1;
-        var hit = BallPhys.Simulate(ref p, ref Vel, dt, M.Geo, assist);
+        int wallPass = State is BallState.Shot or BallState.Pass or BallState.HighPass ? PlayerAbilities.WallPassMask(LastThrower) : 0; // v0.39
+        var hit = BallPhys.Simulate(ref p, ref Vel, dt, M.Geo, assist, wallPass);
         if (hit.UpThroughHoop >= 0) _noScoreHoop = hit.UpThroughHoop;
         if (NoScore) hit.ScoredHoop = -1;
         if (_noScoreHoop >= 0)

@@ -54,7 +54,8 @@ public sealed class AutoPilot
         if (!P.ChargingShot)
         {
             if (new Vector2(P.Velocity.X, P.Velocity.Z).Length() > 0.15f) return inp; // espera parar
-            _holdTarget = 0.25f; // segurar não muda a distância: só mira (câmera) e solta
+            // segurar não muda a distância: só mira (câmera) e solta (v0.39: depois do tempo mínimo mirando)
+            _holdTarget = Mathf.Max(0.25f, Tuning.I.ShotMinChargeTime + 0.05f);
             if (rimDist > Tuning.I.ShotRangeMax) { _spotIdx++; return inp; }
             inp.Pressed |= Btn.Shoot;
             inp.Held |= Btn.Shoot;

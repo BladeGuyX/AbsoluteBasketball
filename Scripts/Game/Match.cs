@@ -581,7 +581,7 @@ public partial class Match : Node3D
             if (!p.Airborne || p.Team == Ball.ThrowTeam) continue;
             var rel = Ball.GlobalPosition - p.GlobalPosition;
             float hd = new Vector2(rel.X, rel.Z).Length();
-            bool sky = p.Ab.SkyJump; // v0.26: Arranha-Céu do Bolt = área de bloqueio bem maior
+            bool sky = p.Ab.SkyJump && !Characters.Immune(Ball.LastThrower, p); // v0.26: Arranha-Céu do Bolt = área de bloqueio bem maior (v0.39: não vale contra o Iron Indestrutível)
             float br = sky ? Mathf.Max(t.BoltSkyBlockRadius, t.BlockRadius) : t.BlockRadius;
             if (hd > br + t.BallRadius) continue;
             if (sky)

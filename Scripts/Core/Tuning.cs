@@ -159,6 +159,8 @@ public sealed class Tuning
     public float ShotRangeMax = 14f;
     [Param(SShot, "Arremesso automático", "Segurando por esse tempo, o jogador arremessa sozinho (s).", 0.5f, 10, 0.1f)]
     public float ShotAutoReleaseTime = 1.5f;
+    [Param(SShot, "Tempo mínimo mirando", "Depois de apertar o arremesso, ele só sai depois deste tempo (s), mesmo soltando o botão antes (apertou e soltou rápido = fica mirando até completar). Vale também no pulo.", 0, 3, 0.05f)]
+    public float ShotMinChargeTime = 0.8f;
     [Param(SShot, "Câmera: inclinação do meio", "Inclinação da câmera (graus) que corresponde ao 'meio da tela'.", -60, 30, 1)]
     public float ShotPitchBaseDeg = -12f;
     [Param(SShot, "Câmera: inclinação do alcance máximo", "Inclinação da câmera (graus) que pede o alcance máximo. Entre o meio e esta, a distância cresce.", -30, 60, 1)]
@@ -501,13 +503,13 @@ public sealed class Tuning
     [Param(SIron, "(2) Pancada: alcance", "Distância máxima (m) até o adversário para a Pancada.", 0.5f, 8, 0.25f, Sub = Hab)] public float IronBonkRange = 3f;
     [Param(SIron, "(2) Pancada: atordoamento", "Segundos atordoado de quem leva a Pancada.", 0, 10, 0.25f, Sub = Hab)] public float IronBonkStun = 3f;
     [Param(SIron, "(2) Pancada: recarga", "Segundos de recarga da Pancada.", 1, 120, 0.5f, Sub = Hab)] public float IronBonkCooldown = 30f;
-    [Param(SIron, "(3) Investida: duração máxima", "Segundos máximos da Investida (acabou o tempo = o Iron fica cansado).", 0.5f, 8, 0.1f, Sub = Hab)] public float IronChargeDuration = 3f;
-    [Param(SIron, "(3) Investida: atordoamento de quem é atropelado", "Segundos atordoado de quem estava no caminho (aliado ou adversário).", 0, 10, 0.25f, Sub = Hab)] public float IronChargeStun = 3f;
+    [Param(SIron, "(3) Investida: duração máxima", "Segundos máximos da Investida (acabou o tempo = o Iron fica cansado).", 0.5f, 8, 0.1f, Sub = Hab)] public float IronChargeDuration = 2f;
+    [Param(SIron, "(3) Investida: atordoamento de quem é atropelado", "Segundos atordoado de quem estava no caminho (aliado ou adversário).", 0, 10, 0.25f, Sub = Hab)] public float IronChargeStun = 4f;
     [Param(SIron, "(3) Investida: Iron parado no fim", "Segundos que o Iron fica parado no fim da Investida (cansado, ou atordoado se bateu na parede).", 0, 10, 0.25f, Sub = Hab)] public float IronChargeRecover = 2f;
     [Param(SIron, "(3) Investida: recarga", "Segundos de recarga da Investida.", 1, 120, 0.5f, Sub = Hab)] public float IronChargeCooldown = 40f;
     [Param(SIron, "Ult: duração", "Segundos do modo Indestrutível.", 2, 60, 0.5f, Sub = Hab)] public float IronUltDuration = 30f;
     [Param(SIron, "Ult: estrelas de velocidade", "Velocidade do Iron no modo Indestrutível, em estrelas (se as dele forem menos).", 1, 5, 1, Sub = Hab)] public float IronUltSpeedStars = 3f;
-    [Param(SIron, "Ult: redução das recargas", "Fração a menos nas recargas das habilidades usadas durante o modo Indestrutível (0,15 = 15% mais curtas).", 0, 0.9f, 0.01f, Sub = Hab)] public float IronUltCdReduction = 0.15f;
+    [Param(SIron, "Ult: recargas mais rápidas", "Quanto mais rápido as recargas das habilidades do Iron correm enquanto o modo Indestrutível está ativo (0,15 = 15% mais rápido).", 0, 2, 0.01f, Sub = Hab)] public float IronUltCdSpeedup = 0.15f;
     [Param(SIron, "Muralha: altura", "Altura (m) da Muralha de Aço (alta o bastante para barrar qualquer arremesso normal).", 3, 30, 0.5f, Sub = Adv)] public float IronWallHeight = 14f;
     [Param(SIron, "Muralha: quique da bola", "Quanto da velocidade a bola guarda ao bater na muralha (0–1).", 0, 1, 0.05f, Sub = Adv)] public float IronWallBounce = 0.45f;
     [Param(SIron, "Investida: velocidade inicial", "Velocidade (m/s) no começo da Investida (impulso inicial: um pouco mais rápido que o Iron correndo, ~6 m/s).", 1, 20, 0.25f, Sub = Adv)] public float IronChargeSpeedStart = 7.5f;

@@ -291,7 +291,7 @@ public partial class Player : CharacterBody3D
             // v0.37: Investida do Iron — segue para a frente acelerando. v0.38: vira seguindo a câmera (até IronChargeTurnRate);
             // os botões de movimento não fazem nada
             Ab.ChargeT += dt;
-            Yaw = Mathf.RotateToward(Yaw, inp.AimYaw, Mathf.DegToRad(t.IronChargeTurnRate) * dt);
+            Yaw = Mathf.RotateToward(Yaw, IsDummy ? Yaw : inp.AimYaw, Mathf.DegToRad(t.IronChargeTurnRate) * dt); // boneco de teste: reto
             hv = Forward * Ab.ChargeSpeed;
             Ab.ChargeHits();
         }
@@ -330,9 +330,11 @@ public partial class Player : CharacterBody3D
             if (_airTime > 0.08f && IsOnFloor() && !onPlayer)
             {
                 Airborne = false;
-                if (HasBall && ChargingShot) ReleaseShot(); // pulou carregando e não soltou: arremessa ao tocar o chão
+                // pulou carregando e não soltou: arremessa ao tocar o chão (v0.39: se ainda não deu o tempo mínimo mirando,
+                // continua mirando no chão, sem o travamento do pouso, e sai quando completar)
+                if (HasBall && ChargingShot && ShotCharge >= t.ShotMinChargeTime) ReleaseShot();
                 if (_stunOnLand) { _stunOnLand = false; Stun = t.DunkStunTime; }
-                else LandLock = St.LandLockTime;
+                else LandLock = HasBall && ChargingShot ? 0f : St.LandLockTime;
                 Ab.SkyJump = false;
                 _jumpVel = Vector3.Zero;
                 M.OnLanded(this);
@@ -448,7 +450,9 @@ public partial class Player : CharacterBody3D
         }
         if (!ChargingShot) return;
         ShotCharge += dt;
-        if (!inp.IsHeld(Btn.Shoot) || ShotCharge >= Tuning.I.ShotAutoReleaseTime) ReleaseShot();
+        // v0.39: só sai depois do tempo mínimo mirando (apertou e soltou rápido = continua mirando até completar)
+        bool minOk = ShotCharge >= Tuning.I.ShotMinChargeTime;
+        if ((!inp.IsHeld(Btn.Shoot) && minOk) || ShotCharge >= Tuning.I.ShotAutoReleaseTime) ReleaseShot();
     }
 
     /// <summary>Interrompe a carga sem arremessar (ex.: perdeu a bola, round reiniciou).</summary>

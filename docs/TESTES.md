@@ -4,6 +4,17 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.39 — arremesso com tempo mínimo, Iron ajustado
+
+1. **Arremesso (todos):** aperte e solte o arremesso bem rápido: o jogador continua mirando (véu vermelho na bola crescendo) e o arremesso só sai **0,8 s** depois do aperto. Segurando mais que isso, sai ao soltar, como antes. O automático continua em 1,5 s.
+2. **Arremesso no pulo:** pulando e soltando no ar antes dos 0,8 s, ele arremessa no ar quando completar; se pousar antes, continua mirando no chão (sem travar no pouso) e arremessa quando completar.
+3. **Investida do Iron:** dura **2 s** (antes 3) e quem é atropelado fica atordoado **4 s** (antes 3).
+4. **Indestrutível:** as recargas das habilidades do Iron **correm 15% mais rápido** enquanto a ult está ativa (o número da recarga desce mais depressa). A recarga em si não é mais encurtada ao usar.
+5. **Indestrutível contra tudo:** com a ult, a Investida de um Iron adversário passa por você sem atropelar nem empurrar (antes a física te arrastava junto); a bola que você lança atravessa a Muralha de Aço adversária; o Arranha-Céu do Bolt não tem a área de bloqueio maior contra os seus arremessos.
+6. Online: os dois na v0.39.
+
+---
+
 ## v0.38 — ajustes do Iron e do "Não me Decepciona"
 
 1. **Investida do Iron:** já sai com um impulso (mais rápida que ele correndo) e continua acelerando. A direção segue a **câmera** (vira mais que antes); os botões de movimento não fazem nada durante ela.

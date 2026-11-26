@@ -64,7 +64,9 @@ public sealed class PlayerAbilities
     // =====================================================================
     public void Tick(PlayerInput inp, float dt)
     {
-        for (int i = 0; i < 3; i++) if (Cd[i] > 0) Cd[i] = Mathf.Max(0, Cd[i] - dt);
+        // v0.39: no modo Indestrutível as recargas correm IronUltCdSpeedup mais rápido
+        float cdRate = Indestructible ? 1f + Mathf.Max(0f, T.IronUltCdSpeedup) : 1f;
+        for (int i = 0; i < 3; i++) if (Cd[i] > 0) Cd[i] = Mathf.Max(0, Cd[i] - dt * cdRate);
         if (EyeT > 0) EyeT -= dt;
         if (PresenceT > 0) PresenceT -= dt;
         if (JinxFlash > 0) JinxFlash -= dt;
@@ -103,9 +105,12 @@ public sealed class PlayerAbilities
         if (inp.Target > 0) TryTarget(inp.TargetSlot, inp.Target);
     }
 
-    // v0.38: no modo Indestrutível as recargas das habilidades usadas ficam IronUltCdReduction mais curtas
-    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f
-        : Characters.Cooldown(Char, slot) * (Indestructible ? 1f - Mathf.Clamp(T.IronUltCdReduction, 0f, 0.95f) : 1f);
+    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f : Characters.Cooldown(Char, slot);
+
+    /// <summary>v0.39: Muralhas de Aço que a bola lançada por <paramref name="thrower"/> atravessa (bit = cesta): o Iron
+    /// Indestrutível não é afetado por nenhuma habilidade adversária, nem pela muralha do outro time.</summary>
+    public static int WallPassMask(Player thrower) =>
+        thrower?.Ab != null && thrower.Ab.Indestructible ? 1 << CourtGeo.AttackHoop(thrower.Team) : 0;
 
     /// <summary>v0.32 (modo de teste): "Sem recarga" deste jogador (cada um liga o seu). Replicado.</summary>
     public bool NoCd;
@@ -448,10 +453,14 @@ public sealed class PlayerAbilities
         ChargeT = 0.0001f;
         _chargeHits.Clear();
         P.CollisionMask = 1; // atravessa os jogadores (quem está no caminho é jogado para o lado)
+        P.CollisionLayer = 0; // v0.39: e ninguém colide com ele (antes a física empurrava quem ele não atropela, como o Iron Indestrutível)
         Sfx.Play3D(M, "fx_charge", P.GlobalPosition + Vector3.Up);
         M.LogEvent("CHARGE", P);
         return true;
     }
+
+    /// <summary>Teste (--smoke-abilities): começa a Investida direto (bonecos não usam habilidades).</summary>
+    public bool TestCharge(float yaw) => IronCharge(yaw);
 
     /// <summary>Velocidade atual da Investida (começa devagar e acelera).</summary>
     public float ChargeSpeed => Mathf.Lerp(T.IronChargeSpeedStart, T.IronChargeSpeedMax,
@@ -465,6 +474,7 @@ public sealed class PlayerAbilities
         _chargeHits.Clear();
         if (P == null) return;
         P.CollisionMask = 1 | 2;
+        P.CollisionLayer = 2;
         if (wall == null) return;
         if (wall.Value)
         {

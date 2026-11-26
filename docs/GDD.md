@@ -320,3 +320,7 @@ Implementação (Claude): muralha = `CourtGeo.Wall[cesta]` + `ThreeDist` (mesma 
 - Iron, Investida: impulso inicial (começa um pouco mais rápida que a velocidade base); a direção é controlada pela câmera (dá para controlar mais); os botões de movimento não fazem nada.
 - Iron, Indestrutível: +10 s (30 s); bloquear enterradas com ela ativa não causa falta (implementação: a enterrada é bloqueada e o Iron fica com a bola); diminui 15% as recargas das habilidades enquanto ativa (implementação: recargas começadas durante a ult são 15% mais curtas); não há mais tempo extra de atordoamento no roubo durante o drible.
 - Luck, Não me Decepciona: se o alvo não fizer cesta nos 5 s, a próxima cesta dele vale o dobro (para o time dele).
+
+## Revisões do usuário (v0.39) — prevalecem sobre as anteriores
+- Arremesso: só pode sair no mínimo 0,8 s depois de apertar o botão (apertou e soltou rápido = fica 0,8 s mirando).
+- Iron: Investida dura 1 s a menos (2 s) e atordoa 1 s a mais (4 s). Indestrutível: as recargas correm 15% mais rápido enquanto ativa (no lugar de encurtar as recargas). A ult não deixa o Iron ser afetado por NENHUMA habilidade adversária, nem indiretamente (Investida, Muralha de Aço, área maior do Arranha-Céu...).
