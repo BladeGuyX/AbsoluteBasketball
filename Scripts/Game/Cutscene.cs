@@ -330,7 +330,8 @@ public partial class Cutscene : Node3D
         _ball = MakeBall();
         if (Kind == CutKind.UltPose && ActorChars[0] == Characters.Luck)
             for (int i = 0; i < 2; i++) { _dice[i] = MakeDie(); _dice[i].Visible = false; AddChild(_dice[i]); }
-        _poseFx = false;
+        if (Kind == CutKind.UltPose && ActorChars[0] == Characters.Iron) { _anvil = MakeAnvil(); AddChild(_anvil); }
+        _poseFx = false; _anvilHit = false; _anvilLand = false;
         AddChild(_ball);
         _beamMesh = new ImmediateMesh();
         var bm = Mat.Unshaded(Colors.White, true);
@@ -355,7 +356,7 @@ public partial class Cutscene : Node3D
         _visStage = -1;
         foreach (var c in GetChildren()) c.QueueFree();
         for (int i = 0; i < 3; i++) _act[i] = null;
-        _cam = null; _ball = null; _ov = null; _beam = null; _dice[0] = _dice[1] = null;
+        _cam = null; _ball = null; _ov = null; _beam = null; _dice[0] = _dice[1] = null; _anvil = null;
         if (M != null)
         {
             foreach (var p in M.Players) p.Visible = true;
@@ -752,6 +753,7 @@ public partial class Cutscene : Node3D
         _ball.Visible = false;
         L.Pos = pos; L.Yaw = yaw; L.St = Base();
         if (ActorChars[0] == Characters.Luck) LuckPose(L, pos, yaw, u);
+        else if (ActorChars[0] == Characters.Iron) IronPose(L, pos, yaw, u);
         else
         {
             // genérico (personagem novo ainda sem cena própria): comemoração com a câmera fechando
@@ -825,6 +827,98 @@ public partial class Cutscene : Node3D
             float k = Smooth((u - LuckThrowAt - 0.3f) / 0.55f);
             Cam(c1.Lerp(c2, k), l1.Lerp(l2, k), Mathf.Lerp(54, 46, k));
         }
+    }
+
+    // =====================================================================
+    // v0.37 — Iron (Indestrutível): uma bigorna (assets/models/bigorna.glb) cai na cabeça dele, faz "KLANG" e quica
+    // para longe; ele nem pisca. Depois solta o grito de guerra com um brilho prateado.
+    public const float IronHitAt = 0.6f, IronAnvilLandAt = 1.3f, IronShoutAt = 1.4f;
+    Node3D _anvil;
+    bool _anvilHit, _anvilLand;
+
+    static Node3D MakeAnvil()
+    {
+        var n = new Node3D { Name = "Bigorna" };
+        const string path = "res://assets/models/bigorna.glb";
+        if (ResourceLoader.Exists(path) && GD.Load<PackedScene>(path) is { } sc)
+        {
+            var m = sc.Instantiate<Node3D>();
+            m.Scale = Vector3.One * 1.3f;
+            Mat.ApplyToon(m, name => name == "Ferro" ? 0.014f : 0f);
+            n.AddChild(m);
+        }
+        else n.AddChild(Mat.MeshNode(new BoxMesh { Size = new Vector3(0.8f, 0.5f, 0.3f) }, Mat.ToonOutlined(new Color("4b5058"), 0.014f), Vector3.Up * 0.25f));
+        return n;
+    }
+
+    void IronPose(Actor L, Vector3 pos, float yaw, float u)
+    {
+        var f = Dir(yaw); var r = Right(yaw);
+        float head = 1.23f * Tuning.I.CharacterScale;          // topo da cabeça do modelo (make_iron.py) na escala do jogo
+        var top = pos + Vector3.Up * head;
+        var land = pos + r * 1.5f + f * 0.9f;
+
+        // corpo: parado e sério (nem liga) → o impacto amassa um pouquinho → grito de guerra
+        L.St.Emote = Expressions.Serio;
+        if (u >= IronHitAt && u < IronHitAt + 0.18f) L.St.Landing = true;
+        if (u >= IronShoutAt) { L.St.Emote = Expressions.Feliz; L.St.Defending = true; }
+
+        if (_anvil != null)
+        {
+            Vector3 p; float spin;
+            var rest = Basis.FromEuler(new Vector3(0, yaw + 0.5f, 0));
+            if (u < IronHitAt)
+            {
+                float k = Mathf.Clamp(u / IronHitAt, 0, 1);
+                p = top + Vector3.Up * (7.5f * (1f - k * k));      // cai acelerando
+                spin = 0;
+            }
+            else if (u < IronAnvilLandAt)
+            {
+                float k = (u - IronHitAt) / (IronAnvilLandAt - IronHitAt);
+                p = top.Lerp(land, k) + Vector3.Up * (2.2f * 4f * k * (1f - k));
+                spin = k * 4.2f;
+            }
+            else
+            {
+                float bt = u - IronAnvilLandAt;
+                float hop = 0.12f * Mathf.Max(0, Mathf.Sin(Mathf.Clamp(bt / 0.18f, 0, 1) * Mathf.Pi));
+                p = land + Vector3.Up * hop;
+                spin = 4.2f + 0.3f * Smooth(bt / 0.18f);
+            }
+            _anvil.GlobalPosition = p;
+            _anvil.GlobalBasis = new Basis(f, spin) * rest;
+        }
+
+        // sons e efeitos só nesta tela (a cena roda igual em todo mundo)
+        if (u >= IronHitAt && !_anvilHit)
+        {
+            _anvilHit = true;
+            _ov.Flash(Colors.White, 0.5f); _ov.ImpactFrame = 0.1f; _shake = 1.1f;
+            Sfx.PlayLocal3D(this, "clang", top, 2f);
+            Sfx.PlayLocal3D(this, "bonk", top, -2f, 0.7f);
+        }
+        if (u >= IronAnvilLandAt && !_anvilLand)
+        {
+            _anvilLand = true;
+            _shake = Mathf.Max(_shake, 0.5f);
+            Sfx.PlayLocal3D(this, "cut_hit", land, 0f, 0.8f);
+            ImpactFx.Dust(M, land, 0.9f);
+        }
+        if (u >= IronShoutAt && !_poseFx) { _poseFx = true; _ov.Flash(new Color("e6edf5"), 0.45f); Sfx.PlayLocal3D(this, "clang", top, -6f, 0.75f); }
+
+        // câmera: baixa, de frente, olhando para cima (vê a bigorna caindo) → fecha no Iron gritando
+        // (o Iron fica à direita do quadro: o título da ult entra pela esquerda)
+        var c0 = pos + f * 4.4f - r * 0.2f + Vector3.Up * 0.9f;
+        var l0 = pos + r * 1.2f + Vector3.Up * 2.0f;
+        var c1 = pos + f * 4.0f + r * 0.4f + Vector3.Up * 1.3f;
+        var l1 = pos + r * 0.6f + Vector3.Up * 1.3f;
+        var c2 = pos + f * 2.9f - r * 0.5f + Vector3.Up * 1.45f;
+        var l2 = pos + Vector3.Up * 1.35f;
+        var lHit = top + r * 1.1f + Vector3.Up * 0.3f;
+        if (u < IronHitAt) Cam(c0, l0.Lerp(lHit, Smooth(u / IronHitAt)), 58);
+        else if (u < IronShoutAt) { float k = Smooth((u - IronHitAt) / (IronShoutAt - IronHitAt)); Cam(c0.Lerp(c1, k), lHit.Lerp(l1, k), Mathf.Lerp(58, 52, k)); }
+        else { float k = Smooth((u - IronShoutAt) / 0.5f); Cam(c1.Lerp(c2, k), l1.Lerp(l2, k), Mathf.Lerp(52, 44, k)); }
     }
 
     // =====================================================================

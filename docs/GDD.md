@@ -306,3 +306,12 @@ mais), Precisão 8%, Salto 6%. Valores em que menos é melhor são divididos.
   (faz parte da cutscene; se não quiser, é só pedir para tirar).
 - Ult: barra em `PlayerAbilities.Ult` (0–1), passiva `UltChargeTime` (240 s), bônus `UltBonus*`; não enche durante a própria ult ativa.
 - Testes antigos jogam com atributos neutros e sem habilidades (resultado igual ao de antes); `--smoke-abilities` testa tudo novo.
+
+## Iron (v0.37) — especificação do usuário
+Atributos: Velocidade 1, Agilidade 2, Estamina 4, Precisão 3, Salto 5.
+1. **Muralha de Aço** — muralha prateada meio transparente, bem alta (barra qualquer arremesso normal), exatamente em cima da linha de 3 completa do time do Iron. Jogadores atravessam (mesmo com a bola); a bola bate como numa parede (arremessos e passes). O adversário pode entrar com a bola e arremessar de dentro. Dura 5 s, surge na hora. Recarga 40 s.
+2. **Pancada** — só com um adversário a 3 m ou menos. Pancada na cabeça do adversário mais perto de onde o Iron olha (dentro do alcance): atordoado 3 s. Não vale em quem está com a bola; o Iron pode usar estando com ela. Recarga 30 s.
+3. **Investida** — só sem a bola. Começa não tão rápida e acelera; segue para a frente sozinha, a direção muda um pouco andando para os lados. Todos no caminho (até aliados) são jogados para o lado e atordoados 3 s; quem tinha a bola a deixa cair. Acaba ao fim de 3 s ou ao bater numa parede; nos dois casos o Iron fica imobilizado 2 s — no fim do tempo ele fica **cansado** (não atordoado, animação diferente). Recarga 40 s.
+4. **Ultimate: Indestrutível** — 20 s imune a todas as habilidades dos adversários, mais rápido (velocidade de 3 estrelas) e estamina infinita. Driblando, quem tentar roubar fica atordoado 1 s a mais. Bloqueando um arremesso no pulo, o Iron pega a bola no ar (e fica imune a roubo até estar no chão e poder driblar).
+
+Implementação (Claude): muralha = `CourtGeo.Wall[cesta]` + `ThreeDist` (mesma regra da linha de 3 do `IsThree`: arco na frente do aro, retas |dz| = raio até o fim da quadra), colisão em `BallPhys.Step` só para a bola, altura `IronWallHeight` 14 m; visual `SteelWall`. "Parede" da Investida = colisão com algo que não é jogador ou o limite da quadra. "Atordoado 1 s a mais" no roubo = `Stun` de `IronUltStealStun` + a penalidade normal do roubo errado aumentada desse tempo. Cena da ult (pedido v0.36): bigorna cai na cabeça e quica, ele nem pisca e solta o grito de guerra.

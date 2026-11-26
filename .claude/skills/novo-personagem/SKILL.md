@@ -5,7 +5,7 @@ description: Adicionar um personagem jogável novo ao Absolute Basketball de pon
 
 # Novo personagem
 
-Personagens atuais: 0 King (`rei.glb`), 1 Luck (`ametista.glb`), 2 Bolt (`raio.glb`). Leia `docs/ARTE.md` ("Novos personagens")
+Personagens atuais: 0 King (`rei.glb`), 1 Luck (`ametista.glb`), 2 Bolt (`raio.glb`), 3 Iron (`iron.glb`, v0.37 — bom exemplo completo: habilidade que mexe na física da bola, movimento próprio, imunidade e cena com adereço). Leia `docs/ARTE.md` ("Novos personagens")
 e a seção v0.26 do `docs/GDD.md`. Pergunte ao usuário o que faltar das 3 habilidades + ultimate (é decisão dele).
 
 ## 1. Modelo (skill `modelo-blender`)
@@ -29,6 +29,8 @@ e a seção v0.26 do `docs/GDD.md`. Pergunte ao usuário o que faltar das 3 habi
 - Visual: ícones em `AbilityIcons`, efeitos `AbilityAura`/`ImpactFx.Ability` (deixas `fx_*`), sons no `Sfx`.
 - UI: aba nova no `InfoMenu`; conferir `CharacterSelect`, `CheatsMenu` (trocar personagem) e `Match.RefreshNames`.
 - `Characters.ForSlot` (bots alternam por vaga) — conferir se inclui o novo.
+- Imunidade da ult do Iron: toda habilidade nova que afeta um adversário precisa respeitar `Characters.Immune(alvo, quem)`.
+- `PlayerAbilities.Reset` do `AbilityScenario` zera o estado das habilidades: acrescente os campos novos lá.
 - Rede: se mudou snapshot/mensagem, subir `NetProtocol.Version` (skill `mudanca-rede`).
 
 ## 3. Testes

@@ -12,7 +12,7 @@ namespace AB;
 public partial class AbilityAura : Node3D
 {
     public Player P;
-    CpuParticles3D _red, _green, _sky, _eye;
+    CpuParticles3D _red, _green, _sky, _eye, _steel;
     Node3D _clover, _pick;
     float _t, _swapK;
 
@@ -23,6 +23,7 @@ public partial class AbilityAura : Node3D
         _green = Particles(new Color(0.35f, 1f, 0.45f, 0.9f), new Color(0.1f, 0.7f, 0.25f, 0f), 30, 0.9f, new Vector3(0, 1.0f, 0), 0.45f, 1.6f);
         _sky = Particles(new Color(0.7f, 0.95f, 1f, 1f), new Color(0.2f, 0.7f, 1f, 0f), 24, 0.35f, new Vector3(0, 0.9f, 0), 0.5f, 3f);
         _eye = Particles(new Color(1f, 0.25f, 0.2f, 1f), new Color(1f, 0f, 0f, 0f), 10, 0.5f, new Vector3(0, 1.85f, 0), 0.15f, 0.4f);
+        _steel = Particles(new Color(0.95f, 0.97f, 1f, 0.95f), new Color(0.55f, 0.62f, 0.72f, 0f), 30, 0.8f, new Vector3(0, 1.0f, 0), 0.5f, 1.2f); // v0.37: Iron Indestrutível
 
         _clover = new Node3D { Position = new Vector3(0, 2.75f, 0), Visible = false };
         var g = Mat.Unshaded(new Color("3ccf6e"));
@@ -74,6 +75,7 @@ public partial class AbilityAura : Node3D
         _green.Emitting = a.ModeT > 0;
         _sky.Emitting = a.SkyJump && P.Airborne;
         _eye.Emitting = a.EyeT > 0 || a.EyeArmed;
+        _steel.Emitting = a.Indestructible;
 
         // marcado pelo "Não me Decepciona" de algum Luck adversário — v0.27: só o time do Luck vê (o alvo não sabe)
         var lp = P.M.LocalPlayer;
@@ -86,6 +88,9 @@ public partial class AbilityAura : Node3D
         // v0.27: alvo do Swap = anel do chão bem mais claro, sempre que você é o Bolt e o Swap está pronto (só nesta tela)
         bool swap = lp != null && lp != P && lp.CharacterId == Characters.Bolt && P.M.AbilitiesOn && !TargetPicker.IsOpen && lp.Ab.Cd[1] <= 0
                     && P.M.Cam != null && P.M.CanAct && PlayerAbilities.SwapCandidate(lp, P.M.Cam.Yaw) == P;
+        // v0.37: alvo da Pancada (Iron com ela pronta), também só nesta tela
+        swap |= lp != null && lp != P && lp.CharacterId == Characters.Iron && P.M.AbilitiesOn && !TargetPicker.IsOpen && lp.Ab.Cd[1] <= 0
+                && P.M.Cam != null && P.M.CanAct && PlayerAbilities.BonkCandidate(lp, P.M.Cam.Yaw) == P;
         _swapK = Mathf.MoveToward(_swapK, swap ? 1f : 0f, (float)delta * 10f);
         P.SetRingHighlight(_swapK);
 

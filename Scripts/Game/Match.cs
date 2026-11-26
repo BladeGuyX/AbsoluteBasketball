@@ -28,6 +28,7 @@ public sealed class MatchConfig
     public CutKind CutShot;          // --cut-shot <png> [--duel] [--miss]: prints da cutscene (v0.26)
     public bool CutShotMiss;
     public bool CutShotBlockMiss; // v0.33: --toco = erra só o skill check do bloqueio
+    public int CutShotChar = Characters.Luck; // v0.37: personagem da pose da ultimate no --cut-shot (--luck / --iron)
     /// <summary>v0.26: false = modo sem habilidades (ainda escolhe personagem, mas nenhuma habilidade nem ultimate funciona).</summary>
     public bool Abilities = true;
     /// <summary>v0.27: modo de teste — partida infinita (sem vencedor nem relógio) e aba de trapaças no menu de pausa.</summary>
@@ -149,6 +150,7 @@ public partial class Match : Node3D
         Hud = new Hud { M = this, Name = "Hud" };
         AddChild(Hud);
         AddChild(new ImpactFx { M = this, Name = "ImpactFx" });
+        for (int h = 0; h < 2; h++) AddChild(new SteelWall { M = this, Hoop = h, Name = "SteelWall" + h }); // v0.37: Muralha de Aço
         Cut = new Cutscene { M = this, Name = "Cutscene" };
         AddChild(Cut);
         if (LocalPlayer != null && !Automated)
@@ -439,6 +441,7 @@ public partial class Match : Node3D
         if (FtFlash > 0) FtFlash -= dt;
         if (Phase == MatchPhase.FreeThrow) FreeThrowTick(dt);
 
+        UpdateWalls();
         var hit = Ball.ServerTick(dt);
         HandleBallHit(hit);
         if (CanMove && Ball.State is BallState.Shot or BallState.HighPass) CheckBlocks();
@@ -464,6 +467,8 @@ public partial class Match : Node3D
         float vol(float imp) => Mathf.Clamp(Mathf.LinearToDb(Mathf.Clamp(imp / 8f, 0.05f, 1f)), -30, 0);
         if (hit.Rim) Sfx.Play3D(this, "rim", pos, vol(hit.Impact) + 2);
         else if (hit.Board || hit.Pole) Sfx.Play3D(this, "board", pos, vol(hit.Impact));
+        if (hit.Steel && hit.Impact > 1.5f) Sfx.Play3D(this, "fx_clang", pos, vol(hit.Impact));
+        if (hit.Steel) LogEvent("STEEL_HIT", null);
         if (hit.Floor && hit.Impact > 1.0f) Sfx.Play3D(this, "bounce", pos, vol(hit.Impact));
         if (hit.Rim) LogEvent("RIM", null);
         if (hit.Board) LogEvent("BOARD", null);
@@ -487,7 +492,7 @@ public partial class Match : Node3D
             // Luck "Não me Decepciona": a cesta do adversário marcado vai para o time do Luck
             foreach (var q in Players)
             {
-                if (q.Team == thrower.Team || q.CharacterId != Characters.Luck || q.Ab.BetT <= 0 || q.Ab.BetTarget != thrower.Id) continue;
+                if (q.Team == thrower.Team || q.CharacterId != Characters.Luck || q.Ab.BetT <= 0 || q.Ab.BetTarget != thrower.Id || Characters.Immune(thrower, q)) continue;
                 team = q.Team;
                 betStolen = true;
                 q.Ab.BetT = 0; q.Ab.BetTarget = 0;
@@ -572,6 +577,17 @@ public partial class Match : Node3D
                 if (by < 0.8f || by > p.GlobalPosition.Y + t.BlockReach + t.BallRadius + 0.6f) continue;
             }
             else if (rel.Y < 0.8f || rel.Y > t.BlockReach + t.BallRadius) continue;
+            if (p.Ab.Indestructible && Ball.State == BallState.Shot)
+            {
+                // v0.37: Iron Indestrutível pega a bola no ar (imune a roubo até pousar e poder driblar)
+                Ball.GiveTo(p);
+                p.Ab.BlockCatch = true;
+                Sfx.Play3D(this, "catch", Ball.GlobalPosition, 0, 0.8f);
+                Sfx.Play3D(this, "fx_clang", Ball.GlobalPosition);
+                LogEvent("BLOCK", p);
+                LogEvent("IRON_CATCH", p);
+                return;
+            }
             var away = new Vector3(rel.X, 0, rel.Z);
             away = away.LengthSquared() > 1e-4f ? away.Normalized() : -p.Forward;
             Ball.Drop(Ball.GlobalPosition, away * t.BlockBounceSpeed + Vector3.Up * 1.2f);
@@ -841,14 +857,24 @@ public partial class Match : Node3D
         float r = Tuning.I.KingPresenceRadius;
         foreach (var p in Players)
         {
-            if (p.Team == shooter.Team || p.CharacterId != Characters.King || p.Ab.PresenceT <= 0) continue;
+            if (p.Team == shooter.Team || p.CharacterId != Characters.King || p.Ab.PresenceT <= 0 || Characters.Immune(shooter, p)) continue;
             var d = (p.GlobalPosition - shooter.GlobalPosition) with { Y = 0 };
             if (d.Length() <= r) return true;
         }
         return false;
     }
 
-    /// <summary>Começa a cutscene de uma ultimate (só a autoridade). A partida fica parada até ela acabar.</summary>
+    /// <summary>v0.37: Muralha de Aço — liga a parede da linha de 3 de cada cesta defendida por um Iron com ela ativa
+    /// (host e cliente: a física da bola e a prévia da trajetória usam <see cref="CourtGeo.Wall"/>).</summary>
+    public void UpdateWalls()
+    {
+        if (Geo == null) return;
+        Geo.Wall[0] = Geo.Wall[1] = false;
+        if (!AbilitiesOn) return;
+        foreach (var p in Players)
+            if (p.CharacterId == Characters.Iron && p.Ab.WallT > 0) Geo.Wall[CourtGeo.DefendHoop(p.Team)] = true;
+    }
+
     /// <summary>v0.35: pose curta avisando que <paramref name="owner"/> usou a ultimate (para ults que não são cutscene).</summary>
     public bool StartUltPose(Player owner) => StartCutscene(CutKind.UltPose, owner, null);
 
@@ -1013,7 +1039,7 @@ public partial class Match : Node3D
         foreach (var p in Players)
         {
             if (InfiniteStamina) p.Stamina = p.St.StaminaMax;
-            if (p.Ab.NoCd && AbilitiesOn) { p.Ab.Cd[0] = p.Ab.Cd[1] = p.Ab.Cd[2] = 0; if (p.Ab.ModeT <= 0) p.Ab.Ult = 1f; }
+            if (p.Ab.NoCd && AbilitiesOn) { p.Ab.Cd[0] = p.Ab.Cd[1] = p.Ab.Cd[2] = 0; if (p.Ab.ModeT <= 0 && p.Ab.UltT <= 0) p.Ab.Ult = 1f; }
         }
     }
 
@@ -1195,7 +1221,7 @@ public partial class Match : Node3D
         var inp = new PlayerInput { AimYaw = p.Yaw, SkillT = -1 };
         if (!_cutShotStarted && Phase == MatchPhase.Playing && (_cutShotT += 1f / 60f) > 0.6f)
         {
-            p.CharacterId = Cfg.CutShot == CutKind.KingUlt ? Characters.King : Cfg.CutShot == CutKind.UltPose ? Characters.Luck : Characters.Bolt;
+            p.CharacterId = Cfg.CutShot == CutKind.KingUlt ? Characters.King : Cfg.CutShot == CutKind.UltPose ? Cfg.CutShotChar : Characters.Bolt;
             if (Ball.Holder != p) Ball.GiveTo(p);
             p.Ab.Ult = 1f;
             var opp = Players.FirstOrDefault(q => q.Team != p.Team);
@@ -1296,6 +1322,7 @@ public partial class Match : Node3D
 
     void ClientPhysics(float dt)
     {
+        UpdateWalls();
         // input local → host (o personagem só se mexe quando o snapshot do host voltar)
         PlayerInput inp = _clientBot != null ? _clientBot.Build(dt) : _reader.Build(Cam, !InputBlocked);
         if (Cfg.SmokeNet && !_netEmoteSent && _netT > 20f) { inp.Emote = Expressions.Bravo; _netEmoteSent = true; } // teste: expressão online

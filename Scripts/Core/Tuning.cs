@@ -63,6 +63,7 @@ public sealed class Tuning
     const string SKing = "King";
     const string SLuck = "Luck";
     const string SBolt = "Bolt";
+    const string SIron = "Iron";
     const string Star = "Estrelas", Hab = "Habilidades", Adv = "Avançado";
 
     // ---------------- Movimento ----------------
@@ -488,6 +489,33 @@ public sealed class Tuning
     [Param(SBolt, "Swap: ângulo do olhar", "Jogador a até este ângulo (graus) de onde o Bolt olha pode ser trocado (o mais perto do centro).", 5, 90, 1, Sub = Adv)] public float BoltSwapAngle = 25f;
     [Param(SBolt, "Swap: alcance", "Distância máxima (m) do Swap.", 3, 120, 1, Sub = Adv)] public float BoltSwapRange = 45f;
     [Param(SBolt, "Arranha-Céu: raio do bloqueio", "Alcance horizontal (m) do bloqueio no Arranha-Céu (o normal é o Raio do bloqueio).", 0.3f, 5, 0.05f, Sub = Adv)] public float BoltSkyBlockRadius = 1.45f;
+
+    // ---------------- Iron (v0.37) ----------------
+    [Param(SIron, "Velocidade", "Estrelas de Velocidade do Iron.", 1, 5, 1, Sub = Star)] public float IronStarSpeed = 1f;
+    [Param(SIron, "Agilidade", "Estrelas de Agilidade do Iron.", 1, 5, 1, Sub = Star)] public float IronStarAgility = 2f;
+    [Param(SIron, "Estamina", "Estrelas de Estamina do Iron.", 1, 5, 1, Sub = Star)] public float IronStarStamina = 4f;
+    [Param(SIron, "Precisão", "Estrelas de Precisão do Iron.", 1, 5, 1, Sub = Star)] public float IronStarPrecision = 3f;
+    [Param(SIron, "Salto", "Estrelas de Salto do Iron.", 1, 5, 1, Sub = Star)] public float IronStarJump = 5f;
+    [Param(SIron, "(1) Muralha de Aço: duração", "Segundos que a muralha fica de pé na linha de 3 do time do Iron.", 1, 20, 0.5f, Sub = Hab)] public float IronWallDuration = 5f;
+    [Param(SIron, "(1) Muralha de Aço: recarga", "Segundos de recarga da Muralha de Aço.", 1, 120, 0.5f, Sub = Hab)] public float IronWallCooldown = 40f;
+    [Param(SIron, "(2) Pancada: alcance", "Distância máxima (m) até o adversário para a Pancada.", 0.5f, 8, 0.25f, Sub = Hab)] public float IronBonkRange = 3f;
+    [Param(SIron, "(2) Pancada: atordoamento", "Segundos atordoado de quem leva a Pancada.", 0, 10, 0.25f, Sub = Hab)] public float IronBonkStun = 3f;
+    [Param(SIron, "(2) Pancada: recarga", "Segundos de recarga da Pancada.", 1, 120, 0.5f, Sub = Hab)] public float IronBonkCooldown = 30f;
+    [Param(SIron, "(3) Investida: duração máxima", "Segundos máximos da Investida (acabou o tempo = o Iron fica cansado).", 0.5f, 8, 0.1f, Sub = Hab)] public float IronChargeDuration = 3f;
+    [Param(SIron, "(3) Investida: atordoamento de quem é atropelado", "Segundos atordoado de quem estava no caminho (aliado ou adversário).", 0, 10, 0.25f, Sub = Hab)] public float IronChargeStun = 3f;
+    [Param(SIron, "(3) Investida: Iron parado no fim", "Segundos que o Iron fica parado no fim da Investida (cansado, ou atordoado se bateu na parede).", 0, 10, 0.25f, Sub = Hab)] public float IronChargeRecover = 2f;
+    [Param(SIron, "(3) Investida: recarga", "Segundos de recarga da Investida.", 1, 120, 0.5f, Sub = Hab)] public float IronChargeCooldown = 40f;
+    [Param(SIron, "Ult: duração", "Segundos do modo Indestrutível.", 2, 60, 0.5f, Sub = Hab)] public float IronUltDuration = 20f;
+    [Param(SIron, "Ult: estrelas de velocidade", "Velocidade do Iron no modo Indestrutível, em estrelas (se as dele forem menos).", 1, 5, 1, Sub = Hab)] public float IronUltSpeedStars = 3f;
+    [Param(SIron, "Ult: atordoamento extra no roubo", "Segundos a mais de penalidade para quem tentar roubar a bola do Iron enquanto ele dribla no modo Indestrutível (fica atordoado esse tempo além da penalidade normal).", 0, 5, 0.25f, Sub = Hab)] public float IronUltStealStun = 1f;
+    [Param(SIron, "Muralha: altura", "Altura (m) da Muralha de Aço (alta o bastante para barrar qualquer arremesso normal).", 3, 30, 0.5f, Sub = Adv)] public float IronWallHeight = 14f;
+    [Param(SIron, "Muralha: quique da bola", "Quanto da velocidade a bola guarda ao bater na muralha (0–1).", 0, 1, 0.05f, Sub = Adv)] public float IronWallBounce = 0.45f;
+    [Param(SIron, "Investida: velocidade inicial", "Velocidade (m/s) no começo da Investida.", 1, 20, 0.25f, Sub = Adv)] public float IronChargeSpeedStart = 4.5f;
+    [Param(SIron, "Investida: velocidade máxima", "Velocidade (m/s) no fim da Investida (cresce aos poucos).", 2, 30, 0.25f, Sub = Adv)] public float IronChargeSpeedMax = 11f;
+    [Param(SIron, "Investida: curva", "Quanto (graus por segundo) dá para virar a Investida andando para os lados.", 0, 360, 5, Sub = Adv)] public float IronChargeTurnRate = 70f;
+    [Param(SIron, "Investida: raio do atropelo", "Distância (m) entre o Iron e um jogador para atropelar.", 0.3f, 3, 0.05f, Sub = Adv)] public float IronChargeHitRadius = 1.05f;
+    [Param(SIron, "Investida: empurrão para o lado", "Quantos metros quem é atropelado é jogado para o lado.", 0, 5, 0.1f, Sub = Adv)] public float IronChargeKnock = 1.6f;
+    [Param(SIron, "Pancada: ângulo do olhar", "Prefere o adversário mais perto do centro do olhar; acima deste ângulo (graus) ninguém é escolhido.", 10, 180, 5, Sub = Adv)] public float IronBonkAngle = 120f;
 
     // ---------------- Bots ----------------
     [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]

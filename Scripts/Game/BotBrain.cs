@@ -168,6 +168,8 @@ public sealed class BotBrain
             var (to, high) = BestPass(me, rim, d, open);
             if (to != null) { StartPass(ref inp, to, high); return true; }
         }
+        // v0.37: Muralha de Aço do Iron adversário de pé e eu do lado de fora → entra com a bola em vez de arremessar
+        if (M.Geo.Wall[AttackHoop] && M.Geo.IsThree(me, AttackHoop)) { _driving = true; return false; }
         // arremesso
         bool impatient = _hold > T.BotMaxHoldTime;
         if (d <= ShootRange() && (open >= T.BotOpenDistance || impatient || d < 4f || R.Randf() < T.BotContestedShotChance))
@@ -280,6 +282,14 @@ public sealed class BotBrain
                     if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab1; return true; }
                 }
                 break;
+            case Characters.Iron:
+                // v0.37: Pancada em quem está marcando de perto
+                if (a.Cd[1] <= 0 && open < 2.2f)
+                {
+                    var tg = PlayerAbilities.BonkCandidate(P, ShotMath.YawOf(rim - me));
+                    if (tg != null && Roll()) { inp.AimYaw = ShotMath.YawOf(Flat(tg.GlobalPosition) - me); inp.Pressed |= Btn.Ab2; return true; }
+                }
+                break;
         }
         return false;
     }
@@ -298,6 +308,7 @@ public sealed class BotBrain
             if (a.ModeT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
             if (a.ModeT > 0 && a.ModeT < 3f && R.Randf() < GambleChance) { inp.Pressed |= Btn.Ult; return; }
         }
+        if (P.CharacterId == Characters.Iron && a.UltT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
         var h = M.Ball.Holder;
         if (h == null || h.Team == P.Team || M.Ball.State != BallState.Held) return;
         var rel = Flat(h.GlobalPosition - P.GlobalPosition);
@@ -312,6 +323,18 @@ public sealed class BotBrain
                 if (a.Cd[1] <= 0 && toRim < 13f && roll) { inp.Target = (byte)h.Id; inp.TargetSlot = 1; }
                 else if (a.Cd[2] <= 0 && dist > 1f && dist < 4.5f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
                 break;
+            case Characters.Iron:
+            {
+                // v0.37: muralha quando o adversário vai arremessar/passar de fora da nossa linha de 3
+                bool outside = M.Geo.IsThree(h.GlobalPosition, DefendHoop);
+                if (a.Cd[0] <= 0 && outside && toRim < M.Geo.ThreePt + 6f && (h.ChargingShot || h.ChargingPass) && roll) { inp.Pressed |= Btn.Ab1; break; }
+                // pancada em quem está perto sem a bola (alguém livre para receber)
+                var bk = PlayerAbilities.BonkCandidate(P, P.Yaw);
+                if (a.Cd[1] <= 0 && bk != null && R.Randf() < AbChance * 0.5f) { inp.AimYaw = ShotMath.YawOf(Flat(bk.GlobalPosition - P.GlobalPosition)); inp.Pressed |= Btn.Ab2; break; }
+                // investida em quem tem a bola, se ele estiver na frente a uma distância boa
+                if (a.Cd[2] <= 0 && dist > 3f && dist < 9f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
+                break;
+            }
             case Characters.Bolt:
                 if (a.Cd[2] <= 0 && dist < T.BoltSkyStunRadius * 0.9f && P.IsOnFloor() && roll) inp.Pressed |= Btn.Ab3;
                 else if (a.Cd[1] <= 0 && toRim < 7f && dist > 14f && dist < T.BoltSwapRange && roll)

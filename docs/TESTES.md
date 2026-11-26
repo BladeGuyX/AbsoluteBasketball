@@ -4,6 +4,22 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.37 — novo personagem: Iron
+
+Escolha o **Iron** (cavaleiro de armadura) em "Personagem". Para testar com calma use o **modo de teste** (Sem recarga, bots).
+1. **Visual:** armadura prateada com faixa clara, ombreiras, gibão marrom acolchoado, cinto com fivela, joelheiras, botas marrons com biqueira de aço, manoplas redondas, cabelo raspado e cicatriz na sobrancelha. Roda de expressões (Q/B): Severo, Focado, Meio sorriso, Bravo, Grito de guerra, Surpreso.
+2. **Estrelas:** Velocidade 1, Agilidade 2, Estamina 4, Precisão 3, Salto 5 (escolha de personagem / Informações → Iron).
+3. **(1) Muralha de Aço:** aparece na hora uma parede prateada meio transparente, bem alta, em cima da linha de 3 inteira do **seu** lado (arco + cantos retos até o fim da quadra), com um som metálico. Arremessos e passes de fora batem nela e voltam (som de "klang"); jogadores atravessam (até com a bola); quem entrar com a bola arremessa de dentro normalmente. Some em 5 s. Recarga 40 s. A prévia da trajetória também mostra a bola batendo na parede.
+4. **(2) Pancada:** com um adversário a até 3 m, o anel do chão dele fica claro na sua tela; aperte e o Iron dá uma pancada de cima na cabeça dele ("bonk" + estrelinhas), que fica atordoado 3 s. Funciona com você segurando a bola (bate com a mão livre); **não** funciona em quem está com a bola (ícone apagado). Recarga 30 s.
+5. **(3) Investida (sem a bola):** o Iron dispara para a frente, começa devagar e acelera; andando para os lados ele vira um pouco. Quem estiver no caminho (até aliados) é jogado para o lado e fica atordoado 3 s; quem tinha a bola a deixa cair. Durante a investida ele não pega a bola. Fim: depois de 3 s ele fica **cansado** (curvado com as mãos nos joelhos) por 2 s; se bater numa parede/limite da quadra, faz "klang" e fica **atordoado** (estrelinhas) por 2 s. Recarga 40 s.
+6. **Ultimate — Indestrutível:** na 1ª ativação o jogo congela ~2 s: uma **bigorna cai na cabeça do Iron**, faz "KLANG" e quica para longe; ele nem pisca e depois solta um grito de guerra. Depois, por 20 s: partículas prateadas em volta, mais rápido (como 3 estrelas), estamina não acaba, e as habilidades dos adversários não pegam nele (Presença do King, Drible Perfeito, Não me Decepciona/Impulso do Luck, Drible Relâmpago/Swap/Arranha-Céu/Duelo do Bolt, Pancada/Investida de outro Iron — ele nem aparece no menu de alvo).
+7. Na ult: quem tentar roubar a bola dele enquanto ele dribla fica atordoado 1 s (além da penalidade normal). Pulando na frente de um arremesso adversário, o Iron **pega a bola no ar** (em vez de só rebater) e ninguém consegue roubar até ele pousar e poder driblar.
+8. **Bots:** um bot Iron usa a muralha quando você vai arremessar de fora, dá pancadas e investidas, e usa a ult. Bots adversários não arremessam de fora com a muralha de pé (entram com a bola).
+9. **Online:** o amigo vê a muralha, a investida, o cansaço, a pancada e a cena da bigorna. Os dois precisam estar na v0.37.
+10. Valores novos na aba **Iron** do artifact de tuning.
+
+---
+
 ## v0.36 — cena da Sorte Infinita com dados
 
 1. Use a ultimate do Luck (1ª vez): o jogo congela ~2 s. O Luck joga dois dados para o alto (som de dados quando caem), eles giram no ar e caem na frente dele com o **6 e 6** para cima; ele comemora (clarão verde e um "plim"). Não aparece mais a bola girando, mesmo se ele estiver com ela.

@@ -101,6 +101,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 
 ## Modelos prontos
 - **v0.36 — dado do Luck:** `art_source/scripts/make_dado.py` → `assets/models/dado.glb` (cubo 0,26 m com bevel, materiais `Dado`/`Ponto`, +Y na Godot = 6). Usado na cena da Sorte Infinita (`Cutscene.LuckPose`).
+- **v0.37 — bigorna do Iron:** `art_source/scripts/make_bigorna.py` → `assets/models/bigorna.glb` (~0,62 m, origem no centro da base, chifre para +X, materiais `Ferro`/`FerroClaro`). Usada na cena do Indestrutível (`Cutscene.IronPose`, escala 1,3).
 - **v0.32 — cenário da praia:** `art_source/scripts/make_scenery.py` (sem concept) → `palmeira_a/b`, `arquibancada` (material
   `Assento` pintado com a cor do time na Godot), `guarda_sol`, `espreguicadeira`, `torre_salva_vidas`, `poste_luz` (`Lampada`
   vira unshaded), `pedra_a/b`, `arbusto`, `prancha`. Montagem em `Scripts/Game/Scenery.cs` (posições sorteadas com semente fixa,
@@ -113,6 +114,7 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 | Rei (`rei.glb`) — 1º personagem | `make_rei.py` | `concepts/rei.png` | `CharacterVisual` (ver seção "Personagem: o Rei"). | v0.21 |
 | Raio (`raio.glb`) — 3º personagem (nome provisório) | `make_raio.py` (importa `make_rei` e `make_ametista`) | `concepts/raio.png` | `CharacterVisual` via `Characters.All[2]`. | v0.25 |
 | Ametista (`ametista.glb`) — 2º personagem (nome provisório) | `make_ametista.py` (importa funções do `make_rei.py`) | `concepts/ametista.png` | `CharacterVisual` via `Characters.All[1]` (ver "Novos personagens"). | v0.24 |
+| Iron (`iron.glb`) — 4º personagem | `make_iron.py` (importa funções do `make_rei.py`/`make_ametista.py`) | `concepts/iron.png` | `CharacterVisual` via `Characters.All[3]`. | v0.37 |
 
 - `Mat.ApplyToon(raiz, nome => espessura)` troca os materiais importados pelo toon do jogo, com a cor base de cada material do .glb. A função recebe o nome do material e devolve a espessura do contorno (0 = sem contorno). Use também nos próximos modelos.
 - Bola: as costuras são faixas em relevo de 2,5 mm na mesma malha (~1,9 mil triângulos). Gomos e textura da concept foram ignorados de propósito (visual toon liso).
@@ -143,10 +145,11 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - Registrar em `Scripts/Game/Characters.cs` (nome, .glb, rótulos da roda). Materiais novos: incluir o nome no `switch` de `CharacterVisual.ApplyMaterials` para ganhar contorno.
 - Conferir: `render_preview.py assets/models/<nome>.glb --no-ref --hide Rosto_Focado,...` e `--pose-shot <png> --char N`.
 - Raio (v0.25, `make_raio.py`, concept `concepts/raio.png`): jaqueta bomber fechada (`J_OPEN`, estufada por `jr`) com punho na cintura; decalques neon por `jacket_poly`/`jacket_strip` (coordenadas em metros sobre a jaqueta), zigue-zague nas pernas (`make_leg_stripes`), raio em relevo no tênis; reaproveita camiseta/quadril/barra/tênis do `make_ametista.py` trocando os nomes dos materiais pelo dicionário `PAL` (chave usada pelas funções → nome no .glb: `TenisVerde`→`TenisDetalhe`, `Sola`→`SolaNeon`). Cabelo = espetos `strand` em anéis (`hair_spike`). Rostos: Serio = "Tranquilo", SorrisoFrio = "Sorriso confiante", Bravo = "Irritado", Feliz = "Empolgado". `Neon`/`SolaNeon` são sem sombra na Godot (brilham).
+- Iron (v0.37, `make_iron.py`, concept `concepts/iron.png`): gibão acolchoado (perfil `GAMB`, losangos = faixas finas `GibaoLinha`), peitoral de aço (perfil `PLATE`, borda clara pelo rim do Solidify, faixa clara `plate_strip`), gola de couro, ombreiras = 3 cúpulas (`dome`) pesadas no osso do ombro, cinto + fivela, escarcelas (`make_tassets`, pesos `tasset_weights`), joelheiras e biqueiras (`dome` girada), botas do Rei com dobra. Cabelo raspado = calota em grade azimute×elevação com a linha do cabelo lisa (`HAIRLINE`); cicatriz = decalque `Cicatriz` junto da `Cabeca`. Mãos = manoplas (esfera `Aco` + nós `AcoClaro` + punho `Couro` virado para o corpo; a Godot não gira as mãos). Rostos: Serio = "Severo", SorrisoFrio = "Meio sorriso", Feliz = "Grito de guerra" (comemoração). Materiais novos no `switch` do `CharacterVisual.ApplyMaterials`: `Aco`, `Gibao`, `Couro` (contorno 0,012), `AcoClaro`, `AcoEscuro`, `CouroEscuro`, `BotaDobra` (0,007).
 - Pele do Rei: `#DFAA84` desde a v0.25 (antes `#F5E6D3`, pálida demais no toon). O toon clareia bastante: escolha a pele uns tons mais escura do que quer ver.
 - Ametista: casaco aberto (`FRONT_OPEN`), camiseta, quadril de calça por baixo, barra dobrada, tênis; cabelo = mechas Bézier (`strand`) + volume do topete; rostos: Serio = "Relaxado", SorrisoFrio = "Sorriso convencido", Feliz = "Rindo".
 
-- **v0.26:** personagem novo também precisa de estrelas no Tuning (`<Nome>Star*`, seção com `Sub = "Estrelas"` — vira aba no artifact), 4 `AbilityDef` em `Characters.cs` e a lógica em `PlayerAbilities` (+ bots em `BotBrain`). Nomes atuais: King (rei.glb), Luck (ametista.glb), Bolt (raio.glb).
+- **v0.26:** personagem novo também precisa de estrelas no Tuning (`<Nome>Star*`, seção com `Sub = "Estrelas"` — vira aba no artifact), 4 `AbilityDef` em `Characters.cs` e a lógica em `PlayerAbilities` (+ bots em `BotBrain`). Nomes atuais: King (rei.glb), Luck (ametista.glb), Bolt (raio.glb), Iron (iron.glb).
 
 ## Integração na Godot (fazer quando o 1º modelo chegar)
 - **Bola:** ✅ feito na v0.14 (ver "Modelos prontos").

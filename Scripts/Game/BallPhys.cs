@@ -4,7 +4,7 @@ namespace AB;
 
 public struct BallHit
 {
-    public bool Floor, Rim, Board, Wall, Pole;
+    public bool Floor, Rim, Board, Wall, Pole, Steel; // Steel = Muralha de Aço (v0.37)
     public int ScoredHoop; // -1 = nenhuma
     public int UpThroughHoop; // -1 = nenhuma; passou SUBINDO por dentro do aro (cesta por baixo não vale)
     public float Impact;   // maior velocidade de impacto (para volume do som)
@@ -28,7 +28,7 @@ public static class BallPhys
         {
             var r = Step(ref p, ref v, h, g, assistHoop);
             total.Floor |= r.Floor; total.Rim |= r.Rim; total.Board |= r.Board;
-            total.Wall |= r.Wall; total.Pole |= r.Pole;
+            total.Wall |= r.Wall; total.Pole |= r.Pole; total.Steel |= r.Steel;
             total.Impact = Mathf.Max(total.Impact, r.Impact);
             if (r.ScoredHoop >= 0) total.ScoredHoop = r.ScoredHoop;
             if (r.UpThroughHoop >= 0) total.UpThroughHoop = r.UpThroughHoop;
@@ -80,6 +80,26 @@ public static class BallPhys
         if (p.X > g.MaxX - r) { p.X = g.MaxX - r; if (v.X > 0) { hit.Impact = Mathf.Max(hit.Impact, v.X); v.X = -v.X * t.WallBounce; hit.Wall = true; } }
         if (p.Z < g.MinZ + r) { p.Z = g.MinZ + r; if (v.Z < 0) { hit.Impact = Mathf.Max(hit.Impact, -v.Z); v.Z = -v.Z * t.WallBounce; hit.Wall = true; } }
         if (p.Z > g.MaxZ - r) { p.Z = g.MaxZ - r; if (v.Z > 0) { hit.Impact = Mathf.Max(hit.Impact, v.Z); v.Z = -v.Z * t.WallBounce; hit.Wall = true; } }
+
+        // v0.37: Muralha de Aço do Iron (parede alta em cima da linha de 3; só a bola bate, jogadores atravessam)
+        for (int hoop = 0; hoop < 2; hoop++)
+        {
+            if (!g.Wall[hoop] || p.Y > t.IronWallHeight + r) continue;
+            float fp = g.ThreeDist(prev, hoop, out _);
+            float fn = g.ThreeDist(p, hoop, out var grad);
+            float side = fp >= g.ThreePt ? 1f : -1f;          // lado de onde a bola veio (fora = +1)
+            float pen = (fn - g.ThreePt) * side;
+            if (pen >= r) continue;
+            var n = grad * side;
+            p += n * (r - pen);
+            float vn = v.Dot(n);
+            if (vn < 0)
+            {
+                hit.Impact = Mathf.Max(hit.Impact, -vn);
+                v -= (1f + t.IronWallBounce) * vn * n;
+                hit.Wall = true; hit.Steel = true;
+            }
+        }
 
         for (int hoop = 0; hoop < 2; hoop++)
         {

@@ -107,6 +107,50 @@ public static class AbilityIcons
                 ci.DrawLine(P(0f, -0.48f), P(0f, -0.6f), bolt, lw * 0.45f, true);
                 break;
             }
+            // ---- v0.37: Iron ----
+            case AbIcon.Wall:
+            {
+                // muralha de tijolos de aço (arco da linha de 3 visto de frente)
+                var steel = A(new Color("dfe5ec"));
+                var dark = A(new Color(0.25f, 0.28f, 0.33f));
+                ci.DrawColoredPolygon(new[] { P(-0.6f, 0.45f), P(-0.6f, -0.45f), P(0.6f, -0.45f), P(0.6f, 0.45f) }, steel);
+                for (int row = 0; row < 3; row++)
+                {
+                    float y = -0.45f + row * 0.3f;
+                    ci.DrawLine(P(-0.6f, y), P(0.6f, y), dark, lw * 0.5f, true);
+                    float off = row % 2 == 0 ? 0f : 0.2f;
+                    for (float x = -0.4f + off; x < 0.6f; x += 0.4f) ci.DrawLine(P(x, y), P(x, y + 0.3f), dark, lw * 0.5f, true);
+                }
+                ci.DrawPolyline(new[] { P(-0.6f, 0.45f), P(-0.6f, -0.45f), P(0.6f, -0.45f), P(0.6f, 0.45f), P(-0.6f, 0.45f) }, dark, lw * 0.6f, true);
+                break;
+            }
+            case AbIcon.Bonk:
+            {
+                // manopla descendo com riscos de impacto e estrelinha
+                var steel = A(new Color("dfe5ec"));
+                ci.DrawCircle(P(-0.05f, -0.1f), r * 0.34f, steel);
+                ci.DrawArc(P(-0.05f, -0.1f), r * 0.34f, 0, Mathf.Tau, 24, A(new Color(0.3f, 0.33f, 0.38f)), lw * 0.6f, true);
+                ci.DrawRect(new Rect2(P(-0.27f, -0.62f), new Vector2(0.44f, 0.2f) * r), A(new Color("8e5a34")), true);
+                for (int i = -1; i <= 1; i++) ci.DrawLine(P(i * 0.25f, 0.32f), P(i * 0.38f, 0.58f), A(new Color("ffd23f")), lw * 0.8f, true);
+                break;
+            }
+            case AbIcon.Charge:
+            {
+                // ombreira avançando com linhas de velocidade
+                for (int i = 0; i < 3; i++) ci.DrawLine(P(-0.65f, -0.3f + i * 0.3f), P(-0.25f, -0.3f + i * 0.3f), A(new Color(1, 1, 1, 0.6f)), lw * 0.7f, true);
+                ci.DrawColoredPolygon(new[] { P(-0.15f, 0.45f), P(-0.15f, -0.1f), P(0.05f, -0.42f), P(0.45f, -0.3f), P(0.62f, 0.05f), P(0.5f, 0.45f) }, A(new Color("dfe5ec")));
+                ci.DrawLine(P(0.05f, -0.42f), P(0.2f, 0.45f), A(new Color(0.3f, 0.33f, 0.38f)), lw * 0.6f, true);
+                break;
+            }
+            case AbIcon.Shield:
+            {
+                var pts = new[] { P(0, -0.62f), P(0.5f, -0.42f), P(0.46f, 0.1f), P(0, 0.62f), P(-0.46f, 0.1f), P(-0.5f, -0.42f) };
+                ci.DrawColoredPolygon(pts, A(new Color("dfe5ec")));
+                ci.DrawPolyline(new[] { pts[0], pts[1], pts[2], pts[3], pts[4], pts[5], pts[0] }, A(new Color("ffd23f")), lw * 0.8f, true);
+                ci.DrawLine(P(0, -0.5f), P(0, 0.5f), A(new Color(0.55f, 0.6f, 0.68f)), lw * 0.7f, true);
+                ci.DrawLine(P(-0.38f, -0.1f), P(0.38f, -0.1f), A(new Color(0.55f, 0.6f, 0.68f)), lw * 0.7f, true);
+                break;
+            }
         }
     }
 }

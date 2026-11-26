@@ -119,7 +119,8 @@ public partial class ImpactFx : Node3D
 
     // ------------------------------------------------------------------ v0.26: habilidades
 
-    static readonly Color Red = new(1f, 0.18f, 0.15f), Green = new(0.3f, 1f, 0.45f), Cyan = new(0.45f, 0.92f, 1f), Gold = new(1f, 0.85f, 0.3f);
+    static readonly Color Red = new(1f, 0.18f, 0.15f), Green = new(0.3f, 1f, 0.45f), Cyan = new(0.45f, 0.92f, 1f), Gold = new(1f, 0.85f, 0.3f),
+        Silver = new(0.85f, 0.9f, 0.97f);
 
     void Ability(string name, Vector3 pos)
     {
@@ -153,6 +154,20 @@ public partial class ImpactFx : Node3D
             case "fx_lucklose": Burst(pos, new Color(0.6f, 0.6f, 0.6f), 0.7f, 16); Sfx.PlayLocal3D(this, "fail", pos, -3f, 0.8f); break;
             case "fx_bolt": Burst(pos, Cyan, 0.7f, 16); Sfx.PlayLocal3D(this, "zap", pos, -4f); break;
             case "fx_swap": Ring(pos, Cyan, 1.4f, 0.4f, true); Burst(pos, Cyan, 0.8f, 18); Bolt(pos + Vector3.Up * 4f, pos, 0.35f); Sfx.PlayLocal3D(this, "zap", pos, -3f, 1.2f); break;
+            // ---- v0.37: Iron ----
+            case "fx_wall": Burst(pos, Silver, 1.4f, 30); Sfx.PlayLocal3D(this, "wall", pos, -1f); break;
+            case "fx_bonk":
+                Ring(pos, Silver, 0.9f, 0.3f, true); Burst(pos, Gold, 0.6f, 14);
+                Sfx.PlayLocal3D(this, "bonk", pos, -1f); Sfx.PlayLocal3D(this, "clang", pos, -10f, 1.5f);
+                break;
+            case "fx_charge": Dust(this, pos with { Y = 0 }, 0.8f); Sfx.PlayLocal3D(this, "charge", pos, -2f); break;
+            case "fx_ram": Burst(pos, Silver, 0.8f, 16); Dust(this, pos with { Y = 0 }, 0.6f); Sfx.PlayLocal3D(this, "cut_hit", pos, -2f, 1.1f); break;
+            case "fx_clang":
+                Burst(pos, Gold, 0.7f, 18); Ring(pos, Silver, 1.0f, 0.3f, true);
+                Sfx.PlayLocal3D(this, "clang", pos, -3f);
+                if (M?.Cam != null) M.Cam.Shake(0.25f * (1f - Mathf.Clamp((M.Cam.Cam.GlobalPosition.DistanceTo(pos) - 4f) / 20f, 0, 1)));
+                break;
+            case "fx_ironon": Ring(pos with { Y = 0.05f }, Silver, 3f, 0.6f); Burst(pos, Silver, 1.2f, 30); Burst(pos, Gold, 0.8f, 14); Sfx.PlayLocal3D(this, "clang", pos, -4f, 0.8f); break;
             case "fx_thunder":
                 Bolt(pos + Vector3.Up * 22f, pos, 0.5f);
                 Ring(pos, Cyan, 6f, 0.5f);

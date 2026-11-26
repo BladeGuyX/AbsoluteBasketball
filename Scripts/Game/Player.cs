@@ -95,9 +95,10 @@ public partial class Player : CharacterBody3D
 
     public bool HasBall => M?.Ball?.Holder == this;
     public bool IsDribbling => DribbleActive > 0;
-    public bool CanCatch => true;
-    /// <summary>Pode ter a bola roubada? (não se estiver driblando, no ar ou carregando arremesso)</summary>
-    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass && Flight == FlightKind.None;
+    /// <summary>v0.37: na Investida o Iron não pega a bola.</summary>
+    public bool CanCatch => Ab == null || !Ab.Charging;
+    /// <summary>Pode ter a bola roubada? (não se estiver driblando, no ar ou carregando arremesso; v0.37: nem o Iron que pegou a bola no bloqueio)</summary>
+    public bool CanBeStolen => !IsDribbling && !Airborne && !ChargingShot && !ChargingPass && Flight == FlightKind.None && (Ab == null || !Ab.BlockCatch);
     public Vector3 Forward => ShotMath.Dir(Yaw);
     public Vector3 Right => new(Mathf.Cos(Yaw), 0, -Mathf.Sin(Yaw));
 
@@ -137,7 +138,13 @@ public partial class Player : CharacterBody3D
     }
 
     /// <summary>Atributos de estrela (+ bônus do modo apostador do Luck). Testes antigos jogam com tudo neutro.</summary>
-    public void UpdateStats() => St = PlayerStats.For(CharacterId, Ab?.ModeBonus ?? 0f, M == null || M.UseStars);
+    public void UpdateStats()
+    {
+        St = PlayerStats.For(CharacterId, Ab?.ModeBonus ?? 0f, M == null || M.UseStars);
+        // v0.37: Iron Indestrutível corre como alguém de IronUltSpeedStars estrelas (se as dele forem menos)
+        if (Ab != null && Ab.Indestructible)
+            St.Speed = Mathf.Max(St.Speed, PlayerStats.Mult(Mathf.Clamp(Mathf.RoundToInt(Tuning.I.IronUltSpeedStars), 1, 5), Tuning.I.StarSpeedStep));
+    }
 
     /// <summary>v0.27 (modo de teste): troca o personagem na hora — refaz o visual. Recargas e ultimate continuam.</summary>
     public void SetCharacter(int id)
@@ -145,7 +152,7 @@ public partial class Player : CharacterBody3D
         id = Characters.Clamp(id);
         if (id == CharacterId) return;
         CharacterId = id;
-        if (Ab != null) { Ab.OnRoundReset(); Ab.EyeT = 0; Ab.PresenceT = 0; Ab.ModeT = 0; Ab.ModeBonus = 0; Ab.BetT = 0; Ab.BetTarget = 0; }
+        if (Ab != null) { Ab.OnRoundReset(); Ab.EyeT = 0; Ab.PresenceT = 0; Ab.ModeT = 0; Ab.ModeBonus = 0; Ab.BetT = 0; Ab.BetTarget = 0; Ab.UltT = 0; Ab.WallT = 0; }
         if (_rig is CharacterVisual cv) cv.Remove(); else _visual?.QueueFree();
         _rig = CharacterVisual.Available ? new CharacterVisual(this) : new PlayerRig(this, Team);
         _visual = _rig.Root;
@@ -206,8 +213,9 @@ public partial class Player : CharacterBody3D
             return;
         }
 
-        bool canMove = M.CanMove && LandLock <= 0 && Stun <= 0;
-        bool canAct = M.CanAct && LandLock <= 0 && !Airborne && Stun <= 0;
+        if (Ab.Charging && (Stun > 0 || !M.CanMove || HasBall)) Ab.EndCharge();
+        bool canMove = M.CanMove && LandLock <= 0 && Stun <= 0 && Ab.TiredT <= 0;
+        bool canAct = M.CanAct && LandLock <= 0 && !Airborne && Stun <= 0 && Ab.TiredT <= 0 && !Ab.Charging;
 
         var wish = canMove ? new Vector3(inp.Move.X, 0, inp.Move.Y) : Vector3.Zero;
         if (wish.LengthSquared() > 1f) wish = wish.Normalized();
@@ -252,7 +260,7 @@ public partial class Player : CharacterBody3D
         }
 
         // ---------- corrida / estamina ----------
-        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && !IsDribbling && StealFail <= 0 && !Airborne && Ab.DashT <= 0;
+        bool wantRun = inp.IsHeld(Btn.Sprint) && moving && !ChargingShot && !IsDribbling && StealFail <= 0 && !Airborne && Ab.DashT <= 0 && !Ab.Charging;
         Running = wantRun && Stamina > 0 && (Running || Stamina >= t.StaminaMinToRun);
         if (Running)
         {
@@ -262,7 +270,7 @@ public partial class Player : CharacterBody3D
         }
         else if (_regenDelay > 0) _regenDelay -= dt;
         else Stamina = Mathf.Min(St.StaminaMax, Stamina + St.StaminaRegen * dt);
-        if (Stamina > St.StaminaMax) Stamina = St.StaminaMax;
+        if (Stamina > St.StaminaMax || Ab.Indestructible) Stamina = St.StaminaMax; // v0.37: Indestrutível = estamina infinita
 
         // ---------- movimento ----------
         float speed = Running ? St.RunSpeed : St.WalkSpeed;
@@ -278,6 +286,15 @@ public partial class Player : CharacterBody3D
         Vector3 hv;
         if (Airborne) hv = new Vector3(_jumpVel.X, 0, _jumpVel.Z);
         else if (Ab.DashT > 0) hv = Forward * t.LuckDashSpeed;
+        else if (Ab.Charging)
+        {
+            // v0.37: Investida do Iron — segue para a frente acelerando; andar para os lados vira um pouco
+            Ab.ChargeT += dt;
+            float steer = wish.Dot(Right);
+            Yaw -= steer * Mathf.DegToRad(t.IronChargeTurnRate) * dt;
+            hv = Forward * Ab.ChargeSpeed;
+            Ab.ChargeHits();
+        }
         else if (StealDash > 0) hv = Forward * St.StealDashSpeed;
         else
         {
@@ -292,6 +309,20 @@ public partial class Player : CharacterBody3D
         MoveAndSlide();
         bool onPlayer = SlideOffPlayers();
         SanitizeState();
+        if (Ab.Charging)
+        {
+            // bateu numa parede (colisão ou limite da quadra) = atordoado; acabou o tempo = cansado
+            var gp = GlobalPosition;
+            bool edge = gp.X <= M.Geo.MinX + 0.45f || gp.X >= M.Geo.MaxX - 0.45f || gp.Z <= M.Geo.MinZ + 0.45f || gp.Z >= M.Geo.MaxZ - 0.45f;
+            bool wallHit = false;
+            for (int i = 0; i < GetSlideCollisionCount(); i++)
+            {
+                var col = GetSlideCollision(i);
+                if (col.GetCollider() is not Player && Mathf.Abs(col.GetNormal().Y) < 0.5f && col.GetNormal().Dot(Forward) < -0.5f) wallHit = true;
+            }
+            if (wallHit || edge) { Ab.EndCharge(true); Velocity = Vector3.Zero; }
+            else if (Ab.ChargeT >= t.IronChargeDuration) { Ab.EndCharge(false); Velocity = Vector3.Zero; }
+        }
 
         if (Airborne)
         {
@@ -315,7 +346,7 @@ public partial class Player : CharacterBody3D
         // ---------- rotação ----------
         float targetYaw = Yaw;
         if (ChargingShot || ChargingPass || ChargingJump) targetYaw = inp.AimYaw;
-        else if (moving && !Airborne && StealDash <= 0 && Ab.DashT <= 0 && LandLock <= 0) targetYaw = ShotMath.YawOf(wish);
+        else if (moving && !Airborne && StealDash <= 0 && Ab.DashT <= 0 && LandLock <= 0 && !Ab.Charging && Ab.TiredT <= 0) targetYaw = ShotMath.YawOf(wish);
         Yaw = Mathf.LerpAngle(Yaw, targetYaw, 1f - Mathf.Exp(-t.TurnSpeed * dt));
 
         UpdateDribble(dt);
@@ -599,7 +630,7 @@ public partial class Player : CharacterBody3D
         float ang = Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(rel) - Yaw));
         if (ang > Mathf.DegToRad(t.StealAngleDeg)) return;
         StealDash = 0;
-        if (holder.Ab.PerfectDribble && holder.IsDribbling) { holder.Ab.PunishStealer(this); return; } // v0.26: Drible Perfeito
+        if (holder.Ab.PerfectDribble && holder.IsDribbling && !Characters.Immune(this, holder)) { holder.Ab.PunishStealer(this); return; } // v0.26: Drible Perfeito
         if (holder.CanBeStolen)
         {
             holder.CancelShot(false);
@@ -614,6 +645,13 @@ public partial class Player : CharacterBody3D
     {
         StealDash = 0;
         StealFail = St.StealFailTime;
+        // v0.37: tentou roubar o Iron Indestrutível driblando → também fica atordoado um pouco
+        if (immuneTarget != null && immuneTarget.IsDribbling && immuneTarget.Ab.Indestructible && immuneTarget.Team != Team)
+        {
+            Stun = Mathf.Max(Stun, Tuning.I.IronUltStealStun);
+            StealFail += Tuning.I.IronUltStealStun;
+            M.LogEvent("IRON_PUNISH", immuneTarget, this);
+        }
         M.OnStealFailed(this, immuneTarget);
     }
 
@@ -672,6 +710,7 @@ public partial class Player : CharacterBody3D
         if (_passReleaseT > 0) _passReleaseT -= dt;
         var st = new RigState
         {
+            Ramming = Ab.Charging, Tired = Ab.TiredT > 0, Bonk = Ab.BonkT > 0 ? 1f - Ab.BonkT / 0.4f : 0f,
             Yaw = Yaw, Speed = Airborne || StealDash > 0 || Ab.DashT > 0 ? 0 : hspeed, HasBall = HasBall, Charging = ChargingShot, Charge = ShotCharge,
             Release = _releaseT / ReleaseAnimTime, PassCharging = ChargingPass, PassRelease = _passReleaseT / 0.3f,
             JumpCharging = ChargingJump, Airborne = Airborne, Dashing = StealDash > 0 || Ab.DashT > 0 || _moveDur > 0 || _netScripted, Slowed = StealFail > 0,
@@ -732,7 +771,7 @@ public partial class Player : CharacterBody3D
     public void StartScriptedMove(Vector3 from, Vector3 to, float dur, float bulge)
     {
         CancelShot(false); CancelPass(); ChargingJump = false; StealDash = 0;
-        _moveFrom = from; _moveTo = to; _moveT = 0; _moveDur = Mathf.Max(dur, 0.02f); _moveBulge = bulge;
+        _moveFrom = from; _moveTo = to; _moveT = 0; _moveDur = Mathf.Max(dur, 0.02f); _moveBulge = bulge; _moveKeepYaw = false;
         Velocity = Vector3.Zero;
     }
 
@@ -746,8 +785,18 @@ public partial class Player : CharacterBody3D
         var p = _moveFrom.Lerp(_moveTo, e) + side * (_moveBulge * Mathf.Sin(k * Mathf.Pi));
         GlobalPosition = p;
         Velocity = Vector3.Zero;
-        if (d.LengthSquared() > 1e-4f) Yaw = ShotMath.YawOf(d);
-        if (k >= 1f) { _moveDur = 0; if (d.LengthSquared() > 1e-4f) Velocity = d.Normalized() * St.RunSpeed * 0.6f; }
+        if (d.LengthSquared() > 1e-4f && !_moveKeepYaw) Yaw = ShotMath.YawOf(d);
+        if (k >= 1f) { _moveDur = 0; if (d.LengthSquared() > 1e-4f && !_moveKeepYaw) Velocity = d.Normalized() * St.RunSpeed * 0.6f; _moveKeepYaw = false; }
+    }
+
+    bool _moveKeepYaw;
+
+    /// <summary>v0.37: atropelado pela Investida — escorrega para o lado (sem virar), já atordoado.</summary>
+    public void StartKnockback(Vector3 to, float dur)
+    {
+        var from = GlobalPosition;
+        StartScriptedMove(from, to with { Y = from.Y }, dur, 0f);
+        _moveKeepYaw = true;
     }
 
     Vector3? _queuedReloc;

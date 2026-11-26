@@ -31,24 +31,33 @@ public sealed class PlayerAbilities
     public float ModeT, ModeBonus;                // Luck ult: modo apostador
     public int ModeWins, ModeGambles;
     public bool SkyJump;                          // Bolt 3: no ar do Arranha-Céu
+    public float WallT;                           // Iron 1: Muralha de Aço de pé (s restantes)
+    public float BonkT;                           // Iron 2: animação da Pancada (s restantes)
+    public float ChargeT;                         // Iron 3: tempo desde o começo da Investida (0 = sem investida)
+    public float TiredT;                          // Iron 3: parado no fim da Investida (cansado; bateu na parede = Stun)
+    public float UltT;                            // Iron ult: Indestrutível (s restantes)
+    public bool BlockCatch;                       // Iron ult: pegou a bola no bloqueio (imune a roubo até poder driblar)
+    public bool Charging => ChargeT > 0;
+    public bool Indestructible => UltT > 0 && Char == Characters.Iron;
+    readonly System.Collections.Generic.HashSet<Player> _chargeHits = new();
 
     public static Btn SlotBtn(int slot) => slot switch { 0 => Btn.Ab1, 1 => Btn.Ab2, 2 => Btn.Ab3, _ => Btn.Ult };
 
     public bool Enabled => M != null && M.AbilitiesOn && !P.IsDummy;
-    public bool Ready(int slot) => slot < 3 ? Cd[slot] <= 0 : Ult >= 0.999f || (Char == Characters.Luck && ModeT > 0);
+    public bool Ready(int slot) => slot < 3 ? Cd[slot] <= 0 : (Ult >= 0.999f && UltT <= 0) || (Char == Characters.Luck && ModeT > 0);
     public float CdFrac(int slot) => slot < 3 ? Mathf.Clamp(Cd[slot] / Mathf.Max(Characters.Cooldown(Char, slot), 0.01f), 0, 1) : 0;
 
     /// <summary>Bônus instantâneo na barra da ultimate (bloqueio, passe, roubo, cesta). Não enche com a ult ativa.</summary>
     public void AddUlt(float v)
     {
-        if (!Enabled || ModeT > 0 || v <= 0) return;
+        if (!Enabled || ModeT > 0 || UltT > 0 || v <= 0) return;
         Ult = Mathf.Min(1f, Ult + v);
     }
 
     /// <summary>Início de round: efeitos momentâneos acabam (recargas e carga da ult continuam).</summary>
     public void OnRoundReset()
     {
-        EyeArmed = false; PerfectDribble = false; DashT = 0; SkyJump = false;
+        EyeArmed = false; PerfectDribble = false; DashT = 0; SkyJump = false; BonkT = 0; TiredT = 0; BlockCatch = false; EndCharge();
     }
 
     // =====================================================================
@@ -62,10 +71,15 @@ public sealed class PlayerAbilities
         if (DashT > 0) DashT -= dt;
         if (ModeT > 0) { ModeT -= dt; if (ModeT <= 0) EndMode(); }
         if (PerfectDribble && !P.IsDribbling) PerfectDribble = false;
+        if (WallT > 0) WallT = Mathf.Max(0, WallT - dt);
+        if (BonkT > 0) BonkT = Mathf.Max(0, BonkT - dt);
+        if (TiredT > 0) TiredT = Mathf.Max(0, TiredT - dt);
+        if (UltT > 0) UltT = Mathf.Max(0, UltT - dt);
+        if (BlockCatch && (!P.HasBall || (!P.Airborne && P.LandLock <= 0))) BlockCatch = false;
         if (!Enabled) return;
-        if (M.Phase == MatchPhase.Playing && ModeT <= 0) Ult = Mathf.Min(1f, Ult + dt / Mathf.Max(T.UltChargeTime, 1f));
+        if (M.Phase == MatchPhase.Playing && ModeT <= 0 && UltT <= 0) Ult = Mathf.Min(1f, Ult + dt / Mathf.Max(T.UltChargeTime, 1f));
 
-        bool can = M.CanAct && P.Stun <= 0 && P.Flight == FlightKind.None && P.RimHang <= 0 && !P.InScriptedMove;
+        bool can = M.CanAct && P.Stun <= 0 && TiredT <= 0 && !Charging && P.Flight == FlightKind.None && P.RimHang <= 0 && !P.InScriptedMove;
         if (!can) return;
         for (int s = 0; s < 3; s++)
             if (inp.WasPressed(SlotBtn(s)) && !Characters.NeedsTarget(Char, s)) TryUse(s, inp);
@@ -79,7 +93,7 @@ public sealed class PlayerAbilities
     public bool NoCd;
 
     /// <summary>v0.27 (modo de teste): recargas zeradas e ultimate cheia.</summary>
-    public void Refill() { Cd[0] = Cd[1] = Cd[2] = 0; Ult = 1f; }
+    public void Refill() { Cd[0] = Cd[1] = Cd[2] = 0; if (UltT <= 0) Ult = 1f; }
 
     void TryUse(int slot, PlayerInput inp)
     {
@@ -94,6 +108,9 @@ public sealed class PlayerAbilities
             (Characters.Bolt, 0) => BoltDribble(inp.AimYaw),
             (Characters.Bolt, 1) => DoSwap(inp.AimYaw), // v0.27: troca na hora (o alvo fica com o anel do chão claro antes)
             (Characters.Bolt, 2) => BoltSky(),
+            (Characters.Iron, 0) => IronWall(),
+            (Characters.Iron, 1) => IronBonk(inp.AimYaw),
+            (Characters.Iron, 2) => IronCharge(inp.AimYaw),
             _ => false,
         };
         if (!ok) return;
@@ -105,13 +122,14 @@ public sealed class PlayerAbilities
     {
         if (Char == Characters.Luck) { LuckUlt(); return; }
         if (Ult < 0.999f) return;
+        if (Char == Characters.Iron) { IronUlt(); return; }
         if (Char == Characters.King && CanStartCutscene() && M.StartCutscene(CutKind.KingUlt, P, null)) { Ult = 0; M.LogEvent("ULT", P); }
     }
 
     void TryTarget(int slot, int targetId)
     {
         var tgt = M.Players.FirstOrDefault(q => q.Id == targetId);
-        if (tgt == null || tgt.Team == P.Team) return;
+        if (tgt == null || tgt.Team == P.Team || Characters.Immune(tgt, P)) return;
         if (Char == Characters.Luck && slot == 1 && Cd[1] <= 0)
         {
             BetTarget = tgt.Id; BetT = T.LuckBetDuration; StartCd(1);
@@ -209,11 +227,11 @@ public sealed class PlayerAbilities
     {
         if (DashT <= 0 || P.HasBall) return;
         var h = M.Ball.Holder;
-        if (h == null || h.Team == P.Team || h.Airborne || h.Flight != FlightKind.None) return;
+        if (h == null || h.Team == P.Team || h.Airborne || h.Flight != FlightKind.None || Characters.Immune(h, P)) return;
         var rel = h.GlobalPosition - P.GlobalPosition; rel.Y = 0;
         if (rel.Length() > T.LuckDashStealReach) return;
         DashT = 0;
-        if (h.Ab.PerfectDribble && h.IsDribbling) { h.Ab.PunishStealer(P); return; }
+        if (h.Ab.PerfectDribble && h.IsDribbling && !Characters.Immune(P, h)) { h.Ab.PunishStealer(P); return; }
         h.CancelShot(false); h.CancelPass();
         M.Ball.GiveTo(P);
         M.OnSteal(P, h);
@@ -277,7 +295,7 @@ public sealed class PlayerAbilities
         Player best = null; float bestA = Mathf.DegToRad(t.BoltDribbleAngle);
         foreach (var q in p.M.Players)
         {
-            if (q.Team == p.Team || q.Flight != FlightKind.None || q.RimHang > 0) continue;
+            if (q.Team == p.Team || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
             var to = q.GlobalPosition - p.GlobalPosition; to.Y = 0;
             if (to.Length() > t.BoltDribbleRange || to.Length() < 0.05f) continue;
             float a = Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(to) - aimYaw));
@@ -293,7 +311,7 @@ public sealed class PlayerAbilities
         Player best = null; float bestA = Mathf.DegToRad(t.BoltSwapAngle);
         foreach (var q in p.M.Players)
         {
-            if (q == p || q.Flight != FlightKind.None || q.RimHang > 0) continue;
+            if (q == p || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
             var to = q.GlobalPosition - p.GlobalPosition; to.Y = 0;
             if (to.Length() > t.BoltSwapRange || to.Length() < 0.3f) continue;
             float a = Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(to) - aimYaw));
@@ -345,7 +363,7 @@ public sealed class PlayerAbilities
         SkyJump = true;
         foreach (var q in M.Players)
         {
-            if (q.Team == P.Team) continue;
+            if (q.Team == P.Team || Characters.Immune(q, P)) continue;
             var d = (q.GlobalPosition - P.GlobalPosition) with { Y = 0 };
             if (d.Length() > T.BoltSkyStunRadius) continue;
             q.CancelShot(false); q.CancelPass();
@@ -357,11 +375,138 @@ public sealed class PlayerAbilities
     }
 
     // =====================================================================
+    // Iron (v0.37)
+
+    bool IronWall()
+    {
+        WallT = T.IronWallDuration;
+        var rim = M.Geo.RimCenter[CourtGeo.DefendHoop(P.Team)];
+        float inward = -CourtGeo.HoopSign(CourtGeo.DefendHoop(P.Team));
+        Sfx.Play3D(M, "fx_wall", new Vector3(rim.X + inward * M.Geo.ThreePt, 1.5f, 0));
+        M.LogEvent("WALL", P);
+        return true;
+    }
+
+    /// <summary>Adversário (sem a bola) a até IronBonkRange, o mais perto do centro do olhar (Pancada). Também usado pelo destaque na tela.</summary>
+    public static Player BonkCandidate(Player p, float aimYaw)
+    {
+        var t = Tuning.I;
+        Player best = null; float bestA = Mathf.DegToRad(t.IronBonkAngle);
+        foreach (var q in p.M.Players)
+        {
+            if (q.Team == p.Team || q.HasBall || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, p)) continue;
+            var to = (q.GlobalPosition - p.GlobalPosition) with { Y = 0 };
+            float d = to.Length();
+            if (d > t.IronBonkRange) continue;
+            float a = d < 0.05f ? 0f : Mathf.Abs(ShotMath.WrapAngle(ShotMath.YawOf(to) - aimYaw));
+            if (a <= bestA) { bestA = a; best = q; }
+        }
+        return best;
+    }
+
+    bool IronBonk(float aimYaw)
+    {
+        if (P.Airborne) return false;
+        var q = BonkCandidate(P, aimYaw);
+        if (q == null) return false;
+        if (!P.ChargingShot && !P.ChargingPass)
+            P.Yaw = ShotMath.YawOf((q.GlobalPosition - P.GlobalPosition) with { Y = 0 });
+        BonkT = 0.4f;
+        q.CancelShot(false); q.CancelPass();
+        q.StealDash = 0; q.Ab.DashT = 0;
+        if (q.Ab.Charging) q.Ab.EndCharge();
+        q.Stun = Mathf.Max(q.Stun, T.IronBonkStun);
+        Sfx.Play3D(M, "fx_bonk", q.GlobalPosition + Vector3.Up * 2.1f);
+        M.LogEvent("BONK", P, q);
+        return true;
+    }
+
+    bool IronCharge(float aimYaw)
+    {
+        if (P.HasBall || P.Airborne || !P.IsOnFloor() || P.ChargingJump) return false;
+        P.CancelShot(false); P.CancelPass();
+        P.StealDash = 0;
+        P.Yaw = aimYaw;
+        ChargeT = 0.0001f;
+        _chargeHits.Clear();
+        P.CollisionMask = 1; // atravessa os jogadores (quem está no caminho é jogado para o lado)
+        Sfx.Play3D(M, "fx_charge", P.GlobalPosition + Vector3.Up);
+        M.LogEvent("CHARGE", P);
+        return true;
+    }
+
+    /// <summary>Velocidade atual da Investida (começa devagar e acelera).</summary>
+    public float ChargeSpeed => Mathf.Lerp(T.IronChargeSpeedStart, T.IronChargeSpeedMax,
+        Mathf.Clamp(ChargeT / Mathf.Max(T.IronChargeDuration, 0.1f), 0, 1));
+
+    /// <summary>Fim da Investida: sem efeito se não estava investindo. wall = bateu na parede (atordoado), senão cansado.</summary>
+    public void EndCharge(bool? wall = null)
+    {
+        if (ChargeT <= 0) return;
+        ChargeT = 0;
+        _chargeHits.Clear();
+        if (P == null) return;
+        P.CollisionMask = 1 | 2;
+        if (wall == null) return;
+        if (wall.Value)
+        {
+            P.Stun = Mathf.Max(P.Stun, T.IronChargeRecover);
+            Sfx.Play3D(M, "fx_clang", P.GlobalPosition + Vector3.Up * 1.2f + P.Forward * 0.5f);
+            M.LogEvent("CHARGE_WALL", P);
+        }
+        else
+        {
+            TiredT = T.IronChargeRecover;
+            M.LogEvent("CHARGE_TIRED", P);
+        }
+    }
+
+    /// <summary>Na Investida (Player.ServerTick, antes de mover): atropela quem está na frente (aliados também).</summary>
+    public void ChargeHits()
+    {
+        var t = T;
+        foreach (var q in M.Players)
+        {
+            if (q == P || _chargeHits.Contains(q) || q.Flight != FlightKind.None || q.RimHang > 0 || Characters.Immune(q, P)) continue;
+            var rel = (q.GlobalPosition - P.GlobalPosition) with { Y = 0 };
+            if (rel.Length() > t.IronChargeHitRadius || rel.Dot(P.Forward) < -0.15f) continue;
+            if (q.GlobalPosition.Y - P.GlobalPosition.Y > 1.6f) continue; // muito alto no ar: passa por baixo
+            _chargeHits.Add(q);
+            float side = rel.Dot(P.Right) >= 0 ? 1f : -1f;
+            var dest = M.Geo.ClampInside(q.GlobalPosition + P.Right * side * t.IronChargeKnock + P.Forward * 0.5f, 0.6f);
+            if (q.HasBall)
+            {
+                var bp = M.Ball.GlobalPosition;
+                q.CancelShot(false); q.CancelPass();
+                M.Ball.Drop(bp, P.Forward * 2.5f + P.Right * side * 2.5f + Vector3.Up * 2.5f);
+                q.BallLockoutTimer = 0.6f;
+                M.LogEvent("CHARGE_DROP", P, q);
+            }
+            q.CancelShot(false); q.CancelPass();
+            q.StealDash = 0; q.Ab.DashT = 0;
+            if (q.Ab.Charging) q.Ab.EndCharge();
+            q.Stun = Mathf.Max(q.Stun, t.IronChargeStun);
+            q.StartKnockback(dest, 0.22f);
+            Sfx.Play3D(M, "fx_ram", q.GlobalPosition + Vector3.Up);
+            M.LogEvent("CHARGE_HIT", P, q);
+        }
+    }
+
+    void IronUlt()
+    {
+        Ult = 0;
+        UltT = T.IronUltDuration;
+        Sfx.Play3D(M, "fx_ironon", P.GlobalPosition + Vector3.Up);
+        M.LogEvent("ULT", P);
+        M.StartUltPose(P); // cena: a bigorna cai na cabeça dele e quica (o tempo do modo não corre durante ela)
+    }
+
+    // =====================================================================
     // Rede
 
     public struct NetData
     {
-        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, BetT, DashT, ModeT, ModeBonus;
+        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, BetT, DashT, ModeT, ModeBonus, WallT, BonkT, ChargeT, TiredT, UltT;
         public byte Flags, BetTarget, ModeWins;
     }
 
@@ -369,19 +514,22 @@ public sealed class PlayerAbilities
     {
         Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
         DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
-        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0)),
+        WallT = WallT, BonkT = BonkT, ChargeT = ChargeT, TiredT = TiredT, UltT = UltT,
+        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0)),
     };
 
     public static void Write(NetWriter w, in NetData d)
     {
         w.F(d.Cd0); w.F(d.Cd1); w.F(d.Cd2); w.F(d.Ult); w.F(d.EyeT); w.F(d.PresenceT); w.F(d.JinxFlash); w.F(d.BetT); w.F(d.DashT);
         w.F(d.ModeT); w.F(d.ModeBonus); w.U8(d.Flags); w.U8(d.BetTarget); w.U8(d.ModeWins);
+        w.F(d.WallT); w.F(d.BonkT); w.F(d.ChargeT); w.F(d.TiredT); w.F(d.UltT);
     }
 
     public static NetData Read(NetReader r) => new()
     {
         Cd0 = r.F(), Cd1 = r.F(), Cd2 = r.F(), Ult = r.F(), EyeT = r.F(), PresenceT = r.F(), JinxFlash = r.F(), BetT = r.F(), DashT = r.F(),
         ModeT = r.F(), ModeBonus = r.F(), Flags = r.U8(), BetTarget = r.U8(), ModeWins = r.U8(),
+        WallT = r.F(), BonkT = r.F(), ChargeT = r.F(), TiredT = r.F(), UltT = r.F(),
     };
 
     public void Apply(in NetData d)
@@ -389,5 +537,6 @@ public sealed class PlayerAbilities
         Cd[0] = d.Cd0; Cd[1] = d.Cd1; Cd[2] = d.Cd2; Ult = d.Ult; EyeT = d.EyeT; PresenceT = d.PresenceT; JinxFlash = d.JinxFlash;
         BetT = d.BetT; DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetTarget = d.BetTarget; ModeWins = d.ModeWins;
         EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; NoCd = (d.Flags & 8) != 0;
+        WallT = d.WallT; BonkT = d.BonkT; ChargeT = d.ChargeT; TiredT = d.TiredT; UltT = d.UltT; BlockCatch = (d.Flags & 16) != 0;
     }
 }

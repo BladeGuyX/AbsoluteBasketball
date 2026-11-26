@@ -150,6 +150,28 @@ public static class Sfx
             for (int i = 0; i < 4; i++) { float tt = t - i * 0.07f; if (tt > 0) v += Noise() * Mathf.Exp(-tt * 120) * 0.8f + Mathf.Sin(Tau * 2200 * tt) * Mathf.Exp(-tt * 80) * 0.3f; }
             return v * 0.6f;
         });
+        // ---- v0.37: Iron ----
+        // metal batendo: "klang" com parciais inarmônicas e um baque
+        Streams["clang"] = Make(0.9f, t =>
+            ((Mathf.Sin(Tau * 523 * t) + 0.7f * Mathf.Sin(Tau * 1371 * t) + 0.5f * Mathf.Sin(Tau * 2213 * t) + 0.3f * Mathf.Sin(Tau * 3170 * t)) * Mathf.Exp(-t * 6.5f) * 0.26f
+             + Mathf.Sin(Tau * (110 - 50 * t) * t) * Mathf.Exp(-t * 18) * 0.5f + Noise() * Mathf.Exp(-t * 70) * 0.4f) * Mathf.Min(1f, t / 0.002f));
+        // pancada: "bonk" oco e curto
+        Streams["bonk"] = Make(0.3f, t => (Mathf.Sin(Tau * (420 - 500 * t) * t) * 0.8f + Mathf.Sin(Tau * (180 - 120 * t) * t) * 0.6f + Noise() * Mathf.Exp(-t * 90) * 0.4f)
+            * Mathf.Exp(-t * 14) * Mathf.Min(1f, t / 0.002f) * 0.7f);
+        // investida: ronco grave subindo + passos de metal
+        float cl = 0;
+        Streams["charge"] = Make(0.8f, t =>
+        {
+            cl += (Noise() - cl) * 0.08f;
+            float k = Mathf.Clamp(t / 0.8f, 0, 1);
+            float roar = (Mathf.Sin(Tau * (70 + 60 * k) * t) * 0.5f + cl * 2.2f) * Mathf.Sin(Mathf.Pi * k);
+            float steps = 0;
+            for (int i = 0; i < 4; i++) { float tt = t - i * 0.17f; if (tt > 0) steps += Mathf.Sin(Tau * 900 * tt) * Mathf.Exp(-tt * 60) * 0.25f; }
+            return Mathf.Clamp(roar + steps, -1, 1) * 0.7f;
+        });
+        // muralha: rangido metálico subindo + "chiing"
+        Streams["wall"] = Make(1.0f, t => (Mathf.Sin(Tau * (180 + 380 * t) * t) * 0.35f * Mathf.Min(1f, t / 0.05f) * Mathf.Exp(-t * 2.5f)
+            + Bell(t - 0.25f, 1568f) * 0.35f + Bell(t - 0.25f, 2093f) * 0.2f) * 0.8f);
         // cutscenes: entrada (subida + impacto), golpe, chicote de vento, choque elétrico, trovão
         Streams["cut_start"] = Make(0.9f, t => (Mathf.Sin(Tau * (120 + 500 * t * t) * t) * 0.3f * Mathf.Min(1f, t / 0.5f) * (t < 0.6f ? 1f : 0f))
             + (t > 0.6f ? (Mathf.Sin(Tau * 60 * t) * 0.9f + Noise() * 0.5f) * Mathf.Exp(-(t - 0.6f) * 9) : 0f));

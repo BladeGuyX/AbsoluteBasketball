@@ -83,7 +83,8 @@ public partial class AbilityBar : Control
         return (p.CharacterId, slot) switch
         {
             (Characters.King, 2) or (Characters.King, 3) or (Characters.Luck, 0) or (Characters.Bolt, 0) or (Characters.Bolt, 3) => p.HasBall,
-            (Characters.Bolt, 2) => !p.HasBall,
+            (Characters.Bolt, 2) or (Characters.Iron, 2) => !p.HasBall,
+            (Characters.Iron, 1) => p.M != null && p.M.Cam != null && PlayerAbilities.BonkCandidate(p, p.M.Cam.Yaw) != null,
             _ => true,
         };
     }
@@ -97,6 +98,9 @@ public partial class AbilityBar : Control
             (Characters.King, 1) => Mathf.Max(0, a.PresenceT) / Mathf.Max(t.KingPresenceDuration, 0.1f),
             (Characters.Luck, 1) => Mathf.Max(0, a.BetT) / Mathf.Max(t.LuckBetDuration, 0.1f),
             (Characters.Luck, 3) => Mathf.Clamp(Mathf.Max(0, a.ModeT) / Mathf.Max(t.LuckModeDuration, 0.1f), 0, 1),
+            (Characters.Iron, 0) => Mathf.Max(0, a.WallT) / Mathf.Max(t.IronWallDuration, 0.1f),
+            (Characters.Iron, 2) => a.Charging ? 1f - Mathf.Clamp(a.ChargeT / Mathf.Max(t.IronChargeDuration, 0.1f), 0, 1) : 0f,
+            (Characters.Iron, 3) => Mathf.Clamp(Mathf.Max(0, a.UltT) / Mathf.Max(t.IronUltDuration, 0.1f), 0, 1),
             _ => 0f,
         };
     }

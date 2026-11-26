@@ -54,6 +54,8 @@ public sealed class AbilityScenario
         P.UpdateStats();
         for (int i = 0; i < 3; i++) P.Ab.Cd[i] = 0;
         P.Ab.EyeT = 0; P.Ab.PresenceT = 0; P.Ab.BetT = 0; P.Ab.BetTarget = 0; P.Ab.ModeT = 0; P.Ab.ModeBonus = 0;
+        P.Ab.UltT = 0; P.Ab.WallT = 0; P.Ab.TiredT = 0; P.Ab.BonkT = 0; P.Ab.BlockCatch = false; P.Ab.EndCharge();
+        P.UpdateStats();
         foreach (var q in M.Players) { q.Stun = 0; q.StealFail = 0; }
         P.Stamina = P.St.StaminaMax;
     }
@@ -281,6 +283,9 @@ public sealed class AbilityScenario
         foreach (var r in Duel(true)) yield return r;
         foreach (var r in Duel(false)) yield return r;
 
+        // ---------------- v0.37: Iron ----------------
+        foreach (var r in IronTests()) yield return r;
+
         // ---------------- v0.27: modo de teste (trapaças: bot entra com nome do personagem, troca e sai) ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
         M.Cfg.TestMode = true;
@@ -300,6 +305,128 @@ public sealed class AbilityScenario
         M.Cfg.TestMode = false;
         Rec("trapacas", added && changed && refilled && removed);
         Done = true;
+    }
+
+    IEnumerable<int> IronTests()
+    {
+        var t = Tuning.I;
+        var e0 = Enemies[0]; var e1 = Enemies[1]; var ally = Ally;
+        float s = CourtGeo.HoopSign(CourtGeo.AttackHoop(P.Team));
+        int def = CourtGeo.DefendHoop(P.Team);           // cesta que o Iron defende = onde o adversário arremessa
+        var rimD = M.Geo.RimCenter[def];
+        float inward = -CourtGeo.HoopSign(def);          // da cesta para o meio da quadra
+
+        // ---- (1) Muralha de Aço: arremesso de fora bate nela; de dentro entra ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.Iron);
+        Place(P, rimD.X + inward * 3f, 5f); Place(ally, 0, 8f); Place(e1, 0, -8f);
+        Place(e0, rimD.X + inward * (M.Geo.ThreePt + 1.2f), 0.5f, rimD);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.2f)) yield return 0;
+        _inp.Pressed |= Btn.Ab1; yield return 0;
+        bool wallOn = M.Geo.Wall[def] && P.Ab.WallT > t.IronWallDuration - 0.1f;
+        int st0 = Ev("STEEL_HIT"), sc0 = M.Score[e0.Team];
+        e0.TestShot();
+        foreach (var _ in Wait(2.0f)) yield return 0;
+        bool blocked = Ev("STEEL_HIT") > st0 && M.Score[e0.Team] == sc0;
+        Place(e0, rimD.X + inward * 3.5f, 0.3f, rimD);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        bool stillOn = M.Geo.Wall[def];
+        e0.TestShot();
+        int n = 0; while (M.Score[e0.Team] == sc0 && n++ < 200) yield return 0;
+        bool inside = M.Score[e0.Team] > sc0;
+        if (!(wallOn && blocked && stillOn && inside)) GD.Print($"[ABIL] muralha: on={wallOn} barrou={blocked} ainda={stillOn} dentro={inside}");
+        Rec("muralha_de_aco", wallOn && blocked && stillOn && inside);
+
+        // ---- (2) Pancada: atordoa quem está perto (o Iron pode estar com a bola); não vale em quem tem a bola ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.Iron);
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 2f, 0, Vector3.Zero); Place(e1, -s * 10f, 6f); Place(ally, -s * 10f, -6f);
+        M.Ball.GiveTo(P);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int b0 = Ev("BONK");
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab2; yield return 0;
+        bool bonked = Ev("BONK") > b0 && e0.Stun > t.IronBonkStun - 0.1f && M.Ball.Holder == P && P.Ab.Cd[1] > 0;
+        Reset(Characters.Iron);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        b0 = Ev("BONK");
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab2; yield return 0;
+        bool notHolder = Ev("BONK") == b0 && e0.Stun <= 0 && P.Ab.Cd[1] <= 0;
+        Rec("pancada", bonked && notHolder);
+
+        // ---- (3) Investida: atropela adversário com a bola e aliado; acaba cansado; na parede = atordoado ----
+        Reset(Characters.Iron);
+        Place(P, -s * 8f, 0, new Vector3(s, 0, 0)); Place(e0, -s * 4f, 0.2f, Vector3.Zero); Place(ally, s * 1f, -0.3f, null); Place(e1, s * 3f, 10f);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int h0 = Ev("CHARGE_HIT"), d0 = Ev("CHARGE_DROP"), tired0 = Ev("CHARGE_TIRED");
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab3; yield return 0;
+        bool started = P.Ab.Charging;
+        float e0Stun = 0, allyStun = 0;
+        n = 0;
+        while ((P.Ab.Charging || n < 3) && n++ < 400) { e0Stun = Mathf.Max(e0Stun, e0.Stun); allyStun = Mathf.Max(allyStun, ally.Stun); yield return 0; }
+        bool tired = Ev("CHARGE_TIRED") > tired0 && P.Ab.TiredT > 0 && P.Stun <= 0;
+        bool hits = Ev("CHARGE_HIT") >= h0 + 2 && Ev("CHARGE_DROP") > d0 && e0Stun > t.IronChargeStun - 0.5f && allyStun > t.IronChargeStun - 0.5f;
+        foreach (var _ in Wait(t.IronChargeRecover + 0.2f)) yield return 0;
+        Reset(Characters.Iron);
+        if (M.Ball.Holder == P) M.Ball.Drop(new Vector3(0, 0.3f, M.Geo.HalfW - 2f), Vector3.Zero);
+        Place(P, s * (M.Geo.HalfL - 3f), -5f, new Vector3(s, 0, 0));
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int w0 = Ev("CHARGE_WALL");
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab3; yield return 0;
+        n = 0; while (P.Ab.Charging && n++ < 240) yield return 0;
+        bool wall = Ev("CHARGE_WALL") > w0 && P.Stun > 0;
+        if (!(started && hits && tired && wall)) GD.Print($"[ABIL] investida: começou={started} atropelou={hits} ({Ev("CHARGE_HIT") - h0} hits, e0={e0Stun:0.0} aliado={allyStun:0.0}) cansado={tired} parede={wall}");
+        Rec("investida", started && hits && tired && wall);
+        foreach (var _ in Wait(t.IronChargeRecover)) yield return 0;
+
+        // ---- Ult: Indestrutível (pose, velocidade, estamina, imune, pega a bola no bloqueio, pune roubo no drible) ----
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.Iron);
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 6f, 3f); Place(e1, -s * 2f, 2f); Place(ally, -s * 10f, -6f);
+        P.Ab.Ult = 1f;
+        _inp.Pressed |= Btn.Ult; yield return 0;
+        bool posed = M.Phase == MatchPhase.Cutscene && M.Cut.Kind == CutKind.UltPose;
+        n = 0; while (M.Cut.Active && n++ < 600) yield return 0;
+        yield return 0;
+        bool on = P.Ab.UltT > t.IronUltDuration - 0.3f && P.Ab.Ult <= 0.01f;
+        bool fast = P.St.Speed >= PlayerStats.Mult(Mathf.RoundToInt(t.IronUltSpeedStars), t.StarSpeedStep) - 0.001f;
+        P.Stamina = 0.1f; yield return 0;
+        bool stamina = P.Stamina >= P.St.StaminaMax - 0.01f;
+        // imune: Presença de um King adversário ao lado não vale; o Swap de um Bolt não o escolhe
+        int keepChar = e1.CharacterId;
+        e1.CharacterId = Characters.King; e1.Ab.PresenceT = 3f;
+        bool immune = !M.PresenceJinx(P) && PlayerAbilities.SwapCandidate(e1, ShotMath.YawOf((P.GlobalPosition - e1.GlobalPosition) with { Y = 0 })) != P;
+        P.Ab.UltT = 0; bool control = M.PresenceJinx(P); P.Ab.UltT = t.IronUltDuration;
+        e1.Ab.PresenceT = 0; e1.CharacterId = keepChar;
+        // pega a bola no bloqueio
+        Place(e0, rimD.X + inward * 6f, 0, rimD); Place(e1, -s * 10f, 6f);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        e0.TestShot();
+        yield return 0; yield return 0;
+        P.GlobalPosition = M.Ball.GlobalPosition - Vector3.Up * 1.5f; P.Velocity = Vector3.Zero; P.Airborne = true; P.ResetPhysicsInterpolation();
+        yield return 0; yield return 0;
+        bool caught = M.Ball.Holder == P && P.Ab.BlockCatch && !P.CanBeStolen && Ev("IRON_CATCH") > 0;
+        n = 0; while ((P.Airborne || P.LandLock > 0) && n++ < 300) yield return 0;
+        yield return 0;
+        bool released = !P.Ab.BlockCatch;
+        // roubo no drible: quem tenta fica atordoado
+        Reset(Characters.Iron); P.Ab.UltT = t.IronUltDuration;
+        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 1.0f, 0, Vector3.Zero);
+        M.Ball.GiveTo(P);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        _inp.Pressed |= Btn.Dribble; yield return 0;
+        int ip0 = Ev("IRON_PUNISH");
+        e0.TestSteal(P);
+        foreach (var _ in Wait(0.25f)) yield return 0;
+        bool punish = Ev("IRON_PUNISH") > ip0 && e0.Stun > 0 && M.Ball.Holder == P;
+        bool ok = posed && on && fast && stamina && immune && control && caught && released && punish;
+        if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} roubo={punish}");
+        Rec("indestrutivel", ok);
+        P.Ab.UltT = 0; P.UpdateStats();
     }
 
     IEnumerable<int> KingUlt(bool win, bool failBlock = false)

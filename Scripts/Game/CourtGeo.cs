@@ -81,6 +81,21 @@ public sealed class CourtGeo
         return Mathf.Sqrt(dx * dx + dz * dz) > ThreePt;
     }
 
+    /// <summary>v0.37: Muralha de Aço do Iron de pé na linha de 3 desta cesta (atualizado pelo Match a cada tick).</summary>
+    public readonly bool[] Wall = new bool[2];
+
+    /// <summary>"Distância" do ponto até a cesta medida como a linha de 3 (= ThreePt em cima da linha; menor = dentro):
+    /// raio até o aro na frente dela, |dz| atrás (cantos retos até a linha de fundo). grad = direção para fora.</summary>
+    public float ThreeDist(Vector3 p, int hoop, out Vector3 grad)
+    {
+        var c = RimCenter[hoop];
+        float dx = p.X - c.X, dz = p.Z - c.Z;
+        if (dx * HoopSign(hoop) > 0) { grad = new Vector3(0, 0, dz >= 0 ? 1 : -1); return Mathf.Abs(dz); }
+        float l = Mathf.Sqrt(dx * dx + dz * dz);
+        grad = l > 1e-4f ? new Vector3(dx / l, 0, dz / l) : new Vector3(-HoopSign(hoop), 0, 0);
+        return l;
+    }
+
     public Vector3 ClampInside(Vector3 p, float margin = 0.4f) =>
         new(Mathf.Clamp(p.X, MinX + margin, MaxX - margin), p.Y, Mathf.Clamp(p.Z, MinZ + margin, MaxZ - margin));
 }

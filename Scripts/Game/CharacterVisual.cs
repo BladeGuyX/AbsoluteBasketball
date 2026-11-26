@@ -76,7 +76,7 @@ public sealed class CharacterVisual : IPlayerVisual
     }
 
     // camadas
-    enum S { Ball, Defense, Celebrate, Sad, StealFail, Dribble, PassCharge, ShootCharge, JumpCharge, Air, Land, Steal, Stun, Dunk, Hang, Count }
+    enum S { Ball, Defense, Celebrate, Sad, StealFail, Dribble, PassCharge, ShootCharge, JumpCharge, Air, Land, Steal, Stun, Dunk, Hang, Ram, Tired, Count }
     readonly float[] _w = new float[(int)S.Count];
     readonly Pose _pose = new(), _tmp = new(), _tmp2 = new();
 
@@ -179,6 +179,9 @@ public sealed class CharacterVisual : IPlayerVisual
                     "Camiseta" or "Tenis" or "TenisVerde" or "TenisDetalhe" or "Barra" or "Punho" => Mat.ToonOutlined(c, 0.01f),
                     "Lapela" => Mat.ToonOutlined(c, 0.006f),
                     "Coroa" or "Sola" => Mat.ToonOutlined(c, 0.008f),
+                    // v0.37: Iron
+                    "Aco" or "Gibao" or "Couro" => Mat.ToonOutlined(c, 0.012f),
+                    "AcoClaro" or "AcoEscuro" or "CouroEscuro" or "BotaDobra" => Mat.ToonOutlined(c, 0.007f),
                     _ => Mat.Toon(c),
                 };
                 mi.SetSurfaceOverrideMaterial(i, m);
@@ -386,6 +389,8 @@ public sealed class CharacterVisual : IPlayerVisual
         W(S.Stun, s.Stunned && ground);
         W(S.Dunk, s.Dunking, true);
         W(S.Hang, s.Hanging, true);
+        W(S.Ram, s.Ramming && !s.Stunned, true);
+        W(S.Tired, s.Tired && ground);
         float side = s.BallSide >= 0 ? 1f : -1f;
 
         // ---------- camadas ----------
@@ -599,6 +604,47 @@ public sealed class CharacterVisual : IPlayerVisual
             _tmp.Squash = Key(f, DkSquash);
             _pose.Mix(_tmp, w, Mask.Full);
         }
+        if ((w = _w[(int)S.Ram]) > 0.001f)
+        {
+            // v0.37: Investida do Iron — ombro para a frente, cabeça baixa, uma manopla na frente e a outra atrás
+            _tmp.Clear();
+            Lean(_tmp, 32, 0, -14);
+            Look(_tmp, -22, 8);
+            Shrug(_tmp, 14);
+            _tmp.HandL = new Vector3(-0.16f, 0.66f, -0.42f);
+            _tmp.HandR = new Vector3(0.38f, 0.52f, 0.18f);
+            _pose.Mix(_tmp, w, Mask.UpperHands);
+        }
+        if ((w = _w[(int)S.Tired]) > 0.001f)
+        {
+            // v0.37: cansado no fim da Investida — curvado, mãos nos joelhos, ofegante
+            float pant = Mathf.Sin(_time * 9f);
+            _tmp.Clear();
+            Lean(_tmp, 42 + 3 * pant);
+            Look(_tmp, -18 + 3 * pant);
+            Shrug(_tmp, 6 + 5 * pant);
+            Leg(_tmp, true, 22, 36, 0, 10); Leg(_tmp, false, 22, 36, 0, 10);
+            _tmp.Hips = new Vector3(0, -Drop(22, 36), 0.05f);
+            _tmp.HandL = new Vector3(-0.15f, 0.33f + 0.01f * pant, -0.2f);
+            _tmp.HandR = new Vector3(0.15f, 0.33f + 0.01f * pant, -0.2f);
+            _pose.Mix(_tmp, w, Mask.Full);
+        }
+        if (s.Bonk > 0)
+        {
+            // v0.37: Pancada — a manopla direita sobe e desce na cabeça de quem está na frente
+            float bk = Mathf.Clamp(s.Bonk, 0, 1);
+            w = SmoothStep(0, 0.12f, bk) * (1f - SmoothStep(0.75f, 1f, bk));
+            float strike = SmoothStep(0.3f, 0.5f, bk);
+            _tmp.Clear();
+            Lean(_tmp, Mathf.Lerp(-8, 22, strike), 0, Mathf.Lerp(-10, 8, strike));
+            Look(_tmp, Mathf.Lerp(-10, 8, strike));
+            Shrug(_tmp, 10);
+            // com a bola, bate com a mão livre (a outra continua no quique)
+            float hs = s.HasBall && s.BallSide >= 0 ? -1f : 1f;
+            var fist = new Vector3(0.22f * hs, 1.42f, 0.02f).Lerp(new Vector3(0.08f * hs, 0.95f, -0.62f), strike);
+            if (hs > 0) _tmp.HandR = fist; else _tmp.HandL = fist;
+            _pose.Mix(_tmp, w, Mask.UpperHands);
+        }
         _hangT = s.Hanging ? _hangT + dt : 0;
         if ((w = _w[(int)S.Hang]) > 0.001f)
         {
@@ -734,6 +780,8 @@ public sealed class CharacterVisual : IPlayerVisual
             id = Expressions.Serio;
             if (s.Charging || s.Dribbling) id = Expressions.Focado;
             if (s.Slowed) id = Expressions.Bravo;
+            if (s.Ramming || s.Bonk > 0) id = Expressions.Bravo;
+            if (s.Tired) id = Expressions.Focado;
             if (s.Dunking || s.Hanging) id = Expressions.Bravo;
             if (s.Mood == 1) id = Expressions.Feliz;
             if (s.Angry) id = Expressions.Bravo;

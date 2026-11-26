@@ -33,6 +33,10 @@ public struct RigState
     public int Mood;           // 1 = comemorando, 2 = triste (perdeu)
     public byte Emote;         // expressão da roda (0 = automática)
     public bool Angry;         // v0.22: o adversário acabou de pontuar
+    // v0.37 (Iron)
+    public bool Ramming;       // Investida
+    public bool Tired;         // cansado no fim da Investida (mãos nos joelhos)
+    public float Bonk;         // 0 → 1 ao longo da Pancada (0 = sem)
 }
 
 /// <summary>Visual do jogador: o placeholder (<see cref="PlayerRig"/>) ou o modelo do Blender (<see cref="CharacterVisual"/>).</summary>
