@@ -384,8 +384,10 @@ public sealed class Tuning
     public float StarAgilityStep = 5.5f;
     [Param(SStars, "Estamina: % por estrela", "Estamina máxima e recarga de estamina (%).", 0, 25, 0.5f)]
     public float StarStaminaStep = 9f;
-    [Param(SStars, "Precisão: % por estrela", "Alcance do arremesso, alcance do passe rápido, velocidade do passe e altura do passe alto (%).", 0, 20, 0.5f)]
+    [Param(SStars, "Precisão: % por estrela", "Alcance do passe rápido, velocidade do passe e altura do passe alto (%). O alcance do arremesso usa o valor abaixo.", 0, 20, 0.5f)]
     public float StarPrecisionStep = 8f;
+    [Param(SStars, "Alcance do arremesso: % por estrela", "Só o alcance máximo do arremesso por estrela de Precisão (%). Menor que o da Precisão para as estrelas não mudarem tanto a distância (v0.32).", 0, 20, 0.5f)]
+    public float StarShotRangeStep = 3.5f;
     [Param(SStars, "Salto: % por estrela", "Impulso do salto, travamento ao pousar (menor = melhor), tempo de carga do salto (menor = melhor) e distância para enterrar (%).", 0, 20, 0.5f)]
     public float StarJumpStep = 6f;
 

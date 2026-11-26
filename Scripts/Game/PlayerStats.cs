@@ -10,9 +10,11 @@ namespace AB;
 public struct PlayerStats
 {
     public float Speed, Agility, Stamina, Precision, Jump;
+    /// <summary>v0.32: multiplicador só do alcance do arremesso (passo próprio por estrela, menor que o da Precisão).</summary>
+    public float ShotRange;
     public int DribbleBonus;
 
-    public static readonly PlayerStats Neutral = new() { Speed = 1, Agility = 1, Stamina = 1, Precision = 1, Jump = 1 };
+    public static readonly PlayerStats Neutral = new() { Speed = 1, Agility = 1, Stamina = 1, Precision = 1, Jump = 1, ShotRange = 1 };
 
     public static float Mult(int stars, float stepPct) => 1f + (stars - 2.5f) * stepPct / 100f;
 
@@ -25,7 +27,7 @@ public struct PlayerStats
         if (!useStars)
         {
             float k = 1f + Mathf.Max(bonus, 0f);
-            return new PlayerStats { Speed = k, Agility = k, Stamina = k, Precision = k, Jump = k };
+            return new PlayerStats { Speed = k, Agility = k, Stamina = k, Precision = k, Jump = k, ShotRange = k };
         }
         var s = Characters.Stars(character);
         float b = 1f + Mathf.Max(bonus, 0f);
@@ -35,6 +37,7 @@ public struct PlayerStats
             Agility = Mult(s[1], t.StarAgilityStep) * b,
             Stamina = Mult(s[2], t.StarStaminaStep) * b,
             Precision = Mult(s[3], t.StarPrecisionStep) * b,
+            ShotRange = Mult(s[3], t.StarShotRangeStep) * b,
             Jump = Mult(s[4], t.StarJumpStep) * b,
             DribbleBonus = DribbleFor(s[1]),
         };
@@ -49,7 +52,7 @@ public struct PlayerStats
     public readonly int DribbleCharges => Mathf.Max(1, Mathf.RoundToInt(Tuning.I.DribbleCharges) + DribbleBonus);
     public readonly float StaminaMax => Tuning.I.StaminaMax * Stamina;
     public readonly float StaminaRegen => Tuning.I.StaminaRegenPerSec * Stamina;
-    public readonly float ShotRangeMax => Tuning.I.ShotRangeMax * Precision;
+    public readonly float ShotRangeMax => Tuning.I.ShotRangeMax * ShotRange;
     public readonly float PassRange => Tuning.I.PassRange * Precision;
     public readonly float PassSpeed => Tuning.I.PassSpeed * Precision;
     public readonly float AimPassSpeedMult => Precision;

@@ -41,7 +41,8 @@ public partial class AimIndicator : Control
         // ---- online: o cliente mostra o resultado do próprio aperto na hora (ponteiro onde ele viu) ----
         // (no duelo, o próximo skill check começa na hora: ele tem prioridade sobre o resultado do anterior)
         bool newerCut = cc != null && cc.Active && cc.Seq != M.ClientSkillSeq && M.ClientSkillSeq >= 0;
-        if (M.IsClient && M.ClientSkillHold > 0 && !newerCut)
+        bool duel = M.Cut.Active && M.Cut.Kind == CutKind.BoltDuel; // v0.32: no duelo não mostra acerto/erro
+        if (M.IsClient && M.ClientSkillHold > 0 && !newerCut && !duel)
         {
             DrawSkillCheck(c, t, M.ClientSkillT, M.ClientSkillDur, false, true, M.ClientSkillT, M.ClientSkillHold, M.ClientSkillOk, 1f, M.ClientSkillWindow);
             return;
@@ -50,7 +51,7 @@ public partial class AimIndicator : Control
 
         if (M.Cut.Active)
         {
-            if (cc != null && (cc.Active || (cc.Flash > 0 && !mute)))
+            if (cc != null && (cc.Active || (cc.Flash > 0 && !mute && !duel)))
                 DrawSkillCheck(c, t, Mathf.Max(cc.T, 0), cc.Dur, cc.Active, cc.Pressed, cc.PressT, cc.Flash, cc.Ok, cc.T + t.CutCheckPrep, cc.Window, pointer: cc.T >= 0 || !cc.Active);
             return;
         }

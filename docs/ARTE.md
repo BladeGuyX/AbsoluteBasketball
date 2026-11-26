@@ -100,6 +100,10 @@ O jogo hoje anima o boneco por código (`Scripts/Game/PlayerRig.cs`). Cada estad
 - **não** anime a bola dentro do .blend.
 
 ## Modelos prontos
+- **v0.32 — cenário da praia:** `art_source/scripts/make_scenery.py` (sem concept) → `palmeira_a/b`, `arquibancada` (material
+  `Assento` pintado com a cor do time na Godot), `guarda_sol`, `espreguicadeira`, `torre_salva_vidas`, `poste_luz` (`Lampada`
+  vira unshaded), `pedra_a/b`, `arbusto`, `prancha`. Montagem em `Scripts/Game/Scenery.cs` (posições sorteadas com semente fixa,
+  mar por shader no fundo +X, areia com ruído). Frente dos objetos = −Y no Blender (+Z na Godot).
 | Modelo | Script | Concept | Encaixe | Versão |
 |---|---|---|---|---|
 | Bola (`ball.glb`) | `make_ball.py` | `concepts/ball.png` | `Ball._Ready`: instancia o .glb escalado para `Tuning.BallRadius` (o modelo tem raio 0,22 m). Materiais `Borracha` (contorno 0,012) e `Costura` (sem contorno). Se o .glb faltar, usa a esfera placeholder. | v0.14 |

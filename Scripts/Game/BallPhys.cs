@@ -335,20 +335,18 @@ public static class ShotMath
         return plan;
     }
 
-    /// <summary>v0.26: desvia um arremesso já planejado para bater no aro e sair (Presença Implacável).</summary>
+    /// <summary>v0.26: desvia um arremesso já planejado para errar (Presença Implacável).
+    /// v0.32: só GIRA a direção do arremesso (mesma força e altura) para a bola passar ao lado do aro. Antes refazia o
+    /// arremesso inteiro mirando no aro de onde a pessoa estivesse — arremessando de longe ou para outro lado, a bola saía
+    /// num arco enorme e "voava" pela quadra. A cesta já não vale (Ball.NoScore), então basta desviar.</summary>
     public static ShotPlan Jinx(ShotPlan plan, int team, CourtGeo g, float offset, float side)
     {
-        var t = Tuning.I;
-        var rim = g.RimCenter[CourtGeo.AttackHoop(team)];
-        var dir = ((rim - plan.Pos) with { Y = 0 });
-        if (dir.LengthSquared() < 1e-4f) return plan;
-        dir = dir.Normalized();
-        var target = rim + new Vector3(-dir.Z, 0, dir.X) * (side * offset) - dir * (t.RimRadius * 0.3f);
-        var to = (target - plan.Pos) with { Y = 0 };
-        float d = to.Length();
-        float k = Mathf.Clamp(d / Mathf.Max(t.ShotRangeMax, 0.1f), 0, 1);
-        plan.Vel = Ballistic(YawOf(to), d, target.Y - plan.Pos.Y, Mathf.DegToRad(Mathf.Lerp(t.ShotAngleNearDeg, t.ShotAngleFarDeg, k)));
-        plan.Distance = d;
+        var flat = plan.Vel with { Y = 0 };
+        if (flat.LengthSquared() < 1e-4f) return plan;
+        float dist = Mathf.Max(plan.Distance, 1f);
+        float ang = side * Mathf.Atan2(Mathf.Max(offset, 0.1f) + Tuning.I.RimRadius * 0.6f, dist);
+        var rot = flat.Rotated(Vector3.Up, ang);
+        plan.Vel = new Vector3(rot.X, plan.Vel.Y, rot.Z);
         return plan;
     }
 }

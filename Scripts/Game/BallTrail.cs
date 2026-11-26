@@ -4,14 +4,13 @@ namespace AB;
 
 /// <summary>
 /// v0.26: efeitos na bola. Rastro sutil de energia vermelha (passe/arremesso com o Olho do Rei, <see cref="Ball.Aura"/> = 1)
-/// e aura vermelha em volta da bola durante o Drible Perfeito do King.
+/// e fogo vermelho saindo da bola durante o Drible Perfeito do King (v0.32: antes era uma esfera vermelha em volta).
 /// </summary>
 public partial class BallTrail : Node3D
 {
     public Ball B;
     CpuParticles3D _trail;
-    MeshInstance3D _aura;
-    StandardMaterial3D _auraMat;
+    CpuParticles3D _fire;
     float _t;
 
     public override void _Ready()
@@ -33,12 +32,34 @@ public partial class BallTrail : Node3D
         _trail.MaterialOverride = m;
         AddChild(_trail);
 
-        _auraMat = Mat.Unshaded(new Color(1f, 0.15f, 0.1f, 0.35f), true);
-        _auraMat.BlendMode = BaseMaterial3D.BlendModeEnum.Add;
+        // fogo: labaredas (quadradinhos com degradê redondo, virados para a câmera) nascendo na superfície da bola, subindo e
+        // encolhendo; amarelo → laranja → vermelho → some. Coordenadas do mundo: ficam para trás quando a bola quica.
         float r = Tuning.I.BallRadius;
-        _aura = new MeshInstance3D { Mesh = new SphereMesh { Radius = r * 1.7f, Height = r * 3.4f, RadialSegments = 16, Rings = 8 }, MaterialOverride = _auraMat, Visible = false,
-            CastShadow = GeometryInstance3D.ShadowCastingSetting.Off };
-        AddChild(_aura);
+        var g = new Gradient();
+        g.Offsets = new[] { 0f, 0.55f, 1f };
+        g.Colors = new[] { new Color(1, 1, 1, 1), new Color(1, 1, 1, 0.45f), new Color(1, 1, 1, 0) };
+        var tex = new GradientTexture2D { Gradient = g, Fill = GradientTexture2D.FillEnum.Radial, FillFrom = new Vector2(0.5f, 0.5f), FillTo = new Vector2(1f, 0.5f), Width = 32, Height = 32 };
+        var fm = new StandardMaterial3D
+        {
+            ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
+            BlendMode = BaseMaterial3D.BlendModeEnum.Add, BillboardMode = BaseMaterial3D.BillboardModeEnum.Particles,
+            VertexColorUseAsAlbedo = true, AlbedoTexture = tex, CullMode = BaseMaterial3D.CullModeEnum.Disabled,
+        };
+        var fr = new Gradient();
+        fr.Offsets = new[] { 0f, 0.25f, 0.6f, 1f };
+        fr.Colors = new[] { new Color(1f, 0.9f, 0.45f, 0.95f), new Color(1f, 0.5f, 0.1f, 0.85f), new Color(0.95f, 0.12f, 0.05f, 0.6f), new Color(0.5f, 0f, 0f, 0f) };
+        var shrink = new Curve();
+        shrink.AddPoint(new Vector2(0, 0.6f)); shrink.AddPoint(new Vector2(0.25f, 1f)); shrink.AddPoint(new Vector2(1, 0.1f));
+        _fire = new CpuParticles3D
+        {
+            Emitting = false, Amount = 48, Lifetime = 0.42f, LocalCoords = false,
+            EmissionShape = CpuParticles3D.EmissionShapeEnum.Sphere, EmissionSphereRadius = r * 0.95f,
+            Direction = Vector3.Up, Spread = 25f, InitialVelocityMin = 0.6f, InitialVelocityMax = 1.4f, Gravity = new Vector3(0, 1.8f, 0),
+            DampingMin = 0.5f, DampingMax = 1.5f, ScaleAmountMin = 0.8f, ScaleAmountMax = 1.4f, ScaleAmountCurve = shrink,
+            AngleMin = 0, AngleMax = 360, ColorRamp = fr,
+            Mesh = new QuadMesh { Size = Vector2.One * r * 0.9f, Material = fm },
+        };
+        AddChild(_fire);
     }
 
     public override void _Process(double delta)
@@ -48,12 +69,6 @@ public partial class BallTrail : Node3D
         _trail.Emitting = B.Aura == 1 && B.State != BallState.Held;
         var h = B.Holder;
         bool aura = h != null && h.Ab != null && h.Ab.PerfectDribble && h.IsDribbling;
-        _aura.Visible = aura;
-        if (aura)
-        {
-            float s = 1f + 0.15f * Mathf.Sin(_t * 18f);
-            _aura.Scale = Vector3.One * s;
-            _auraMat.AlbedoColor = new Color(1f, 0.15f, 0.1f, 0.28f + 0.12f * Mathf.Sin(_t * 11f));
-        }
+        _fire.Emitting = aura;
     }
 }

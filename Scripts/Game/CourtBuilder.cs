@@ -63,13 +63,14 @@ public static class CourtBuilder
             LightEnergy = 1.25f,
             LightColor = new Color("fff3dc"),
             ShadowEnabled = true,
-            DirectionalShadowMaxDistance = 60,
+            DirectionalShadowMaxDistance = 90,
             RotationDegrees = new Vector3(-58, -32, 0),
         };
         root.AddChild(sun);
 
         // chão de areia em volta (abaixo da laje da quadra)
-        root.AddChild(Mat.MeshNode(new PlaneMesh { Size = new Vector2(160, 160) }, Mat.Toon(Palette.Sand, 0),
+        // v0.32: areia maior (vai até o mar) com variação de cor
+        root.AddChild(Mat.MeshNode(new PlaneMesh { Size = new Vector2(320, 260) }, Scenery.Available ? Scenery.SandMaterial() : Mat.Toon(Palette.Sand, 0),
             new Vector3(0, -Court.SlabDepth - 0.005f, 0), false));
     }
 
@@ -152,6 +153,7 @@ public static class CourtBuilder
 
     static void BuildDecor(Node3D root, CourtGeo g)
     {
+        if (Scenery.Available) { Scenery.Build(root, g); return; } // v0.32: modelos do Blender
         var rng = new RandomNumberGenerator { Seed = 7 };
         var trunk = Mat.ToonOutlined(new Color("a0703c"), 0.02f);
         var leaves = new[] { Mat.ToonOutlined(new Color("4cc56b"), 0.03f), Mat.ToonOutlined(new Color("38a957"), 0.03f) };

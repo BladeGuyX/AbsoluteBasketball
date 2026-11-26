@@ -105,72 +105,63 @@ public partial class MainMenu : Control
         panel.AddChild(vb);
         vb.AddChild(UiKit.Title("Nova partida"));
 
-        var grid = new GridContainer { Columns = 2 };
-        grid.AddThemeConstantOverride("h_separation", 30);
-        grid.AddThemeConstantOverride("v_separation", 14);
-        vb.AddChild(grid);
+        // v0.32: dois cartões lado a lado (Partida | Jogadores), rótulos e campos alinhados em grade
+        var cols = new HBoxContainer();
+        cols.AddThemeConstantOverride("separation", 20);
+        vb.AddChild(cols);
+        var gm = Card(cols, "Partida");
+        var gp = Card(cols, "Jogadores");
 
-        var size = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        var size = Opt();
         foreach (CourtSize s in new[] { CourtSize.Small, CourtSize.Medium, CourtSize.Large })
-            size.AddItem($"{CourtGeo.Name(s)} (até {CourtGeo.MaxPlayers(s)} jogadores)", (int)s);
+            size.AddItem($"{CourtGeo.Name(s)} (até {CourtGeo.MaxPlayers(s)})", (int)s);
         size.Selected = (int)Last.Size;
-        grid.AddChild(new Label { Text = "Tamanho da quadra" });
-        grid.AddChild(size);
+        Row(gm, "Quadra", size);
 
-        var mode = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        var mode = Opt();
         mode.AddItem("Por pontos", 0);
-        mode.AddItem("Por tempo (sem limite de pontos)", 1);
+        mode.AddItem("Por tempo", 1);
         mode.Selected = (int)Last.Mode;
-        grid.AddChild(new Label { Text = "Condição de vitória" });
-        grid.AddChild(mode);
+        Row(gm, "Vitória", mode);
 
-        var pts = new SpinBox { MinValue = 1, MaxValue = 99, Value = Last.TargetScore, CustomMinimumSize = new Vector2(360, 56) };
-        var ptsLbl = new Label { Text = "Pontos para vencer" };
-        grid.AddChild(ptsLbl);
-        grid.AddChild(pts);
+        var pts = new SpinBox { MinValue = 1, MaxValue = 99, Value = Last.TargetScore, CustomMinimumSize = new Vector2(300, 52) };
+        var ptsLbl = Row(gm, "Pontos para vencer", pts);
+        var mins = new SpinBox { MinValue = 1, MaxValue = 60, Step = 0.5, Value = Last.TimeMinutes, Suffix = "min", CustomMinimumSize = new Vector2(300, 52) };
+        var minsLbl = Row(gm, "Duração", mins);
 
-        var mins = new SpinBox { MinValue = 1, MaxValue = 60, Step = 0.5, Value = Last.TimeMinutes, Suffix = "min", CustomMinimumSize = new Vector2(360, 56) };
-        var minsLbl = new Label { Text = "Duração" };
-        grid.AddChild(minsLbl);
-        grid.AddChild(mins);
-
-        // v0.27: modo de teste = partida infinita e trapaças no menu de pausa
-        var test = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
-        test.AddItem("Partida normal", 0);
-        test.AddItem("Teste (infinita + trapaças)", 1);
-        test.Selected = Last.TestMode ? 1 : 0;
-        grid.AddChild(new Label { Text = "Modo" });
-        grid.AddChild(test);
-
-        var abil = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        var abil = Opt();
         abil.AddItem("Com habilidades", 0);
         abil.AddItem("Sem habilidades", 1);
         abil.Selected = Last.Abilities ? 0 : 1;
-        grid.AddChild(new Label { Text = "Habilidades" });
-        grid.AddChild(abil);
+        Row(gm, "Habilidades", abil);
 
-        var allies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.AllyDummies, CustomMinimumSize = new Vector2(360, 56) };
-        var kind = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        // v0.27: modo de teste = partida infinita e trapaças no menu de pausa
+        var test = Opt();
+        test.AddItem("Partida normal", 0);
+        test.AddItem("Teste (infinita + trapaças)", 1);
+        test.Selected = Last.TestMode ? 1 : 0;
+        Row(gm, "Modo", test);
+
+        var kind = Opt();
         kind.AddItem("Bots", 0);
         kind.AddItem("Bonecos de treino", 1);
         kind.Selected = Last.TrainingDummies ? 1 : 0;
-        grid.AddChild(new Label { Text = "Outros jogadores" });
-        grid.AddChild(kind);
-        var diff = new OptionButton { CustomMinimumSize = new Vector2(360, 56) };
+        Row(gp, "Outros jogadores", kind);
+        var diff = Opt();
         diff.AddItem("Fácil", 0);
         diff.AddItem("Normal", 1);
         diff.AddItem("Difícil", 2);
         diff.Selected = Mathf.Clamp(Last.BotDifficulty, 0, 2);
-        var diffLbl = new Label { Text = "Dificuldade dos bots" };
-        grid.AddChild(diffLbl);
-        grid.AddChild(diff);
-        kind.ItemSelected += _ => diff.Visible = diffLbl.Visible = kind.Selected == 0;
-        diff.Visible = diffLbl.Visible = kind.Selected == 0;
-        grid.AddChild(new Label { Text = "Aliados (no seu time)" });
-        grid.AddChild(allies);
-        var enemies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.EnemyDummies, CustomMinimumSize = new Vector2(360, 56) };
-        grid.AddChild(new Label { Text = "Adversários" });
-        grid.AddChild(enemies);
+        var diffLbl = Row(gp, "Dificuldade", diff);
+        var allies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.AllyDummies, CustomMinimumSize = new Vector2(300, 52) };
+        Row(gp, "Aliados", allies);
+        var enemies = new SpinBox { MinValue = 0, MaxValue = 9, Value = Last.EnemyDummies, CustomMinimumSize = new Vector2(300, 52) };
+        Row(gp, "Adversários", enemies);
+        var help = UiKit.Lbl("", 18, UiKit.Muted);
+        help.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+        help.CustomMinimumSize = new Vector2(480, 0);
+        gp.GetParent<VBoxContainer>().AddChild(help);
+
         void ClampDummies()
         {
             int max = CourtGeo.MaxPlayers((CourtSize)size.GetSelectedId()) - 1;
@@ -178,20 +169,23 @@ public partial class MainMenu : Control
             enemies.MaxValue = Mathf.Max(0, max - (int)allies.Value);
             if (enemies.Value > enemies.MaxValue) enemies.Value = enemies.MaxValue;
         }
-        allies.ValueChanged += _ => ClampDummies();
-        size.ItemSelected += _ => ClampDummies();
-        ClampDummies();
-
         void Refresh()
         {
             bool time = mode.Selected == 1;
             pts.Visible = ptsLbl.Visible = !time;
             mins.Visible = minsLbl.Visible = time;
+            diff.Visible = diffLbl.Visible = kind.Selected == 0;
+            help.Text = kind.Selected == 0
+                ? "Bots jogam de verdade: atacam, passam, enterram, marcam, roubam, bloqueiam e usam habilidades."
+                : "Bonecos de treino: o aliado devolve passes; o adversário pula contra arremessos e marca a cesta.";
         }
+        allies.ValueChanged += _ => ClampDummies();
+        size.ItemSelected += _ => ClampDummies();
         mode.ItemSelected += _ => Refresh();
+        kind.ItemSelected += _ => Refresh();
+        ClampDummies();
         Refresh();
 
-        vb.AddChild(UiKit.Lbl("Bots jogam de verdade (atacam, passam, enterram, marcam, roubam e bloqueiam).\nBonecos de treino: o aliado devolve passes; o adversário pula contra arremessos e marca a cesta.", 20, new Color("5b6577")));
         Button start = null;
         start = UiKit.Btn("Escolher personagem e jogar", () =>
         {
@@ -207,15 +201,45 @@ public partial class MainMenu : Control
             Last.TestMode = test.Selected == 1;
             // v0.26: escolha do personagem antes de começar
             AddChild(new CharacterSelect { AbilitiesOn = Last.Abilities, OnConfirm = _ => GameRoot.I.StartMatch(Last.Clone()), OnBack = () => start.GrabFocus() });
-        });
-        UiKit.Tint(start, UiKit.Green);
+        }, UiKit.Green, 360);
         var btns = new HBoxContainer();
         btns.AddThemeConstantOverride("separation", 14);
         btns.AddChild(UiKit.Btn("Voltar", ShowHome, UiKit.Grey, 220));
-        start.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+        btns.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         btns.AddChild(start);
         vb.AddChild(btns);
         start.CallDeferred(Control.MethodName.GrabFocus);
+    }
+
+    static OptionButton Opt() => new() { CustomMinimumSize = new Vector2(300, 52) };
+
+    /// <summary>Cartão com título e uma grade rótulo | campo (devolve a grade).</summary>
+    static GridContainer Card(HBoxContainer parent, string title)
+    {
+        var pc = new PanelContainer { SizeFlagsVertical = SizeFlags.Fill };
+        var sb = UiKit.Box(new Color("f4f7fc"), 20, 22, 18);
+        sb.BorderColor = new Color("e1e8f2"); sb.SetBorderWidthAll(2); sb.BorderWidthBottom = 5;
+        pc.AddThemeStyleboxOverride("panel", sb);
+        parent.AddChild(pc);
+        var vb = new VBoxContainer();
+        vb.AddThemeConstantOverride("separation", 12);
+        pc.AddChild(vb);
+        vb.AddChild(UiKit.Section(title, 26));
+        var grid = new GridContainer { Columns = 2 };
+        grid.AddThemeConstantOverride("h_separation", 18);
+        grid.AddThemeConstantOverride("v_separation", 10);
+        vb.AddChild(grid);
+        return grid;
+    }
+
+    static Label Row(GridContainer g, string label, Control c)
+    {
+        var l = UiKit.Lbl(label, 22);
+        l.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        l.CustomMinimumSize = new Vector2(170, 0);
+        g.AddChild(l);
+        g.AddChild(c);
+        return l;
     }
 
     public void DebugSetup() => ShowSetup();

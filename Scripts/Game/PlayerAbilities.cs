@@ -73,7 +73,10 @@ public sealed class PlayerAbilities
         if (inp.Target > 0) TryTarget(inp.TargetSlot, inp.Target);
     }
 
-    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && M.NoCooldowns ? 0f : Characters.Cooldown(Char, slot);
+    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f : Characters.Cooldown(Char, slot);
+
+    /// <summary>v0.32 (modo de teste): "Sem recarga" deste jogador (cada um liga o seu). Replicado.</summary>
+    public bool NoCd;
 
     /// <summary>v0.27 (modo de teste): recargas zeradas e ultimate cheia.</summary>
     public void Refill() { Cd[0] = Cd[1] = Cd[2] = 0; Ult = 1f; }
@@ -365,7 +368,7 @@ public sealed class PlayerAbilities
     {
         Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
         DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
-        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0)),
+        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0)),
     };
 
     public static void Write(NetWriter w, in NetData d)
@@ -384,6 +387,6 @@ public sealed class PlayerAbilities
     {
         Cd[0] = d.Cd0; Cd[1] = d.Cd1; Cd[2] = d.Cd2; Ult = d.Ult; EyeT = d.EyeT; PresenceT = d.PresenceT; JinxFlash = d.JinxFlash;
         BetT = d.BetT; DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetTarget = d.BetTarget; ModeWins = d.ModeWins;
-        EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0;
+        EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; NoCd = (d.Flags & 8) != 0;
     }
 }

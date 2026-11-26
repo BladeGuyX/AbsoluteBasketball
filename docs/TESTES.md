@@ -4,6 +4,19 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.32 — cenário novo, bola "voando", véu de carga preciso, menu local, ajustes
+
+1. **Cenário:** em volta da quadra agora tem arquibancadas (assentos azuis de um lado, laranja do outro), postes de luz nos cantos, palmeiras, moitas e pedras; atrás das cestas, guarda-sóis com espreguiçadeiras e pranchas de surfe; num dos fundos, o mar com ondas e espuma e uma torre de salva-vidas. A areia tem variação de cor.
+2. **Bola voando depois do arremesso:** a causa mais provável era a Presença Implacável (os bots King usam): o arremesso de quem estava perto era refeito inteiro mirando no aro — de longe ou para outro lado, a bola saía num arco enorme. Agora ela só desvia a direção. Jogue contra um King e arremesse perto dele (de perto e de longe): a bola erra pelo lado, sem voar.
+3. **Véu de carga:** o disco vermelho cresce em ritmo constante e só cobre a bola inteira no instante em que sai o arremesso automático; a borda da onda é clara e fácil de ver.
+4. **Trapaças → "Sem recarga (só você)":** vale só para quem ligou (online, cada um liga o seu).
+5. **Duelo:** os skill checks não mostram mais verde/vermelho de acerto/erro (só o anel enquanto roda).
+6. **Estrelas:** a Precisão muda menos o alcance do arremesso (passo próprio de 3,5% por estrela; passes continuam iguais).
+7. **Drible Perfeito do King:** em vez da esfera vermelha, sai fogo vermelho/laranja da bola.
+8. **Jogar (local):** dois cartões lado a lado (Partida | Jogadores), com o texto de ajuda mudando conforme Bots/Bonecos.
+
+---
+
 ## v0.31 — balanceamento aplicado de verdade, carga do arremesso na bola, corrida que travava, confirmação ao sair
 
 **Atenção:** o balanceamento da v0.29 "não aplicava" porque o `Build	uning.json` (salvo do artifact) guardava os valores antigos e

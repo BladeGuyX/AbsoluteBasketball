@@ -58,7 +58,7 @@ public partial class CheatsMenu : Control
         left.AddChild(UiKit.Btn("Recarregar de todos", () => M.RequestCheat(Cheat.RefillAll), UiKit.Purple, 440));
         left.AddChild(UiKit.Btn("Pegar a bola", () => M.RequestCheat(Cheat.GiveBall, M.LocalPlayer?.Id ?? 0), 440));
         left.AddChild(UiKit.Btn("Zerar o placar", () => M.RequestCheat(Cheat.ResetScore), UiKit.Grey, 440));
-        _noCd = UiKit.CheckRow("Sem recarga (tudo sempre pronto)", M.NoCooldowns, b => M.RequestCheat(Cheat.NoCooldowns, b ? 1 : 0));
+        _noCd = UiKit.CheckRow("Sem recarga (só você)", M.LocalPlayer?.Ab.NoCd ?? false, b => M.RequestCheat(Cheat.NoCooldowns, b ? 1 : 0));
         _stam = UiKit.CheckRow("Estamina infinita", M.InfiniteStamina, b => M.RequestCheat(Cheat.InfStamina, b ? 1 : 0));
         left.AddChild(_noCd);
         left.AddChild(_stam);
@@ -101,7 +101,7 @@ public partial class CheatsMenu : Control
         if (M == null || !IsInstanceValid(M)) return;
         _refreshT -= (float)delta;
         if (_refreshT <= 0) { _refreshT = 0.5f; _dirty = true; } // online: o personagem dos outros chega pelo snapshot
-        _noCd.SetPressedNoSignal(M.NoCooldowns);
+        _noCd.SetPressedNoSignal(M.LocalPlayer != null && IsInstanceValid(M.LocalPlayer) && M.LocalPlayer.Ab.NoCd);
         _stam.SetPressedNoSignal(M.InfiniteStamina);
         if (_dirty) { _dirty = false; Rebuild(); }
     }

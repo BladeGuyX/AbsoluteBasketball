@@ -893,7 +893,7 @@ public partial class Match : Node3D
     // ------------------------------------------------------------------ v0.27: modo de teste (trapaças)
 
     /// <summary>Sem recarga: habilidades sempre prontas e ultimate sempre cheia. Estamina infinita. (Replicados no snapshot.)</summary>
-    public bool NoCooldowns, InfiniteStamina;
+    public bool InfiniteStamina;
     public const int TestMaxPlayers = 12;
 
     /// <summary>Pede uma trapaça (offline/host: faz na hora; cliente: manda para o host).</summary>
@@ -943,7 +943,11 @@ public partial class Match : Node3D
                 RemovePlayer(p);
                 break;
             }
-            case Cheat.NoCooldowns: NoCooldowns = a != 0; if (NoCooldowns) foreach (var p in Players) p.Ab.Refill(); break;
+            case Cheat.NoCooldowns: // v0.32: só para quem ativou
+                if (requester == null) return;
+                requester.Ab.NoCd = a != 0;
+                if (requester.Ab.NoCd) requester.Ab.Refill();
+                break;
             case Cheat.InfStamina: InfiniteStamina = a != 0; break;
             case Cheat.ResetScore: Score[0] = Score[1] = 0; break;
             case Cheat.GiveBall:
@@ -993,7 +997,7 @@ public partial class Match : Node3D
     /// <summary>Host: jogador controlado por um cliente (quem pediu a trapaça).</summary>
     public Player PlayerOfNetId(int netId) => _remote.FirstOrDefault(kv => kv.Value == netId).Key;
 
-    public byte TestFlags => (byte)((NoCooldowns ? 1 : 0) | (InfiniteStamina ? 2 : 0));
+    public byte TestFlags => (byte)(InfiniteStamina ? 2 : 0);
 
     public void DebugOpenCheats() { _pause.Open(); _pause.DebugCheats(); }
     public void DebugOpenPicker() => GetNodeOrNull<TargetPicker>("EmoteLayer/TargetPicker")?.OpenFor(1);
@@ -1004,7 +1008,7 @@ public partial class Match : Node3D
         foreach (var p in Players)
         {
             if (InfiniteStamina) p.Stamina = p.St.StaminaMax;
-            if (NoCooldowns && AbilitiesOn) { p.Ab.Cd[0] = p.Ab.Cd[1] = p.Ab.Cd[2] = 0; if (p.Ab.ModeT <= 0) p.Ab.Ult = 1f; }
+            if (p.Ab.NoCd && AbilitiesOn) { p.Ab.Cd[0] = p.Ab.Cd[1] = p.Ab.Cd[2] = 0; if (p.Ab.ModeT <= 0) p.Ab.Ult = 1f; }
         }
     }
 
@@ -1348,7 +1352,7 @@ public partial class Match : Node3D
         var prevPhase = Phase;
         if (Phase != MatchPhase.Ended) Phase = b.Phase;
         PhaseTimer = b.PhaseTimer; Score[0] = b.Score0; Score[1] = b.Score1; Clock = b.Clock; Overtime = b.Overtime; Possession = b.Possession;
-        NoCooldowns = (b.TestFlags & 1) != 0; InfiniteStamina = (b.TestFlags & 2) != 0;
+        InfiniteStamina = (b.TestFlags & 2) != 0;
         if (Phase != MatchPhase.Ended) Winner = b.Winner;
         FtShooter = ById(b.FtShooter); FtAttempt = b.FtAttempt; FtT = b.FtT; FtDur = b.FtDur; FtPressed = b.FtPressed; FtPressT = b.FtPressT;
         FtFlash = b.FtFlash; FtFlashOk = b.FtFlashOk; FtFlashPlayer = ById(b.FtFlashPlayer); _netFtChecking = b.FtChecking;

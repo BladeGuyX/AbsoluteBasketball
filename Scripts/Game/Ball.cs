@@ -74,18 +74,21 @@ public partial class Ball : Node3D
     // então todo mundo vê (host e clientes).
     MeshInstance3D _charge;
     ShaderMaterial _chargeMat;
+    // v0.32: preciso — o raio do disco NA TELA = fração do tempo (num ponto da esfera virado ao normal n, a distância ao
+    // centro da bola na tela é sqrt(1 − n.z²)); borda fina e clara; só cobre a bola inteira no instante do arremesso automático.
     const string ChargeShader = @"shader_type spatial;
 render_mode unshaded, blend_mix, depth_draw_never, cull_back, shadows_disabled;
 uniform float fill = 0.0;
-uniform vec4 tint : source_color = vec4(0.85, 0.02, 0.06, 0.62);
+uniform vec4 tint : source_color = vec4(0.85, 0.02, 0.06, 0.6);
 void fragment() {
-    float d = dot(normalize(NORMAL), vec3(0.0, 0.0, 1.0));   // 1 = virado para a câmera, 0 = borda
-    float t = 1.0 - fill * 1.08;
-    float a = smoothstep(t - 0.05, t + 0.05, d);
-    float edge = smoothstep(t - 0.06, t, d) - smoothstep(t, t + 0.06, d); // linha mais forte na frente da onda
-    float full = smoothstep(0.97, 1.0, fill);                          // perto do automático: pisca de leve
-    ALBEDO = mix(tint.rgb, vec3(1.0, 0.75, 0.7), edge * 0.8);
-    ALPHA = clamp(tint.a * a * (1.0 - 0.25 * full * (0.5 + 0.5 * sin(TIME * 30.0))) + edge * 0.45, 0.0, 1.0) * step(0.001, fill);
+    float d = clamp(dot(normalize(NORMAL), vec3(0.0, 0.0, 1.0)), 0.0, 1.0);
+    float r = sqrt(1.0 - d * d);                       // 0 = centro da bola na tela, 1 = contorno
+    float f = clamp(fill, 0.0, 1.0) * 0.968;            // a casca tem raio 1,035× o da bola: borda da bola = 0,966
+    float inside = 1.0 - smoothstep(f - 0.015, f + 0.015, r);
+    float ring = (1.0 - smoothstep(0.0, 0.035, abs(r - f))) * step(fill, 0.995);
+    float done = step(0.999, fill);
+    ALBEDO = mix(tint.rgb, vec3(1.0, 0.85, 0.8), ring);
+    ALPHA = clamp(max(tint.a * inside, ring * 0.95) + done * 0.2, 0.0, 1.0) * step(0.001, f);
 }";
 
     void AddChargeGlow()
@@ -108,7 +111,7 @@ void fragment() {
         _charge.Visible = on;
         if (!on) return;
         float k = Mathf.Clamp(h.ShotCharge / Mathf.Max(Tuning.I.ShotAutoReleaseTime, 0.05f), 0, 1);
-        _chargeMat.SetShaderParameter("fill", Mathf.Max(k, 0.04f));
+        _chargeMat.SetShaderParameter("fill", Mathf.Max(k, 0.02f));
     }
 
     public void GiveTo(Player p)

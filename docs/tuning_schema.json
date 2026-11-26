@@ -1576,11 +1576,22 @@
     "key": "StarPrecisionStep",
     "section": "Estrelas (valores)",
     "label": "Precis\u00E3o: % por estrela",
-    "desc": "Alcance do arremesso, alcance do passe r\u00E1pido, velocidade do passe e altura do passe alto (%).",
+    "desc": "Alcance do passe r\u00E1pido, velocidade do passe e altura do passe alto (%). O alcance do arremesso usa o valor abaixo.",
     "min": 0,
     "max": 20,
     "step": 0.5,
     "default": 8,
+    "sub": ""
+  },
+  {
+    "key": "StarShotRangeStep",
+    "section": "Estrelas (valores)",
+    "label": "Alcance do arremesso: % por estrela",
+    "desc": "S\u00F3 o alcance m\u00E1ximo do arremesso por estrela de Precis\u00E3o (%). Menor que o da Precis\u00E3o para as estrelas n\u00E3o mudarem tanto a dist\u00E2ncia (v0.32).",
+    "min": 0,
+    "max": 20,
+    "step": 0.5,
+    "default": 3.5,
     "sub": ""
   },
   {
