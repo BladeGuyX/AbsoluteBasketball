@@ -2669,7 +2669,7 @@
     "min": 2,
     "max": 60,
     "step": 0.5,
-    "default": 20,
+    "default": 30,
     "sub": "Habilidades"
   },
   {
@@ -2684,14 +2684,14 @@
     "sub": "Habilidades"
   },
   {
-    "key": "IronUltStealStun",
+    "key": "IronUltCdReduction",
     "section": "Iron",
-    "label": "Ult: atordoamento extra no roubo",
-    "desc": "Segundos a mais de penalidade para quem tentar roubar a bola do Iron enquanto ele dribla no modo Indestrut\u00EDvel (fica atordoado esse tempo al\u00E9m da penalidade normal).",
+    "label": "Ult: redu\u00E7\u00E3o das recargas",
+    "desc": "Fra\u00E7\u00E3o a menos nas recargas das habilidades usadas durante o modo Indestrut\u00EDvel (0,15 = 15% mais curtas).",
     "min": 0,
-    "max": 5,
-    "step": 0.25,
-    "default": 1,
+    "max": 0.9,
+    "step": 0.01,
+    "default": 0.15,
     "sub": "Habilidades"
   },
   {
@@ -2720,11 +2720,11 @@
     "key": "IronChargeSpeedStart",
     "section": "Iron",
     "label": "Investida: velocidade inicial",
-    "desc": "Velocidade (m/s) no come\u00E7o da Investida.",
+    "desc": "Velocidade (m/s) no come\u00E7o da Investida (impulso inicial: um pouco mais r\u00E1pido que o Iron correndo, ~6 m/s).",
     "min": 1,
     "max": 20,
     "step": 0.25,
-    "default": 4.5,
+    "default": 7.5,
     "sub": "Avan\u00E7ado"
   },
   {
@@ -2742,11 +2742,11 @@
     "key": "IronChargeTurnRate",
     "section": "Iron",
     "label": "Investida: curva",
-    "desc": "Quanto (graus por segundo) d\u00E1 para virar a Investida andando para os lados.",
+    "desc": "Quanto (graus por segundo) a Investida vira, no m\u00E1ximo, seguindo a c\u00E2mera (os bot\u00F5es de movimento n\u00E3o fazem nada).",
     "min": 0,
-    "max": 360,
+    "max": 720,
     "step": 5,
-    "default": 70,
+    "default": 140,
     "sub": "Avan\u00E7ado"
   },
   {

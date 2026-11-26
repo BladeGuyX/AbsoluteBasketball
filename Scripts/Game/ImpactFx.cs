@@ -154,6 +154,7 @@ public partial class ImpactFx : Node3D
             case "fx_lucklose": Burst(pos, new Color(0.6f, 0.6f, 0.6f), 0.7f, 16); Sfx.PlayLocal3D(this, "fail", pos, -3f, 0.8f); break;
             case "fx_bolt": Burst(pos, Cyan, 0.7f, 16); Sfx.PlayLocal3D(this, "zap", pos, -4f); break;
             case "fx_swap": Ring(pos, Cyan, 1.4f, 0.4f, true); Burst(pos, Cyan, 0.8f, 18); Bolt(pos + Vector3.Up * 4f, pos, 0.35f); Sfx.PlayLocal3D(this, "zap", pos, -3f, 1.2f); break;
+            case "fx_betx2": Ring(pos, Gold, 1.4f, 0.5f, true); Burst(pos, Gold, 0.9f, 20); Sfx.PlayLocal3D(this, "chime", pos, -6f, 0.7f); break; // v0.38
             // ---- v0.37: Iron ----
             case "fx_wall": Burst(pos, Silver, 1.4f, 30); Sfx.PlayLocal3D(this, "wall", pos, -1f); break;
             case "fx_bonk":

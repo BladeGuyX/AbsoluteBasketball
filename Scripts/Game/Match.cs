@@ -501,6 +501,15 @@ public partial class Match : Node3D
                 break;
             }
         }
+        // v0.38: alvo do "Não me Decepciona" que não pontuou a tempo — esta cesta (do time dele) vale o dobro
+        bool doubled = false;
+        if (AbilitiesOn && thrower != null && !freeThrow && !betStolen && thrower.Ab.DoubleNext && team == thrower.Team)
+        {
+            pts *= 2;
+            doubled = true;
+            thrower.Ab.DoubleNext = false;
+            LogEvent("SCORE_DOUBLE", thrower);
+        }
         // v0.27: enterrada carrega mais a ultimate que as outras cestas
         if (AbilitiesOn && thrower != null && Ball.FromDunk && thrower.Team == CourtGeo.ScoringTeamForHoop(hoop))
             thrower.Ab.AddUlt(Mathf.Max(0f, t.UltBonusDunk - t.UltBonusScore));
@@ -515,6 +524,12 @@ public partial class Match : Node3D
             // v0.27: aviso claro para todos — a cesta do alvo foi para o outro time
             UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.4f, Palette.Team[team]);
             UiSub($"A cesta de {thrower.PlayerName} foi para o time {Palette.TeamName[team]}", 2.6f, new Color("5fe08a"));
+            Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
+        }
+        else if (doubled)
+        {
+            UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.2f, Palette.Team[team]);
+            UiSub($"A cesta de {thrower.PlayerName} valeu o dobro", 2.4f, new Color("ffd23f"));
             Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
         }
         else UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
@@ -620,6 +635,18 @@ public partial class Match : Node3D
                 float py0 = p.GlobalPosition.Y, py1 = p.GlobalPosition.Y + t.BlockReach;
                 bool bodyHit = bodyH <= 0.9f && fy0 <= py1 && py0 <= fy1;
                 if (!handHit && !bodyHit) continue;
+                if (p.Ab.Indestructible)
+                {
+                    // v0.38: Iron Indestrutível bloqueia a enterrada sem falta e fica com a bola
+                    f.EndFlight();
+                    Ball.GiveTo(p);
+                    p.Ab.BlockCatch = true;
+                    Sfx.Play3D(this, "fx_clang", Ball.GlobalPosition);
+                    Sfx.Play3D(this, "catch", Ball.GlobalPosition, 0, 0.8f);
+                    LogEvent("BLOCK", p);
+                    LogEvent("IRON_DUNK_BLOCK", p, f);
+                    return;
+                }
                 OnFoul(f, p);
                 return;
             }

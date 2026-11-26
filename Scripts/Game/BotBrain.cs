@@ -61,6 +61,17 @@ public sealed class BotBrain
     {
         var inp = BuildInner(dt);
         if (M.AbilitiesOn && M.CanAct && !P.HasBall && P.Flight == FlightKind.None) AbilitiesOffBall(ref inp, dt);
+        if (P.Ab.Charging)
+        {
+            // v0.38: a Investida segue a câmera (mira): o bot mira em quem tem a bola, se estiver mais ou menos na frente
+            inp.AimYaw = P.Yaw;
+            var h = M.Ball.Holder;
+            if (h != null && h.Team != P.Team)
+            {
+                float y = ShotMath.YawOf(Flat(h.GlobalPosition - P.GlobalPosition));
+                if (Mathf.Abs(ShotMath.WrapAngle(y - P.Yaw)) < 1.2f) inp.AimYaw = y;
+            }
+        }
         return inp;
     }
 

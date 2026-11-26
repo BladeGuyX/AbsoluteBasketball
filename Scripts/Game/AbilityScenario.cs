@@ -195,7 +195,22 @@ public sealed class AbilityScenario
         int luckSc = M.Score[P.Team], eSc = M.Score[e0.Team];
         e0.TestShot();
         n = 0; while (M.Score[P.Team] == luckSc && n++ < 240) yield return 0;
-        Rec("nao_me_decepciona", marked && M.Score[P.Team] > luckSc && M.Score[e0.Team] == eSc && Ev("BET_WIN") > 0);
+        bool betWin = marked && M.Score[P.Team] > luckSc && M.Score[e0.Team] == eSc && Ev("BET_WIN") > 0;
+        // v0.38: não fez a cesta a tempo → a próxima cesta dele vale o dobro (para o time dele)
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.Luck);
+        Place(e0, spot.X, spot.Z, rim1); Place(P, -spot.X, 0, null);
+        M.Ball.GiveTo(e0);
+        _inp.Target = (byte)e0.Id; _inp.TargetSlot = 1; yield return 0;
+        foreach (var _ in Wait(t.LuckBetDuration + 0.3f)) yield return 0;
+        bool doubleOn = e0.Ab.DoubleNext && P.Ab.BetT <= 0 && Ev("BET_DOUBLE") > 0;
+        luckSc = M.Score[P.Team]; eSc = M.Score[e0.Team];
+        e0.TestShot();
+        n = 0; while (M.Score[e0.Team] == eSc && n++ < 240) yield return 0;
+        int basePts = Mathf.RoundToInt(M.Geo.IsThree(e0.GlobalPosition, CourtGeo.AttackHoop(e0.Team)) ? t.PointsOutside : t.PointsInside);
+        bool doubled = M.Score[e0.Team] - eSc == 2 * basePts && M.Score[P.Team] == luckSc && !e0.Ab.DoubleNext;
+        if (!(betWin && doubleOn && doubled)) GD.Print($"[ABIL] nao_me_decepciona: ganhou={betWin} dobro_ligado={doubleOn} dobrou={doubled} ({M.Score[e0.Team] - eSc} pts)");
+        Rec("nao_me_decepciona", betWin && doubleOn && doubled);
 
         // ---------------- Luck 3: Impulso Descuidado (rouba passando / tropeça) ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
@@ -366,7 +381,15 @@ public sealed class AbilityScenario
         bool started = P.Ab.Charging;
         float e0Stun = 0, allyStun = 0;
         n = 0;
-        while ((P.Ab.Charging || n < 3) && n++ < 400) { e0Stun = Mathf.Max(e0Stun, e0.Stun); allyStun = Mathf.Max(allyStun, ally.Stun); yield return 0; }
+        bool fastStart = false;
+        while ((P.Ab.Charging || n < 3) && n++ < 400)
+        {
+            // v0.38: a direção segue a câmera; os botões de movimento não fazem nada (manda andar para o lado e não vira)
+            _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Move = new Vector2(0, 1);
+            if (n == 3) fastStart = new Vector2(P.Velocity.X, P.Velocity.Z).Length() > P.St.RunSpeed;
+            e0Stun = Mathf.Max(e0Stun, e0.Stun); allyStun = Mathf.Max(allyStun, ally.Stun); yield return 0;
+        }
+        bool straight = Mathf.Abs(ShotMath.WrapAngle(P.Yaw - ShotMath.YawOf(new Vector3(s, 0, 0)))) < 0.05f;
         bool tired = Ev("CHARGE_TIRED") > tired0 && P.Ab.TiredT > 0 && P.Stun <= 0;
         bool hits = Ev("CHARGE_HIT") >= h0 + 2 && Ev("CHARGE_DROP") > d0 && e0Stun > t.IronChargeStun - 0.5f && allyStun > t.IronChargeStun - 0.5f;
         foreach (var _ in Wait(t.IronChargeRecover + 0.2f)) yield return 0;
@@ -378,8 +401,19 @@ public sealed class AbilityScenario
         _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab3; yield return 0;
         n = 0; while (P.Ab.Charging && n++ < 240) yield return 0;
         bool wall = Ev("CHARGE_WALL") > w0 && P.Stun > 0;
-        if (!(started && hits && tired && wall)) GD.Print($"[ABIL] investida: começou={started} atropelou={hits} ({Ev("CHARGE_HIT") - h0} hits, e0={e0Stun:0.0} aliado={allyStun:0.0}) cansado={tired} parede={wall}");
-        Rec("investida", started && hits && tired && wall);
+        // v0.38: virando a câmera, a investida vira junto
+        foreach (var _ in Wait(t.IronChargeRecover + 0.2f)) yield return 0;
+        Reset(Characters.Iron);
+        Place(P, -s * 6f, -8f, new Vector3(s, 0, 0));
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        _inp.AimYaw = ShotMath.YawOf(new Vector3(s, 0, 0)); _inp.Pressed |= Btn.Ab3; yield return 0;
+        float wantYaw = ShotMath.YawOf(new Vector3(s, 0, 1));
+        for (int i = 0; i < 30 && P.Ab.Charging; i++) { _inp.AimYaw = wantYaw; yield return 0; }
+        bool turned = Mathf.Abs(ShotMath.WrapAngle(P.Yaw - wantYaw)) < 0.1f;
+        n = 0; while (P.Ab.Charging && n++ < 300) { _inp.AimYaw = wantYaw; yield return 0; }
+        bool ok3 = started && hits && tired && wall && fastStart && straight && turned;
+        if (!ok3) GD.Print($"[ABIL] investida: começou={started} atropelou={hits} ({Ev("CHARGE_HIT") - h0} hits, e0={e0Stun:0.0} aliado={allyStun:0.0}) cansado={tired} parede={wall} impulso={fastStart} reto={straight} virou={turned}");
+        Rec("investida", ok3);
         foreach (var _ in Wait(t.IronChargeRecover)) yield return 0;
 
         // ---- Ult: Indestrutível (pose, velocidade, estamina, imune, pega a bola no bloqueio, pune roubo no drible) ----
@@ -413,18 +447,32 @@ public sealed class AbilityScenario
         n = 0; while ((P.Airborne || P.LandLock > 0) && n++ < 300) yield return 0;
         yield return 0;
         bool released = !P.Ab.BlockCatch;
-        // roubo no drible: quem tenta fica atordoado
+        // v0.38: recarga 15% menor no modo; bloquear enterrada não é falta (fica com a bola)
         Reset(Characters.Iron); P.Ab.UltT = t.IronUltDuration;
-        Place(P, 0, 0, new Vector3(s, 0, 0)); Place(e0, s * 1.0f, 0, Vector3.Zero);
-        M.Ball.GiveTo(P);
-        foreach (var _ in Wait(0.1f)) yield return 0;
-        _inp.Pressed |= Btn.Dribble; yield return 0;
-        int ip0 = Ev("IRON_PUNISH");
-        e0.TestSteal(P);
+        Place(P, rimD.X + inward * 4f, 6f); Place(e1, -s * 10f, 6f); Place(e0, s * 10f, -6f);
+        _inp.Pressed |= Btn.Ab1; yield return 0;
+        bool cdShort = Mathf.Abs(P.Ab.Cd[0] - t.IronWallCooldown * (1f - t.IronUltCdReduction)) < 0.05f;
+        foreach (var _ in WaitPlaying()) yield return 0;
+        P.Ab.WallT = 0;
+        var rimE = M.Geo.RimCenter[CourtGeo.AttackHoop(e0.Team)];
+        float sgE = CourtGeo.HoopSign(CourtGeo.AttackHoop(e0.Team));
+        Place(e0, rimE.X - sgE * 1.8f, rimE.Z, rimE); Place(P, rimE.X - sgE * 1.8f, rimE.Z + 5f, null);
+        e0.Stun = 0;
+        M.Ball.GiveTo(e0);
         foreach (var _ in Wait(0.25f)) yield return 0;
-        bool punish = Ev("IRON_PUNISH") > ip0 && e0.Stun > 0 && M.Ball.Holder == P;
-        bool ok = posed && on && fast && stamina && immune && control && caught && released && punish;
-        if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} roubo={punish}");
+        int f0 = Ev("FOUL"), db0 = Ev("IRON_DUNK_BLOCK");
+        bool dunking = e0.TestDunk();
+        bool dunkBlocked = false;
+        for (int i = 0; i < 60 && e0.Flight != FlightKind.None; i++)
+        {
+            var hand = e0.GlobalPosition + Vector3.Up * t.DunkHandReach + e0.Forward * 0.35f;
+            P.GlobalPosition = hand - Vector3.Up * 1.5f; P.Velocity = Vector3.Zero; P.Airborne = true; P.ResetPhysicsInterpolation();
+            yield return 0;
+        }
+        dunkBlocked = dunking && Ev("IRON_DUNK_BLOCK") > db0 && Ev("FOUL") == f0 && M.Ball.Holder == P && M.Phase == MatchPhase.Playing;
+        n = 0; while ((P.Airborne || P.LandLock > 0) && n++ < 300) yield return 0;
+        bool ok = posed && on && fast && stamina && immune && control && caught && released && cdShort && dunkBlocked;
+        if (!ok) GD.Print($"[ABIL] indestrutivel: pose={posed} ativo={on} rápido={fast} estamina={stamina} imune={immune} controle={control} pegou={caught} soltou={released} recarga={cdShort} enterrada={dunkBlocked}");
         Rec("indestrutivel", ok);
         P.Ab.UltT = 0; P.UpdateStats();
     }

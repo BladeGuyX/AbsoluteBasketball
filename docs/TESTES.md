@@ -4,6 +4,18 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.38 — ajustes do Iron e do "Não me Decepciona"
+
+1. **Investida do Iron:** já sai com um impulso (mais rápida que ele correndo) e continua acelerando. A direção segue a **câmera** (vira mais que antes); os botões de movimento não fazem nada durante ela.
+2. **Indestrutível:** dura **30 s** (antes 20).
+3. Durante o Indestrutível, as habilidades que o Iron usar ficam com a recarga **15% menor** (ex.: Muralha 40 s → 34 s).
+4. Durante o Indestrutível, pular na frente de uma **enterrada** adversária não é falta: a enterrada é bloqueada e o Iron fica com a bola.
+5. Tentar roubar o Iron driblando na ult **não** atordoa mais (só a penalidade normal do roubo errado).
+6. **Não me Decepciona (Luck):** se o alvo **não** fizer cesta nos 5 s, aparece um brilho dourado em volta dele e a **próxima cesta dele vale o dobro** (para o time dele), com aviso na tela quando acontecer. Se ele fizer a cesta dentro dos 5 s, continua indo para o time do Luck.
+7. Online: os dois na v0.38.
+
+---
+
 ## v0.37 — novo personagem: Iron
 
 Escolha o **Iron** (cavaleiro de armadura) em "Personagem". Para testar com calma use o **modo de teste** (Sem recarga, bots).

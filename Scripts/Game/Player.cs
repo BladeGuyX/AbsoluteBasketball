@@ -288,10 +288,10 @@ public partial class Player : CharacterBody3D
         else if (Ab.DashT > 0) hv = Forward * t.LuckDashSpeed;
         else if (Ab.Charging)
         {
-            // v0.37: Investida do Iron — segue para a frente acelerando; andar para os lados vira um pouco
+            // v0.37: Investida do Iron — segue para a frente acelerando. v0.38: vira seguindo a câmera (até IronChargeTurnRate);
+            // os botões de movimento não fazem nada
             Ab.ChargeT += dt;
-            float steer = wish.Dot(Right);
-            Yaw -= steer * Mathf.DegToRad(t.IronChargeTurnRate) * dt;
+            Yaw = Mathf.RotateToward(Yaw, inp.AimYaw, Mathf.DegToRad(t.IronChargeTurnRate) * dt);
             hv = Forward * Ab.ChargeSpeed;
             Ab.ChargeHits();
         }
@@ -645,13 +645,6 @@ public partial class Player : CharacterBody3D
     {
         StealDash = 0;
         StealFail = St.StealFailTime;
-        // v0.37: tentou roubar o Iron Indestrutível driblando → também fica atordoado um pouco
-        if (immuneTarget != null && immuneTarget.IsDribbling && immuneTarget.Ab.Indestructible && immuneTarget.Team != Team)
-        {
-            Stun = Mathf.Max(Stun, Tuning.I.IronUltStealStun);
-            StealFail += Tuning.I.IronUltStealStun;
-            M.LogEvent("IRON_PUNISH", immuneTarget, this);
-        }
         M.OnStealFailed(this, immuneTarget);
     }
 

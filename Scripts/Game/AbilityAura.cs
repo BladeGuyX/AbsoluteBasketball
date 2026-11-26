@@ -12,7 +12,7 @@ namespace AB;
 public partial class AbilityAura : Node3D
 {
     public Player P;
-    CpuParticles3D _red, _green, _sky, _eye, _steel;
+    CpuParticles3D _red, _green, _sky, _eye, _steel, _gold;
     Node3D _clover, _pick;
     float _t, _swapK;
 
@@ -24,6 +24,7 @@ public partial class AbilityAura : Node3D
         _sky = Particles(new Color(0.7f, 0.95f, 1f, 1f), new Color(0.2f, 0.7f, 1f, 0f), 24, 0.35f, new Vector3(0, 0.9f, 0), 0.5f, 3f);
         _eye = Particles(new Color(1f, 0.25f, 0.2f, 1f), new Color(1f, 0f, 0f, 0f), 10, 0.5f, new Vector3(0, 1.85f, 0), 0.15f, 0.4f);
         _steel = Particles(new Color(0.95f, 0.97f, 1f, 0.95f), new Color(0.55f, 0.62f, 0.72f, 0f), 30, 0.8f, new Vector3(0, 1.0f, 0), 0.5f, 1.2f); // v0.37: Iron Indestrutível
+        _gold = Particles(new Color(1f, 0.85f, 0.3f, 0.95f), new Color(1f, 0.6f, 0.1f, 0f), 14, 0.7f, new Vector3(0, 1.1f, 0), 0.4f, 0.8f); // v0.38: próxima cesta vale o dobro
 
         _clover = new Node3D { Position = new Vector3(0, 2.75f, 0), Visible = false };
         var g = Mat.Unshaded(new Color("3ccf6e"));
@@ -76,6 +77,7 @@ public partial class AbilityAura : Node3D
         _sky.Emitting = a.SkyJump && P.Airborne;
         _eye.Emitting = a.EyeT > 0 || a.EyeArmed;
         _steel.Emitting = a.Indestructible;
+        _gold.Emitting = a.DoubleNext;
 
         // marcado pelo "Não me Decepciona" de algum Luck adversário — v0.27: só o time do Luck vê (o alvo não sabe)
         var lp = P.M.LocalPlayer;

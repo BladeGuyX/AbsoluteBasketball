@@ -27,6 +27,7 @@ public sealed class PlayerAbilities
     public bool PerfectDribble;                   // King 3: o drible atual é o Drible Perfeito
     public float JinxFlash;                       // arremesso afetado pela Presença: borda vermelha na tela deste jogador
     public int BetTarget; public float BetT;      // Luck 2: adversário marcado e tempo restante
+    public bool DoubleNext;                       // v0.38: alvo do "Não me Decepciona" que não fez cesta a tempo — a próxima cesta dele vale o dobro
     public float DashT;                           // Luck 3: impulso
     public float ModeT, ModeBonus;                // Luck ult: modo apostador
     public int ModeWins, ModeGambles;
@@ -67,7 +68,22 @@ public sealed class PlayerAbilities
         if (EyeT > 0) EyeT -= dt;
         if (PresenceT > 0) PresenceT -= dt;
         if (JinxFlash > 0) JinxFlash -= dt;
-        if (BetT > 0) { BetT -= dt; if (BetT <= 0) BetTarget = 0; }
+        if (BetT > 0)
+        {
+            BetT -= dt;
+            if (BetT <= 0)
+            {
+                // v0.38: o alvo não fez a cesta nos segundos da aposta → a próxima cesta dele vale o dobro (para o time dele)
+                var tgt = M?.Players.FirstOrDefault(q => q.Id == BetTarget);
+                if (tgt != null && tgt.Team != P.Team)
+                {
+                    tgt.Ab.DoubleNext = true;
+                    Sfx.Play3D(M, "fx_betx2", tgt.GlobalPosition + Vector3.Up * 2.4f);
+                    M.LogEvent("BET_DOUBLE", P, tgt);
+                }
+                BetTarget = 0;
+            }
+        }
         if (DashT > 0) DashT -= dt;
         if (ModeT > 0) { ModeT -= dt; if (ModeT <= 0) EndMode(); }
         if (PerfectDribble && !P.IsDribbling) PerfectDribble = false;
@@ -87,7 +103,9 @@ public sealed class PlayerAbilities
         if (inp.Target > 0) TryTarget(inp.TargetSlot, inp.Target);
     }
 
-    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f : Characters.Cooldown(Char, slot);
+    // v0.38: no modo Indestrutível as recargas das habilidades usadas ficam IronUltCdReduction mais curtas
+    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f
+        : Characters.Cooldown(Char, slot) * (Indestructible ? 1f - Mathf.Clamp(T.IronUltCdReduction, 0f, 0.95f) : 1f);
 
     /// <summary>v0.32 (modo de teste): "Sem recarga" deste jogador (cada um liga o seu). Replicado.</summary>
     public bool NoCd;
@@ -515,7 +533,7 @@ public sealed class PlayerAbilities
         Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
         DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
         WallT = WallT, BonkT = BonkT, ChargeT = ChargeT, TiredT = TiredT, UltT = UltT,
-        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0)),
+        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0) | (DoubleNext ? 32 : 0)),
     };
 
     public static void Write(NetWriter w, in NetData d)
@@ -538,5 +556,6 @@ public sealed class PlayerAbilities
         BetT = d.BetT; DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetTarget = d.BetTarget; ModeWins = d.ModeWins;
         EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; NoCd = (d.Flags & 8) != 0;
         WallT = d.WallT; BonkT = d.BonkT; ChargeT = d.ChargeT; TiredT = d.TiredT; UltT = d.UltT; BlockCatch = (d.Flags & 16) != 0;
+        DoubleNext = (d.Flags & 32) != 0;
     }
 }
