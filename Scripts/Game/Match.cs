@@ -508,7 +508,7 @@ public partial class Match : Node3D
         {
             // v0.27: aviso claro para todos — a cesta do alvo foi para o outro time
             UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.4f, Palette.Team[team]);
-            UiSub($"NÃO ME DECEPCIONA! A cesta de {thrower.PlayerName} foi para o time {Palette.TeamName[team]}", 2.6f, new Color("5fe08a"));
+            UiSub($"A cesta de {thrower.PlayerName} foi para o time {Palette.TeamName[team]}", 2.6f, new Color("5fe08a"));
             Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
         }
         else UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);

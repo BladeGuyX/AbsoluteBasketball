@@ -27,54 +27,63 @@ public partial class LobbyMenu : Control
         AddChild(center);
         var panel = new PanelContainer();
         center.AddChild(panel);
-        var root = new HBoxContainer();
-        root.AddThemeConstantOverride("separation", 34);
-        panel.AddChild(root);
+        // v0.28: reorganizado — cabeçalho, blocos lado a lado (times | configurações | amigos) e barra de botões embaixo
+        var main = new VBoxContainer();
+        main.AddThemeConstantOverride("separation", 18);
+        panel.AddChild(main);
 
         var ns = NetSession.I;
-        // ---------------- coluna esquerda: times + configurações ----------------
-        var left = new VBoxContainer();
-        left.AddThemeConstantOverride("separation", 12);
-        root.AddChild(left);
-        left.AddChild(UiKit.Title("Lobby"));
-        _info = UiKit.Lbl("", 20, new Color("5b6577"));
-        left.AddChild(_info);
+        var head = new HBoxContainer();
+        head.AddThemeConstantOverride("separation", 20);
+        main.AddChild(head);
+        head.AddChild(UiKit.Title("Lobby"));
+        _info = UiKit.Lbl("", 20, UiKit.Muted);
+        _info.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        head.AddChild(_info);
 
-        var teams = new HBoxContainer();
-        teams.AddThemeConstantOverride("separation", 20);
-        left.AddChild(teams);
+        var body = new HBoxContainer();
+        body.AddThemeConstantOverride("separation", 20);
+        main.AddChild(body);
+
+        // ---------------- times ----------------
+        var tc = Card(body, "Times", 0);
+        var teams = new HBoxContainer { SizeFlagsVertical = SizeFlags.ExpandFill };
+        teams.AddThemeConstantOverride("separation", 16);
+        tc.AddChild(teams);
         _teamA = TeamColumn(teams, 0);
         _teamB = TeamColumn(teams, 1);
 
+        // ---------------- configurações (só o host muda) ----------------
+        var cc = Card(body, ns.IsHost ? "Partida" : "Partida (o host escolhe)", 0);
         var grid = new GridContainer { Columns = 2 };
-        grid.AddThemeConstantOverride("h_separation", 24);
-        grid.AddThemeConstantOverride("v_separation", 8);
-        left.AddChild(grid);
-        _size = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        grid.AddThemeConstantOverride("h_separation", 18);
+        grid.AddThemeConstantOverride("v_separation", 10);
+        cc.AddChild(grid);
+        _size = Opt();
         foreach (CourtSize s in new[] { CourtSize.Small, CourtSize.Medium, CourtSize.Large })
             _size.AddItem($"{CourtGeo.Name(s)} (até {CourtGeo.MaxPlayers(s)})", (int)s);
         Row(grid, "Quadra", _size);
-        _mode = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _mode = Opt();
         _mode.AddItem("Por pontos", 0);
         _mode.AddItem("Por tempo", 1);
         Row(grid, "Vitória", _mode);
-        _pts = new SpinBox { MinValue = 1, MaxValue = 99, CustomMinimumSize = new Vector2(340, 50) };
+        _pts = new SpinBox { MinValue = 1, MaxValue = 99, CustomMinimumSize = new Vector2(300, 52) };
         _ptsLbl = Row(grid, "Pontos para vencer", _pts);
-        _mins = new SpinBox { MinValue = 1, MaxValue = 60, Step = 0.5, Suffix = "min", CustomMinimumSize = new Vector2(340, 50) };
+        _mins = new SpinBox { MinValue = 1, MaxValue = 60, Step = 0.5, Suffix = "min", CustomMinimumSize = new Vector2(300, 52) };
         _minsLbl = Row(grid, "Duração", _mins);
-        _teamSize = new SpinBox { MinValue = 1, MaxValue = 5, CustomMinimumSize = new Vector2(340, 50) };
+        _teamSize = new SpinBox { MinValue = 1, MaxValue = 5, CustomMinimumSize = new Vector2(300, 52) };
         Row(grid, "Jogadores por time", _teamSize);
-        _diff = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _diff = Opt();
         _diff.AddItem("Fácil", 0); _diff.AddItem("Normal", 1); _diff.AddItem("Difícil", 2);
         Row(grid, "Bots (vagas vazias)", _diff);
-        _abil = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _abil = Opt();
         _abil.AddItem("Com habilidades", 0); _abil.AddItem("Sem habilidades", 1);
         Row(grid, "Habilidades", _abil);
-        _abil.ItemSelected += _ => OnSettingChanged();
         // v0.27: modo de teste (partida infinita + trapaças para todos)
-        _test = new OptionButton { CustomMinimumSize = new Vector2(340, 50) };
+        _test = Opt();
         _test.AddItem("Partida normal", 0); _test.AddItem("Teste (infinita + trapaças)", 1);
         Row(grid, "Modo", _test);
+        _abil.ItemSelected += _ => OnSettingChanged();
         _test.ItemSelected += _ => OnSettingChanged();
         _size.ItemSelected += _ => OnSettingChanged();
         _mode.ItemSelected += _ => OnSettingChanged();
@@ -83,45 +92,70 @@ public partial class LobbyMenu : Control
         _teamSize.ValueChanged += _ => OnSettingChanged();
         _diff.ItemSelected += _ => OnSettingChanged();
 
-        var buttons = new HBoxContainer();
-        buttons.AddThemeConstantOverride("separation", 12);
-        left.AddChild(buttons);
+        // ---------------- convidar amigos (Steam) ----------------
+        if (ns.ViaSteam && ns.Steam != null)
+        {
+            var fc = Card(body, "Convidar amigos", 380);
+            if (ns.Steam.OverlayAvailable)
+            {
+                var ov = UiKit.Btn("Abrir convite da Steam", () => ns.Steam.OpenOverlayInvite(), 0);
+                ov.SizeFlagsHorizontal = SizeFlags.ExpandFill;
+                fc.AddChild(ov);
+            }
+            var hint = UiKit.Lbl("O amigo precisa estar com o jogo aberto para aceitar o convite (ou usar o código).", 17, UiKit.Muted);
+            hint.AutowrapMode = TextServer.AutowrapMode.WordSmart;
+            fc.AddChild(hint);
+            var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(0, 330), HorizontalScrollMode = ScrollContainer.ScrollMode.Disabled, SizeFlagsVertical = SizeFlags.ExpandFill };
+            _friends = new VBoxContainer { SizeFlagsHorizontal = SizeFlags.ExpandFill };
+            _friends.AddThemeConstantOverride("separation", 6);
+            scroll.AddChild(_friends);
+            fc.AddChild(scroll);
+            FillFriends();
+        }
+
+        // ---------------- barra de botões ----------------
+        var bar = new HBoxContainer();
+        bar.AddThemeConstantOverride("separation", 14);
+        main.AddChild(bar);
+        bar.AddChild(UiKit.Btn("Sair do lobby", () => ns.Leave(toMenu: true), UiKit.Red, 230));
+        _wait = UiKit.Lbl("Aguardando o host começar...", 20, UiKit.Muted);
+        _wait.Visible = !ns.IsHost;
+        _wait.SizeFlagsVertical = SizeFlags.ShrinkCenter;
+        bar.AddChild(_wait);
+        bar.AddChild(new Control { SizeFlagsHorizontal = SizeFlags.ExpandFill });
         // v0.26: cada um escolhe o personagem no lobby (vai para o host e aparece para todos)
         Button chrBtn = null;
         chrBtn = UiKit.Btn("Escolher personagem", () => AddChild(new CharacterSelect
         {
             ConfirmText = "Escolher", AbilitiesOn = NetSession.I.Settings.Abilities,
             OnConfirm = id => NetSession.I.SetMyCharacter(id), OnBack = () => chrBtn.GrabFocus(),
-        }), UiKit.Purple, 300);
-        buttons.AddChild(chrBtn);
-        _start = UiKit.Btn("Começar partida", () => ns.HostStartMatch(), UiKit.Green, 300);
+        }), UiKit.Purple, 290);
+        bar.AddChild(chrBtn);
+        _start = UiKit.Btn("Começar partida", () => ns.HostStartMatch(), UiKit.Green, 290);
         _start.Visible = ns.IsHost;
-        buttons.AddChild(_start);
-        buttons.AddChild(UiKit.Btn("Sair do lobby", () => ns.Leave(toMenu: true), UiKit.Red, 240));
-        _wait = UiKit.Lbl("Aguardando o host começar...", 20, new Color("5b6577"));
-        _wait.Visible = !ns.IsHost;
-        left.AddChild(_wait);
-
-        // ---------------- coluna direita: convidar amigos (Steam) ----------------
-        if (ns.ViaSteam && ns.Steam != null)
-        {
-            var right = new VBoxContainer { CustomMinimumSize = new Vector2(420, 0) };
-            right.AddThemeConstantOverride("separation", 10);
-            root.AddChild(right);
-            right.AddChild(UiKit.Lbl("Convidar amigos", 32));
-            if (ns.Steam.OverlayAvailable) right.AddChild(UiKit.Btn("Abrir convite da Steam", () => ns.Steam.OpenOverlayInvite(), 400));
-            right.AddChild(UiKit.Lbl("O amigo precisa estar com o jogo aberto\npara aceitar o convite (ou usar o código).", 18, new Color("5b6577")));
-            var scroll = new ScrollContainer { CustomMinimumSize = new Vector2(420, 420) };
-            _friends = new VBoxContainer();
-            _friends.AddThemeConstantOverride("separation", 6);
-            scroll.AddChild(_friends);
-            right.AddChild(scroll);
-            FillFriends();
-        }
+        bar.AddChild(_start);
 
         ns.LobbyChanged += Refresh;
         Refresh();
         if (ns.IsHost) _start.CallDeferred(Control.MethodName.GrabFocus);
+        else chrBtn.CallDeferred(Control.MethodName.GrabFocus);
+    }
+
+    static OptionButton Opt() => new() { CustomMinimumSize = new Vector2(300, 52) };
+
+    /// <summary>Bloco com título (cartão claro com borda).</summary>
+    static VBoxContainer Card(HBoxContainer parent, string title, float minW)
+    {
+        var pc = new PanelContainer { CustomMinimumSize = new Vector2(minW, 0) };
+        var sb = UiKit.Box(new Color("f4f7fc"), 20, 22, 18);
+        sb.BorderColor = new Color("e1e8f2"); sb.SetBorderWidthAll(2); sb.BorderWidthBottom = 5;
+        pc.AddThemeStyleboxOverride("panel", sb);
+        parent.AddChild(pc);
+        var vb = new VBoxContainer();
+        vb.AddThemeConstantOverride("separation", 12);
+        pc.AddChild(vb);
+        vb.AddChild(UiKit.Section(title, 26));
+        return vb;
     }
 
     public override void _ExitTree()
@@ -138,7 +172,8 @@ public partial class LobbyMenu : Control
 
     static Label Row(GridContainer g, string label, Control c)
     {
-        var l = new Label { Text = label };
+        var l = UiKit.Lbl(label, 22);
+        l.SizeFlagsVertical = SizeFlags.ShrinkCenter;
         g.AddChild(l);
         g.AddChild(c);
         return l;
@@ -146,7 +181,7 @@ public partial class LobbyMenu : Control
 
     VBoxContainer TeamColumn(HBoxContainer parent, int team)
     {
-        var col = new VBoxContainer { CustomMinimumSize = new Vector2(300, 0) };
+        var col = new VBoxContainer { CustomMinimumSize = new Vector2(300, 0), SizeFlagsVertical = SizeFlags.ExpandFill };
         col.AddThemeConstantOverride("separation", 6);
         var head = new PanelContainer();
         head.AddThemeStyleboxOverride("panel", UiKit.Raised(Palette.Team[team], 5, 14, 16, 6));
@@ -154,7 +189,7 @@ public partial class LobbyMenu : Control
         ht.LabelSettings.Font = UiKit.FontBold;
         head.AddChild(ht);
         col.AddChild(head);
-        var list = new VBoxContainer { CustomMinimumSize = new Vector2(300, 220) };
+        var list = new VBoxContainer { CustomMinimumSize = new Vector2(300, 0), SizeFlagsVertical = SizeFlags.ExpandFill };
         list.AddThemeConstantOverride("separation", 6);
         col.AddChild(list);
         col.AddChild(UiKit.Btn("Entrar neste time", () => NetSession.I.SetMyTeam(team), Palette.Team[team].Darkened(0.1f), 300));
@@ -222,7 +257,7 @@ public partial class LobbyMenu : Control
             var humans = ns.Members.Where(m => m.Team == team).ToList();
             foreach (var m in humans)
             {
-                string tag = (m.NetId == 0 ? "  (host)" : "") + (m.NetId == ns.MyNetId ? "  (você)" : "");
+                string tag = (m.NetId == 0 ? " ★" : "") + (m.NetId == ns.MyNetId ? " (você)" : ""); // ★ = host
                 list.AddChild(MemberRow(m.Name + tag, Characters.Get(m.Character), team, m.NetId == ns.MyNetId));
             }
             int bots = Mathf.Clamp(s.TeamSize, 1, perTeam) - humans.Count;
@@ -240,7 +275,7 @@ public partial class LobbyMenu : Control
         pc.AddThemeStyleboxOverride("panel", sb);
         var hb = new HBoxContainer();
         hb.AddThemeConstantOverride("separation", 8);
-        var l = chr != null ? UiKit.Section(name, 21, me ? Palette.Team[team].Darkened(0.2f) : null) : UiKit.Lbl(name, 20, new Color("8a94a6"));
+        var l = chr != null ? UiKit.Section(name, 20, me ? Palette.Team[team].Darkened(0.2f) : null) : UiKit.Lbl(name, 19, new Color("8a94a6"));
         l.SizeFlagsHorizontal = SizeFlags.ExpandFill;
         l.ClipText = true;
         hb.AddChild(l);

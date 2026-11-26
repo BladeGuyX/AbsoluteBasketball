@@ -391,17 +391,17 @@ public sealed class Tuning
 
     // ---------------- Habilidades e ultimate (geral) ----------------
     [Param(SUlt, "Ultimate: tempo para encher sozinha", "Segundos de jogo para a barra da ultimate encher sem bônus nenhum (enche bem devagar). Não enche durante cutscenes nem com a própria ultimate ativa.", 30, 900, 5)]
-    public float UltChargeTime = 225f;
+    public float UltChargeTime = 205f;
     [Param(SUlt, "Ultimate: bônus por bloqueio", "Fração da barra ganha ao dar um toco.", 0, 1, 0.01f)]
-    public float UltBonusBlock = 0.07f;
+    public float UltBonusBlock = 0.06f;
     [Param(SUlt, "Ultimate: bônus por passe", "Fração da barra ganha quando um passe seu chega no aliado.", 0, 1, 0.005f)]
-    public float UltBonusPass = 0.03f;
+    public float UltBonusPass = 0.025f;
     [Param(SUlt, "Ultimate: bônus por roubo", "Fração da barra ganha ao roubar a bola.", 0, 1, 0.01f)]
-    public float UltBonusSteal = 0.07f;
+    public float UltBonusSteal = 0.06f;
     [Param(SUlt, "Ultimate: bônus por cesta", "Fração da barra ganha ao fazer uma cesta (o maior bônus).", 0, 1, 0.01f)]
-    public float UltBonusScore = 0.14f;
+    public float UltBonusScore = 0.12f;
     [Param(SUlt, "Ultimate: bônus por enterrada", "Fração da barra ganha ao fazer uma cesta de enterrada (no lugar do bônus por cesta; deve ser maior).", 0, 1, 0.01f)]
-    public float UltBonusDunk = 0.2f;
+    public float UltBonusDunk = 0.17f;
     [Param(SUlt, "Skill check da cutscene: preparação", "Segundos com o anel na tela antes do ponteiro começar a girar nos skill checks das cutscenes.", 0, 2, 0.05f)]
     public float CutCheckPrep = 0.35f;
 
@@ -412,15 +412,15 @@ public sealed class Tuning
     [Param(SKing, "Precisão", "Estrelas de Precisão do King.", 1, 5, 1, Sub = Star)] public float KingStarPrecision = 5f;
     [Param(SKing, "Salto", "Estrelas de Salto do King.", 1, 5, 1, Sub = Star)] public float KingStarJump = 2f;
     [Param(SKing, "(1) Olho do Rei: duração", "Segundos que o Olho do Rei fica ativo esperando o próximo passe/arremesso.", 1, 20, 0.5f, Sub = Hab)] public float KingEyeDuration = 7f;
-    [Param(SKing, "(1) Olho do Rei: recarga", "Segundos de recarga do Olho do Rei.", 1, 90, 0.5f, Sub = Hab)] public float KingEyeCooldown = 20f;
-    [Param(SKing, "(1) Olho do Rei: multiplicador de alcance", "Multiplica o alcance do arremesso e do passe rápido (e a velocidade do passe carregado) quando o efeito é gasto.", 1, 4, 0.05f, Sub = Hab)] public float KingEyeRangeMult = 2.1f;
+    [Param(SKing, "(1) Olho do Rei: recarga", "Segundos de recarga do Olho do Rei.", 1, 90, 0.5f, Sub = Hab)] public float KingEyeCooldown = 25f;
+    [Param(SKing, "(1) Olho do Rei: multiplicador de alcance", "Multiplica o alcance do arremesso e do passe rápido (e a velocidade do passe carregado) quando o efeito é gasto.", 1, 4, 0.05f, Sub = Hab)] public float KingEyeRangeMult = 1.9f;
     [Param(SKing, "(2) Presença Implacável: duração", "Segundos que a Presença Implacável fica ativa.", 1, 20, 0.5f, Sub = Hab)] public float KingPresenceDuration = 5f;
     [Param(SKing, "(2) Presença Implacável: raio", "Adversário a até esta distância (m) do King que soltar um arremesso erra com certeza.", 1, 20, 0.5f, Sub = Hab)] public float KingPresenceRadius = 7f;
-    [Param(SKing, "(2) Presença Implacável: recarga", "Segundos de recarga da Presença Implacável.", 1, 90, 0.5f, Sub = Hab)] public float KingPresenceCooldown = 30f;
+    [Param(SKing, "(2) Presença Implacável: recarga", "Segundos de recarga da Presença Implacável.", 1, 90, 0.5f, Sub = Hab)] public float KingPresenceCooldown = 35f;
     [Param(SKing, "(3) Drible Perfeito: duração extra", "Segundos a mais que o drible normal.", 0, 3, 0.05f, Sub = Hab)] public float KingDribbleExtra = 0.5f;
     [Param(SKing, "(3) Drible Perfeito: atordoamento", "Segundos atordoado (caído) de quem tentar roubar durante o Drible Perfeito.", 0, 10, 0.25f, Sub = Hab)] public float KingDribbleStun = 4f;
     [Param(SKing, "(3) Drible Perfeito: recarga", "Segundos de recarga do Drible Perfeito.", 1, 90, 0.5f, Sub = Hab)] public float KingDribbleCooldown = 15f;
-    [Param(SKing, "Ult: pontos da cesta", "Pontos da cesta da ultimate Sua Derrota é Absoluta.", 1, 20, 1, Sub = Hab)] public float KingUltPoints = 5f;
+    [Param(SKing, "Ult: pontos da cesta", "Pontos da cesta da ultimate Sua Derrota é Absoluta.", 1, 20, 1, Sub = Hab)] public float KingUltPoints = 4f;
     [Param(SKing, "Ult: 1º skill check (duração)", "Segundos até o ponteiro chegar na zona no 1º skill check (drible).", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck1Time = 0.85f;
     [Param(SKing, "Ult: 1º skill check (janela)", "Janela certa (s) do 1º skill check.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float KingUltCheck1Window = 0.09f;
     [Param(SKing, "Ult: 2º skill check (duração)", "Segundos até o ponteiro chegar na zona no 2º skill check (arremesso). Menor = mais rápido.", 0.3f, 3, 0.05f, Sub = Hab)] public float KingUltCheck2Time = 0.6f;
@@ -435,13 +435,13 @@ public sealed class Tuning
     [Param(SLuck, "Precisão", "Estrelas de Precisão do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarPrecision = 2f;
     [Param(SLuck, "Salto", "Estrelas de Salto do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarJump = 2f;
     [Param(SLuck, "(1) Arremesso Arriscado: chance de errar", "Chance (0–1) do Arremesso Arriscado errar.", 0, 1, 0.01f, Sub = Hab)] public float LuckRiskyMissChance = 0.3f;
-    [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 25f;
+    [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 30f;
     [Param(SLuck, "(2) Não me Decepciona: duração", "Segundos em que a cesta do adversário escolhido conta para o time do Luck.", 1, 60, 0.5f, Sub = Hab)] public float LuckBetDuration = 15f;
     [Param(SLuck, "(2) Não me Decepciona: recarga", "Segundos de recarga do Não me Decepciona.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 40f;
-    [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.75f;
+    [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.8f;
     [Param(SLuck, "(3) Impulso Descuidado: atordoamento do tropeço", "Segundos atordoado quando o Luck tropeça.", 0, 10, 0.25f, Sub = Hab)] public float LuckTripStun = 2.5f;
     [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 10f;
-    [Param(SLuck, "Ult: duração", "Segundos do modo apostador (Sorte Infinita).", 2, 40, 0.5f, Sub = Hab)] public float LuckModeDuration = 13f;
+    [Param(SLuck, "Ult: duração", "Segundos do modo apostador (Sorte Infinita).", 2, 40, 0.5f, Sub = Hab)] public float LuckModeDuration = 15f;
     [Param(SLuck, "Ult: bônus nos atributos", "Bônus (fração) em todos os valores dos atributos de estrela no modo apostador. 0,15 = +15%.", 0, 1, 0.01f, Sub = Hab)] public float LuckModeBonus = 0.15f;
     [Param(SLuck, "Ult: pontos a mais por cesta", "Pontos a mais em cada cesta do Luck no modo apostador (cada aposta ganha soma mais este valor).", 0, 5, 1, Sub = Hab)] public float LuckModePoints = 1f;
     [Param(SLuck, "Ult: chance de perder a 1ª aposta", "Chance (0–1) de perder ao apostar (apertar a ultimate de novo) pela 1ª vez.", 0, 1, 0.01f, Sub = Hab)] public float LuckGambleLoseChance = 0.5f;
@@ -464,23 +464,23 @@ public sealed class Tuning
     [Param(SBolt, "(1) Drible Relâmpago: alcance", "Distância máxima (m) até o adversário que o Bolt está olhando.", 1, 15, 0.5f, Sub = Hab)] public float BoltDribbleRange = 5f;
     [Param(SBolt, "(1) Drible Relâmpago: distância na frente", "Quantos metros o Bolt sai na frente do adversário driblado.", 0.5f, 10, 0.25f, Sub = Hab)] public float BoltDribbleAhead = 3f;
     [Param(SBolt, "(1) Drible Relâmpago: atordoamento", "Segundos que o adversário driblado fica atordoado.", 0, 10, 0.25f, Sub = Hab)] public float BoltDribbleStun = 2f;
-    [Param(SBolt, "(1) Drible Relâmpago: recarga", "Segundos de recarga do Drible Relâmpago.", 1, 90, 0.5f, Sub = Hab)] public float BoltDribbleCooldown = 20f;
+    [Param(SBolt, "(1) Drible Relâmpago: recarga", "Segundos de recarga do Drible Relâmpago.", 1, 90, 0.5f, Sub = Hab)] public float BoltDribbleCooldown = 25f;
     [Param(SBolt, "(2) Swap: recarga", "Segundos de recarga do Swap.", 1, 90, 0.5f, Sub = Hab)] public float BoltSwapCooldown = 40f;
     [Param(SBolt, "(3) Arranha-Céu: impulso", "Velocidade vertical (m/s) do pulo. Altura ≈ v²/(2·gravidade dos jogadores).", 5, 40, 0.5f, Sub = Hab)] public float BoltSkyJumpVel = 16f;
     [Param(SBolt, "(3) Arranha-Céu: raio do atordoamento", "Adversários a até esta distância (m) quando ele pula ficam atordoados.", 0, 10, 0.25f, Sub = Hab)] public float BoltSkyStunRadius = 3.25f;
     [Param(SBolt, "(3) Arranha-Céu: atordoamento", "Segundos atordoado de quem estava perto.", 0, 10, 0.25f, Sub = Hab)] public float BoltSkyStun = 2f;
     [Param(SBolt, "(3) Arranha-Céu: recarga", "Segundos de recarga do Arranha-Céu.", 1, 90, 0.5f, Sub = Hab)] public float BoltSkyCooldown = 40f;
-    [Param(SBolt, "Ult: pontos da cesta", "Pontos da cesta quando o Bolt vence o Duelo.", 1, 20, 1, Sub = Hab)] public float BoltDuelPoints = 7f;
+    [Param(SBolt, "Ult: pontos da cesta", "Pontos da cesta quando o Bolt vence o Duelo.", 1, 20, 1, Sub = Hab)] public float BoltDuelPoints = 6f;
     [Param(SBolt, "Ult: 1º skill check (duração)", "Segundos até o ponteiro chegar na zona no 1º skill check do Duelo.", 0.2f, 3, 0.05f, Sub = Hab)] public float BoltDuelStartTime = 1.0f;
     [Param(SBolt, "Ult: aceleração por segundo", "Quanto os skill checks ficam mais rápidos a cada segundo de duelo (0,18 = 18% por segundo).", 0, 2, 0.01f, Sub = Hab)] public float BoltDuelSpeedup = 0.18f;
-    [Param(SBolt, "Ult: duração mínima do skill check", "O skill check do Duelo nunca fica mais rápido que isso (s).", 0.1f, 2, 0.01f, Sub = Hab)] public float BoltDuelMinTime = 0.28f;
-    [Param(SBolt, "Ult: janela do skill check", "Janela certa (s) dos skill checks do Duelo (vale para os dois jogadores).", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float BoltDuelWindow = 0.085f;
+    [Param(SBolt, "Ult: duração mínima do skill check", "O skill check do Duelo nunca fica mais rápido que isso (s).", 0.1f, 2, 0.01f, Sub = Hab)] public float BoltDuelMinTime = 0.25f;
+    [Param(SBolt, "Ult: janela do skill check", "Janela certa (s) do 1º skill check do Duelo (vale para os dois). v0.28: encolhe junto com a duração quando acelera, então a zona fica do mesmo tamanho na tela.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float BoltDuelWindow = 0.085f;
     [Param(SBolt, "Ult: duração máxima entre bots", "Quando os dois do Duelo são bots, a troca de skill checks dura no máximo isso (s); depois um dos dois erra (50%).", 1, 20, 0.5f, Sub = Adv)] public float BotDuelMaxTime = 5f;
     [Param(SBolt, "Drible Relâmpago: ângulo do olhar", "O adversário precisa estar a até este ângulo (graus) de onde o Bolt olha (câmera).", 5, 90, 1, Sub = Adv)] public float BoltDribbleAngle = 35f;
     [Param(SBolt, "Drible Relâmpago: duração do impulso", "Segundos do impulso do Drible Relâmpago.", 0.05f, 1, 0.01f, Sub = Adv)] public float BoltDribbleTime = 0.18f;
     [Param(SBolt, "Swap: ângulo do olhar", "Jogador a até este ângulo (graus) de onde o Bolt olha pode ser trocado (o mais perto do centro).", 5, 90, 1, Sub = Adv)] public float BoltSwapAngle = 25f;
     [Param(SBolt, "Swap: alcance", "Distância máxima (m) do Swap.", 3, 120, 1, Sub = Adv)] public float BoltSwapRange = 45f;
-    [Param(SBolt, "Arranha-Céu: raio do bloqueio", "Alcance horizontal (m) do bloqueio no Arranha-Céu (o normal é o Raio do bloqueio).", 0.3f, 5, 0.05f, Sub = Adv)] public float BoltSkyBlockRadius = 1.75f;
+    [Param(SBolt, "Arranha-Céu: raio do bloqueio", "Alcance horizontal (m) do bloqueio no Arranha-Céu (o normal é o Raio do bloqueio).", 0.3f, 5, 0.05f, Sub = Adv)] public float BoltSkyBlockRadius = 1.45f;
 
     // ---------------- Bots ----------------
     [Param(SBots, "Erro de mira (graus)", "Erro máximo de direção do arremesso do bot no Normal (graus). Fácil/Difícil multiplicam.", 0, 20, 0.1f)]

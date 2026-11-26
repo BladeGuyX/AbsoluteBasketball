@@ -4,6 +4,18 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.29 — estamina nova, menus online organizados, jogar de novo online, balanceamento
+
+1. Na partida: a estamina é uma barra arredondada mais embaixo (acima dos ícones das habilidades), com um raiozinho no começo; fica laranja/vermelha quando está acabando e pisca quando não dá para correr; ao gastar, um rastro claro some devagar. As cargas de drible são bolinhas de basquete à direita; a que está recarregando enche como relógio; driblando, um contorno dourado pisca em volta delas.
+2. Menu Online: dois cartões lado a lado (Pela Steam | IP direto), botões com a mesma largura, campos alinhados; Voltar e o status embaixo. Lobby: Times | Partida (| Convidar amigos pela Steam) lado a lado, "Entrar neste time" no pé de cada time, botões numa barra embaixo (★ = host).
+3. **Online, "Jogar de novo"** no fim da partida: o amigo tem que conseguir se mexer e jogar normalmente (antes ficava travado). Testem 2 vezes seguidas.
+4. Duelo: o raio entre os olhos é uma linha fina (ciano → laranja) e no meio um brilho pequeno com faíscas curtas. Os skill checks aceleram, mas a zona amarela **não cresce** mais (fica do mesmo tamanho); o mais rápido ficou um pouco mais rápido. A cesta do Duelo vale 6.
+5. "Não me Decepciona": a linha de baixo agora só diz "A cesta de X foi para o time Y".
+6. Arranha-Céu: bloqueia um pouco menos para os lados (não parece mais que a bola bateu no ar).
+7. Valores: ultimate enche sozinha em 205 s (antes 225) e os bônus diminuíram (toco 0,06, passe 0,025, roubo 0,06, cesta 0,12, enterrada 0,17); Olho do Rei 25 s e alcance 1,9×; Presença 35 s; ult do King 4 pontos; Impulso Descuidado 80% de dar certo; Sorte Infinita 15 s; Drible Relâmpago 25 s; Arremesso Arriscado 30 s.
+
+---
+
 ## v0.28 — correções
 
 1. Luck (2) "Não me Decepciona" com só 1 adversário em quadra (ex.: Jogar local com 1 adversário): o painel fica largo o bastante — título, "Clique no adversário escolhido" e a dica de baixo ficam dentro dele.

@@ -302,7 +302,10 @@ public partial class NetSession : Node
                 int renderTick = r.I32();
                 byte emoteSeq = r.U8(), emoteId = r.U8();
                 byte targetSeq = r.U8(), targetId = r.U8(), targetSlot = r.U8();
-                if (seq <= ri.LastSeq) break;
+                // pacote velho / fora de ordem. v0.28: número MUITO menor = o cliente recomeçou a contagem (partida nova,
+                // "Jogar de novo"); antes, pacotes atrasados da partida anterior deixavam LastSeq alto e o input novo era
+                // ignorado para sempre (o amigo não conseguia se mexer)
+                if (seq <= ri.LastSeq && ri.LastSeq - seq < 300) break;
                 if (renderTick > 0)
                 {
                     float late = Mathf.Max(0, (_hostTick - renderTick) / 60f);
@@ -425,6 +428,7 @@ public partial class NetSession : Node
     public void HostStartMatch()
     {
         if (!IsHost) return;
+        _match = null; // v0.28: "Jogar de novo" — a partida velha não recebe mais nada
         _roster = BuildRoster();
         InMatch = true;
         Steam?.SetInGame(true);

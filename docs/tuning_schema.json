@@ -1602,7 +1602,7 @@
     "min": 30,
     "max": 900,
     "step": 5,
-    "default": 225,
+    "default": 205,
     "sub": ""
   },
   {
@@ -1613,7 +1613,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.07,
+    "default": 0.06,
     "sub": ""
   },
   {
@@ -1624,7 +1624,7 @@
     "min": 0,
     "max": 1,
     "step": 0.005,
-    "default": 0.03,
+    "default": 0.025,
     "sub": ""
   },
   {
@@ -1635,7 +1635,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.07,
+    "default": 0.06,
     "sub": ""
   },
   {
@@ -1646,7 +1646,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.14,
+    "default": 0.12,
     "sub": ""
   },
   {
@@ -1657,7 +1657,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.2,
+    "default": 0.17,
     "sub": ""
   },
   {
@@ -1745,7 +1745,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 20,
+    "default": 25,
     "sub": "Habilidades"
   },
   {
@@ -1756,7 +1756,7 @@
     "min": 1,
     "max": 4,
     "step": 0.05,
-    "default": 2.1,
+    "default": 1.9,
     "sub": "Habilidades"
   },
   {
@@ -1789,7 +1789,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 30,
+    "default": 35,
     "sub": "Habilidades"
   },
   {
@@ -1833,7 +1833,7 @@
     "min": 1,
     "max": 20,
     "step": 1,
-    "default": 5,
+    "default": 4,
     "sub": "Habilidades"
   },
   {
@@ -1976,7 +1976,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 25,
+    "default": 30,
     "sub": "Habilidades"
   },
   {
@@ -2009,7 +2009,7 @@
     "min": 0,
     "max": 1,
     "step": 0.01,
-    "default": 0.75,
+    "default": 0.8,
     "sub": "Habilidades"
   },
   {
@@ -2042,7 +2042,7 @@
     "min": 2,
     "max": 40,
     "step": 0.5,
-    "default": 13,
+    "default": 15,
     "sub": "Habilidades"
   },
   {
@@ -2273,7 +2273,7 @@
     "min": 1,
     "max": 90,
     "step": 0.5,
-    "default": 20,
+    "default": 25,
     "sub": "Habilidades"
   },
   {
@@ -2339,7 +2339,7 @@
     "min": 1,
     "max": 20,
     "step": 1,
-    "default": 7,
+    "default": 6,
     "sub": "Habilidades"
   },
   {
@@ -2372,14 +2372,14 @@
     "min": 0.1,
     "max": 2,
     "step": 0.01,
-    "default": 0.28,
+    "default": 0.25,
     "sub": "Habilidades"
   },
   {
     "key": "BoltDuelWindow",
     "section": "Bolt",
     "label": "Ult: janela do skill check",
-    "desc": "Janela certa (s) dos skill checks do Duelo (vale para os dois jogadores).",
+    "desc": "Janela certa (s) do 1\u00BA skill check do Duelo (vale para os dois). v0.28: encolhe junto com a dura\u00E7\u00E3o quando acelera, ent\u00E3o a zona fica do mesmo tamanho na tela.",
     "min": 0.02,
     "max": 0.5,
     "step": 0.005,
@@ -2449,7 +2449,7 @@
     "min": 0.3,
     "max": 5,
     "step": 0.05,
-    "default": 1.75,
+    "default": 1.45,
     "sub": "Avan\u00E7ado"
   },
   {

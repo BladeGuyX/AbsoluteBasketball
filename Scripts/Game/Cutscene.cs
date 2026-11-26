@@ -172,8 +172,10 @@ public partial class Cutscene : Node3D
         float elapsed = StageT;
         float dur = Mathf.Max(t.BoltDuelMinTime, t.BoltDuelStartTime / (1f + t.BoltDuelSpeedup * elapsed));
         float prep = first ? t.CutCheckPrep : 0.08f;
-        A.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), t.BoltDuelWindow, prep);
-        B.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), t.BoltDuelWindow, prep);
+        // v0.28: a janela encolhe junto com a duração (a zona desenhada = janela ÷ duração ficava maior a cada acerto)
+        float win = t.BoltDuelWindow * dur / Mathf.Max(t.BoltDuelStartTime, 0.05f);
+        A.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), win, prep);
+        B.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), win, prep);
         Round++;
     }
 
@@ -658,14 +660,14 @@ public partial class Cutscene : Node3D
                 else
                 {
                     float k = Smooth((u - 1.3f) / 0.7f);
-                    beam = true; beamW = 0.05f + 0.05f * k;
+                    beam = true; beamW = 0.01f + 0.008f * k;
                     Cam((bSpot + oSpot) * 0.5f + side * Mathf.Lerp(2.2f, 3.6f, k) + Vector3.Up * 1.75f, (eyeB + eyeO) * 0.5f, Mathf.Lerp(44, 56, k));
                 }
                 break;
             }
             case DDuel:
             {
-                beam = true; beamW = 0.09f + 0.015f * Mathf.Min(Round, 8); // v0.27: mais fino
+                beam = true; beamW = 0.018f + 0.002f * Mathf.Min(Round, 8); // v0.28: uma linha fina
                 Bo.St.Dribbling = true;
                 ball = Held(Bo, drib * 1.5f, Mathf.Sin(_time * 4f) >= 0 ? 1 : -1, true);
                 Bo.St.BallSide = Mathf.Sin(_time * 4f) >= 0 ? 1 : -1;
@@ -763,22 +765,70 @@ public partial class Cutscene : Node3D
 
     void Glare(Vector3 a, Vector3 b, float w)
     {
-        // dois raios saindo dos olhos que se chocam no meio, com faíscas
-        // v0.27: mais fino, cores mais suaves (meio transparentes) e sem a linha branca tremendo no meio; o zigue-zague só
-        // muda ~12 vezes por segundo (antes mudava todo quadro)
-        var mid = (a + b) * 0.5f + new Vector3(0, Mathf.Sin(_time * 9f) * 0.03f, 0);
-        _fxRng.Seed = (ulong)(Mathf.FloorToInt(_time * 12f) + 1000);
+        // v0.28: uma linha fina só (ciano do Bolt → laranja do adversário, ondulando de leve) e, no meio, onde os olhares se
+        // chocam, um brilho pequeno pulsando com 4 faíscas curtas que saem e somem suavemente (nada sorteado a cada quadro)
+        var mid = (a + b) * 0.5f + new Vector3(0, Mathf.Sin(_time * 6f) * 0.02f, 0);
+        var ca = new Color(0.55f, 0.92f, 1f, 0.95f);
+        var cb = new Color(1f, 0.62f, 0.4f, 0.95f);
+        var cm = new Color(1f, 0.97f, 0.88f, 1f);
         _beamMesh.ClearSurfaces();
         _beamMesh.SurfaceBegin(Mesh.PrimitiveType.Triangles);
-        Ribbon(a, mid, w, new Color(0.62f, 0.92f, 1f, 0.55f), 9, 0.07f);
-        Ribbon(b, mid, w, new Color(1f, 0.7f, 0.55f, 0.55f), 9, 0.07f);
-        for (int i = 0; i < 3; i++)
+        const int segs = 14;
+        for (int i = 0; i < segs; i++)
         {
-            var d = new Vector3(_fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1), _fxRng.RandfRange(-1, 1)).Normalized() * _fxRng.RandfRange(0.12f, 0.32f);
-            Ribbon(mid, mid + d, w * 0.45f, new Color(1f, 0.96f, 0.8f, 0.6f), 3, 0.05f);
+            float k0 = i / (float)segs, k1 = (i + 1) / (float)segs;
+            Strip(Wave(a, mid, k0), Wave(a, mid, k1), w, ca.Lerp(cm, k0 * k0), ca.Lerp(cm, k1 * k1));
+            Strip(Wave(b, mid, k0), Wave(b, mid, k1), w, cb.Lerp(cm, k0 * k0), cb.Lerp(cm, k1 * k1));
+        }
+        // brilho do choque: disco macio virado para a câmera, pulsando
+        var basis = _cam.GlobalTransform.Basis;
+        var right = basis.X; var up = basis.Y;
+        float glow = 0.11f + 0.025f * Mathf.Sin(_time * 14f) + w * 0.6f;
+        const int fan = 20;
+        for (int i = 0; i < fan; i++)
+        {
+            float t0 = i / (float)fan * Mathf.Tau, t1 = (i + 1) / (float)fan * Mathf.Tau;
+            Vtx(mid, cm with { A = 0.75f });
+            Vtx(mid + (right * Mathf.Cos(t0) + up * Mathf.Sin(t0)) * glow, cm with { A = 0f });
+            Vtx(mid + (right * Mathf.Cos(t1) + up * Mathf.Sin(t1)) * glow, cm with { A = 0f });
+        }
+        // faíscas: cada uma nasce no meio, voa um pouco para fora e some; a direção muda a cada "vida"
+        for (int i = 0; i < 4; i++)
+        {
+            float life = _time * 2.2f + i * 0.25f;
+            int gen = Mathf.FloorToInt(life);
+            float f = life - gen;
+            float ang = Hash(gen * 7 + i * 13) * Mathf.Tau;
+            var dir = (right * Mathf.Cos(ang) + up * Mathf.Sin(ang) * 0.8f).Normalized();
+            var p0 = mid + dir * (0.05f + 0.3f * f);
+            var p1 = p0 + dir * (0.07f * (1f - f));
+            Strip(p0, p1, w * 0.7f, cm with { A = 0.85f * (1f - f) }, cm with { A = 0f });
         }
         _beamMesh.SurfaceEnd();
         _beamDrawn = true;
+    }
+
+    /// <summary>Ponto da linha do olhar com uma ondinha suave (zero nas pontas).</summary>
+    Vector3 Wave(Vector3 from, Vector3 to, float k)
+    {
+        var p = from.Lerp(to, k);
+        float env = Mathf.Sin(k * Mathf.Pi);
+        return p + Vector3.Up * (Mathf.Sin(k * 9f - _time * 10f) * 0.012f * env);
+    }
+
+    static float Hash(int n) { n = (n << 13) ^ n; return ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 2147483647f; }
+
+    void Vtx(Vector3 p, Color c) { _beamMesh.SurfaceSetColor(c); _beamMesh.SurfaceAddVertex(p); }
+
+    /// <summary>Faixa fina virada para a câmera de a até b, com cor em degradê.</summary>
+    void Strip(Vector3 a, Vector3 b, float w, Color ca, Color cb)
+    {
+        var seg = b - a;
+        if (seg.LengthSquared() < 1e-8f) return;
+        var toCam = (_cam.GlobalPosition - (a + b) * 0.5f).Normalized();
+        var off = seg.Cross(toCam).Normalized() * (w * 0.5f);
+        Vtx(a - off, ca); Vtx(a + off, ca); Vtx(b + off, cb);
+        Vtx(a - off, ca); Vtx(b + off, cb); Vtx(b - off, cb);
     }
 
     void LightningLine(Vector3 a, Vector3 b, float w, Color c)

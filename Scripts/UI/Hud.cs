@@ -7,13 +7,12 @@ public partial class Hud : CanvasLayer
     public Match M;
 
     Label _scoreA, _scoreB, _info, _countdown, _msg, _sub;
-    ProgressBar _stamina, _power;
-    HBoxContainer _dribblePips;
+    ProgressBar _power;
     Control _powerBox, _endPanel;
     Label _endTitle, _endScore;
     Button _rematchBtn;
     float _countT, _msgT, _subT;
-    Control _top, _bottom, _cross, _abilityBar;
+    Control _top, _bottom, _cross, _abilityBar, _staminaHud;
     JinxBorder _jinx;
 
     public override void _Ready()
@@ -61,7 +60,7 @@ public partial class Hud : CanvasLayer
 
         // ---- barras ----
         var bottom = new VBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, CustomMinimumSize = new Vector2(420, 0) };
-        UiKit.Anchor(bottom, 0.5f, 1, 0.5f, 1, -210, -205, 210, -105);
+        UiKit.Anchor(bottom, 0.5f, 1, 0.5f, 1, -210, -180, 210, -146);
         _bottom = bottom;
         bottom.AddThemeConstantOverride("separation", 8);
         root.AddChild(bottom);
@@ -69,15 +68,10 @@ public partial class Hud : CanvasLayer
         _power = Bar(new Color("ffb020"), 22);
         _powerBox.AddChild(_power);
         bottom.AddChild(_powerBox);
-        _stamina = Bar(new Color("5ad17a"), 14);
-        bottom.AddChild(_stamina);
-        var row = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore, Alignment = BoxContainer.AlignmentMode.Center };
-        row.AddThemeConstantOverride("separation", 10);
-        row.AddChild(UiKit.Outlined("DRIBLE", 18, Colors.White, outline: 6));
-        _dribblePips = new HBoxContainer { MouseFilter = Control.MouseFilterEnum.Ignore };
-        _dribblePips.AddThemeConstantOverride("separation", 6);
-        row.AddChild(_dribblePips);
-        bottom.AddChild(row);
+        // v0.28: estamina + cargas de drible desenhadas (StaminaHud), mais embaixo; a caixa de cima fica só com a força do arremesso
+        _staminaHud = new StaminaHud { M = M, Name = "StaminaHud" };
+        UiKit.Anchor(_staminaHud, 0.5f, 1, 0.5f, 1, -300, -138, 300, -100);
+        root.AddChild(_staminaHud);
 
         // v0.26: os controles não ficam mais na tela (estão em Configurações → Informações). No rodapé: as habilidades.
         _abilityBar = new AbilityBar { M = M, Name = "AbilityBar" };
@@ -131,31 +125,6 @@ public partial class Hud : CanvasLayer
         return score;
     }
 
-    void UpdateDribblePips(Player p)
-    {
-        int max = p.St.DribbleCharges;
-        while (_dribblePips.GetChildCount() < max)
-        {
-            var pip = new Panel { CustomMinimumSize = new Vector2(18, 18), MouseFilter = Control.MouseFilterEnum.Ignore };
-            _dribblePips.AddChild(pip);
-        }
-        for (int i = 0; i < _dribblePips.GetChildCount(); i++)
-        {
-            var pip = _dribblePips.GetChild<Panel>(i);
-            pip.Visible = i < max;
-            bool full = i < p.DribbleCharges;
-            var sb = pip.GetThemeStylebox("panel") as StyleBoxFlat;
-            if (sb == null || !pip.HasThemeStyleboxOverride("panel")) { sb = UiKit.Box(Colors.White, 9, 0, 0); pip.AddThemeStyleboxOverride("panel", sb); }
-            sb.BgColor = full ? new Color("ffb020") : new Color(0.1f, 0.12f, 0.18f, 0.7f);
-            if (!full && i == p.DribbleCharges)
-            {
-                float k = p.DribbleRecharge / Mathf.Max(Tuning.I.DribbleRecharge, 0.1f);
-                sb.BgColor = new Color(0.1f, 0.12f, 0.18f, 0.7f).Lerp(new Color("ffb020"), k * 0.6f);
-            }
-            pip.AddThemeStyleboxOverride("panel", sb);
-        }
-    }
-
     static ProgressBar Bar(Color fill, int height)
     {
         var b = new ProgressBar { MinValue = 0, MaxValue = 1, Step = 0.001, ShowPercentage = false, CustomMinimumSize = new Vector2(420, height), MouseFilter = Control.MouseFilterEnum.Ignore };
@@ -204,8 +173,8 @@ public partial class Hud : CanvasLayer
         float dt = (float)delta;
         if (M == null) return;
         bool cut = M.Cut != null && M.Cut.Active; // v0.26: na cutscene só fica a cena (e o skill check)
-        _top.Visible = !cut; _bottom.Visible = !cut; _cross.Visible = !cut;
-        if (!M.AbilitiesOn) { _bottom.OffsetTop = -130; _bottom.OffsetBottom = -30; } // sem habilidades: barras no lugar de antes
+        _top.Visible = !cut; _bottom.Visible = !cut; _cross.Visible = !cut; _staminaHud.Visible = !cut;
+        if (!M.AbilitiesOn) { _bottom.OffsetTop = -110; _bottom.OffsetBottom = -76; _staminaHud.OffsetTop = -62; _staminaHud.OffsetBottom = -24; } // sem habilidades: tudo mais embaixo
         _scoreA.Text = M.Score[0].ToString();
         _scoreB.Text = M.Score[1].ToString();
         if (M.Cfg.Mode == WinMode.Time)
@@ -219,10 +188,8 @@ public partial class Hud : CanvasLayer
         var p = M.LocalPlayer;
         if (p != null)
         {
-            _stamina.Value = p.Stamina / Mathf.Max(p.St.StaminaMax, 1);
             _powerBox.Visible = p.ChargingShot;
             _power.Value = p.GetShotPlan(out var plan) ? plan.Power : 0; // força = distância usada (sem texto)
-            UpdateDribblePips(p);
         }
 
         if (_countT > 0)
