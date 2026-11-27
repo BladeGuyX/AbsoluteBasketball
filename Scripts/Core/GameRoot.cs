@@ -136,6 +136,29 @@ public partial class GameRoot : Node
                 }
                 return;
             }
+            if (args.Contains("--edge")) // v0.46: print da câmera com o jogador colado na borda olhando para cima (_0 lateral, _1 fundo)
+            {
+                StartMatch(new MatchConfig { TestMode = true, Size = CourtSize.Small, AllyDummies = 0, EnemyDummies = 1, TrainingDummies = true });
+                string fp = args[si + 1];
+                for (int k = 0; k < 2; k++)
+                {
+                    int kk = k;
+                    GetTree().CreateTimer(6.0 + kk * 1.5).Timeout += () =>
+                    {
+                        var lp = _match.LocalPlayer; var g = _match.Geo;
+                        var pos = kk == 0 ? new Vector3(2f, 0.05f, g.MaxZ - 0.5f) : new Vector3(g.MaxX - 0.5f, 0.05f, 2f);
+                        float yaw = kk == 0 ? 0f : Mathf.Pi / 2f; // de costas para a borda (câmera do lado de fora)
+                        lp.Teleport(pos, yaw, false);
+                        _match.Cam.Yaw = yaw; _match.Cam.Pitch = Mathf.DegToRad(Tuning.I.CameraPitchMaxDeg);
+                    };
+                    GetTree().CreateTimer(6.8 + kk * 1.5).Timeout += () =>
+                    {
+                        GetViewport().GetTexture().GetImage().SavePng(fp.Replace(".png", $"_{kk}.png"));
+                        if (kk == 1) GameRoot.QuitClean(this);
+                    };
+                }
+                return;
+            }
             if (args.Contains("--realm")) // v0.41: print do Realm do One (_0: dentro do Realm, _1: Domínio das Sombras ativo)
             {
                 UserSettings.I.Character = Characters.One;

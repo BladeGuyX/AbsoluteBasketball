@@ -1398,6 +1398,7 @@ public partial class Match : Node3D
         if (NetSession.I != null) NetSession.I.ClientRenderTick = Mathf.RoundToInt(_renderTick);
         // skill check: manda onde o ponteiro estava na tela quando apertou (o host julga por isso)
         inp.SkillT = -1;
+        Cut.ClientAdvance(dt); // v0.46: o ponteiro da cutscene anda todo tick (antes só a cada snapshot)
         if (inp.WasPressed(Btn.Shoot) && LocalPlayer != null)
         {
             float dur = -1, window = Tuning.I.DunkWindow;

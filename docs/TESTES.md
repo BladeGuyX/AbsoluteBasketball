@@ -4,6 +4,15 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.46 — câmera na borda, Duelo
+
+1. **Câmera:** vá até a lateral da quadra (perto da arquibancada), fique de costas para ela e olhe bem para cima: a câmera chega mais perto de você em vez de entrar na arquibancada (antes a tela ficava tampada). Teste também perto dos postes de luz dos cantos.
+2. **Duelo (Bolt):** jogue vários Duelos, como Bolt e como alvo, e leve até as rodadas rápidas do fim: apertando com o ponteiro dentro da zona, conta como acerto. Online, peça ao amigo para testar como alvo e como Bolt.
+3. A zona do Duelo não fica mais minúscula no fim (mínimo de 0,035 s).
+4. Online: os dois na v0.46.
+
+---
+
 ## v0.45 — Muralha, ícone da Investida, recargas
 
 1. **Muralha de Aço:** com ela de pé, **entre** na área de 3 com a bola → a bola cai para **dentro**; **saia** da área de 3 com a bola → a bola cai para **fora**. Nos dois casos, 1 s sem poder pegá-la.

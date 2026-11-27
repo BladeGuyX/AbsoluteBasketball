@@ -110,6 +110,8 @@ public sealed class Tuning
     public float CameraPitchMaxDeg = 30f;
     [Param(SCam, "Suavização do seguimento", "Maior = câmera gruda mais rápido no jogador.", 1, 60, 0.5f)]
     public float CameraFollowSmooth = 18f;
+    [Param(SCam, "Distância da câmera aos obstáculos", "Arquibancadas, postes e torre não tampam a visão: a câmera para esta distância (m) antes deles.", 0.05f, 1.5f, 0.05f)]
+    public float CameraCollisionMargin = 0.35f;
     [Param(SCam, "Sensibilidade base do mouse", "Graus por pixel (multiplicado pela sensibilidade das Configurações).", 0.01f, 1, 0.01f)]
     public float MouseDegPerPixel = 0.12f;
     [Param(SCam, "Sensibilidade base do analógico", "Graus por segundo com o analógico no máximo (multiplicado pelas Configurações).", 30, 720, 5)]
@@ -487,6 +489,7 @@ public sealed class Tuning
     [Param(SBolt, "Ult: aceleração por segundo", "Quanto os skill checks ficam mais rápidos a cada segundo de duelo (0,18 = 18% por segundo).", 0, 2, 0.01f, Sub = Hab)] public float BoltDuelSpeedup = 0.18f;
     [Param(SBolt, "Ult: duração mínima do skill check", "O skill check do Duelo nunca fica mais rápido que isso (s).", 0.1f, 2, 0.01f, Sub = Hab)] public float BoltDuelMinTime = 0.25f;
     [Param(SBolt, "Ult: janela do skill check", "Janela certa (s) do 1º skill check do Duelo (vale para os dois). v0.28: encolhe junto com a duração quando acelera, então a zona fica do mesmo tamanho na tela.", 0.02f, 0.5f, 0.005f, Sub = Hab)] public float BoltDuelWindow = 0.085f;
+    [Param(SBolt, "Ult: janela mínima do skill check", "A janela do Duelo encolhe a cada rodada, mas nunca fica menor que isto (s). Abaixo de ~0,03 s ela fica menor que um quadro do jogo e o acerto vira sorte.", 0.01f, 0.2f, 0.005f, Sub = Hab)] public float BoltDuelMinWindow = 0.035f;
     [Param(SBolt, "Ult: duração máxima entre bots", "Quando os dois do Duelo são bots, a troca de skill checks dura no máximo isso (s); depois um dos dois erra (50%).", 1, 20, 0.5f, Sub = Adv)] public float BotDuelMaxTime = 5f;
     [Param(SBolt, "Drible Relâmpago: ângulo do olhar", "O adversário precisa estar a até este ângulo (graus) de onde o Bolt olha (câmera).", 5, 90, 1, Sub = Adv)] public float BoltDribbleAngle = 35f;
     [Param(SBolt, "Drible Relâmpago: duração do impulso", "Segundos do impulso do Drible Relâmpago.", 0.05f, 1, 0.01f, Sub = Adv)] public float BoltDribbleTime = 0.18f;

@@ -196,7 +196,7 @@ public partial class Cutscene : Node3D
         float dur = Mathf.Max(t.BoltDuelMinTime, t.BoltDuelStartTime / (1f + t.BoltDuelSpeedup * elapsed));
         float prep = first ? t.CutCheckPrep : 0.08f;
         // v0.28: a janela encolhe junto com a duração (a zona desenhada = janela ÷ duração ficava maior a cada acerto)
-        float win = t.BoltDuelWindow * dur / Mathf.Max(t.BoltDuelStartTime, 0.05f);
+        float win = Mathf.Max(t.BoltDuelWindow * dur / Mathf.Max(t.BoltDuelStartTime, 0.05f), t.BoltDuelMinWindow); // v0.46: nunca menor que a mínima
         A.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), win, prep);
         B.Start(dur * (1f + M.Rng.RandfRange(-0.08f, 0.08f)), win, prep);
         Round++;
@@ -210,6 +210,9 @@ public partial class Cutscene : Node3D
         A.Active = B.Active = false;
         M.OnCutsceneEnd(kind, success, owner, target, Team);
     }
+
+    /// <summary>v0.46 (cliente): avança os ponteiros entre os snapshots.</summary>
+    public void ClientAdvance(float dt) { if (!Active) return; A.ClientAdvance(dt); B.ClientAdvance(dt); }
 
     /// <summary>Skill check deste jogador agora (dono = A, alvo do duelo = B), ou null.</summary>
     public SkillCheckState CheckFor(Player p)

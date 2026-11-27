@@ -360,3 +360,7 @@ Implementação (Claude): a aposta vale também para lance livre (é uma cesta);
 ## Revisões do usuário (v0.45)
 - Muralha de Aço: quem sai da área de 3 com a bola a deixa cair para fora (entrando, continua caindo para dentro).
 - Drible Relâmpago: recarga 30 s. Arremesso Arriscado: recarga 35 s. Impulso Descuidado: 85% de sucesso, recarga 15 s. Ícone da Investida refeito.
+
+## v0.46 — correções
+- Câmera: perto da borda olhando para cima, a câmera chega mais perto do jogador em vez de entrar na arquibancada/postes/torre.
+- Duelo: acerto com o ponteiro dentro da zona na tela conta como acerto (o jogo julgava um quadro depois; no cliente online o ponteiro pulava a zona). Janela mínima do Duelo: 0,035 s.

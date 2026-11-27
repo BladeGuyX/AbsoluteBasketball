@@ -56,6 +56,26 @@ public static class Scenery
         return n;
     }
 
+    /// <summary>v0.46: camada de física só da câmera (jogadores e bola não colidem com ela).</summary>
+    public const uint CameraLayer = 1u << 7;
+
+    /// <summary>v0.46: a câmera não entra neste modelo (arquibancada, poste, torre): corpo estático só na camada da câmera.</summary>
+    static void CameraBlocker(Node3D n)
+    {
+        if (n == null || !n.IsInsideTree()) return;
+        var body = new StaticBody3D { Name = "CameraBlocker", CollisionLayer = CameraLayer, CollisionMask = 0 };
+        n.AddChild(body);
+        var inv = body.GlobalTransform.AffineInverse();
+        foreach (var child in n.FindChildren("*", "MeshInstance3D", true, false))
+        {
+            var mi = (MeshInstance3D)child;
+            if (mi.Mesh == null) continue;
+            var shape = mi.Mesh.CreateTrimeshShape();
+            if (shape == null) continue;
+            body.AddChild(new CollisionShape3D { Shape = shape, Transform = inv * mi.GlobalTransform });
+        }
+    }
+
     static float Face(Vector3 from, Vector3 to) { var d = to - from; return Mathf.Atan2(d.X, d.Z); } // +Z do modelo para 'to'
 
     public static void Build(Node3D root, CourtGeo g)
@@ -80,7 +100,7 @@ public static class Scenery
             for (int i = 0; i < mods; i++)
             {
                 float x = (i - (mods - 1) / 2f) * modW;
-                Prop(root, "arquibancada", new Vector3(x, y, side * edgeZ), side < 0 ? 0f : Mathf.Pi, 1f, seat);
+                CameraBlocker(Prop(root, "arquibancada", new Vector3(x, y, side * edgeZ), side < 0 ? 0f : Mathf.Pi, 1f, seat));
             }
         }
 
@@ -89,7 +109,7 @@ public static class Scenery
         for (int sz = -1; sz <= 1; sz += 2)
         {
             var p = new Vector3(sx * (g.MaxX + 2.5f), y, sz * (g.MaxZ + 2.5f));
-            Prop(root, "poste_luz", p, Face(p, new Vector3(0, y, 0)));
+            CameraBlocker(Prop(root, "poste_luz", p, Face(p, new Vector3(0, y, 0))));
         }
 
         // ---- mar no fundo +X: faixa de espuma na beira e ondinhas ----
@@ -117,7 +137,7 @@ public static class Scenery
             }
         }
         var tower = new Vector3(shore - 6f, y, g.MaxZ * 0.4f);
-        Prop(root, "torre_salva_vidas", tower, Face(tower, tower + Vector3.Right));
+        CameraBlocker(Prop(root, "torre_salva_vidas", tower, Face(tower, tower + Vector3.Right)));
 
         // ---- palmeiras, moitas e pedras em volta (fora da área ocupada) ----
         int placed = 0, tries = 0;

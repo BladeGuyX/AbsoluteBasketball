@@ -30,12 +30,16 @@ public sealed class SkillCheckState
         if (Flash > 0) Flash -= dt;
         if (Done) Since += dt;
         if (!Active) return;
+        // v0.46: quem joga na máquina do host viu o ponteiro de ANTES deste tick (o aperto só é lido agora): julga por ele.
+        // Antes o aperto valia um tick depois do que estava na tela, e com a janela do Duelo menor que um tick, ponteiro
+        // dentro da zona na tela virava erro.
+        float shown = T;
         T += dt;
         float half = Window * 0.5f;
         if (T >= 0 && !Pressed && inp.WasPressed(Btn.Shoot))
         {
             Pressed = true;
-            PressT = inp.SkillT >= 0 ? Mathf.Min(inp.SkillT, T) : T;
+            PressT = inp.SkillT >= 0 ? Mathf.Min(inp.SkillT, T) : Mathf.Max(shown, 0f);
         }
         if (Pressed) Resolve(Mathf.Abs(PressT - Dur) <= half);
         else if (T >= Dur + half + grace) Resolve(false);
@@ -47,6 +51,10 @@ public sealed class SkillCheckState
         Flash = Mathf.Max(Tuning.I.SkillResultHold, 0.001f);
     }
 
+    /// <summary>v0.46 (cliente): o ponteiro anda a cada tick entre um snapshot e outro (antes pulava ~30 vezes por segundo e
+    /// podia pular a zona inteira no fim do Duelo — o aperto mandava a posição velha).</summary>
+    public void ClientAdvance(float dt) { if (Active && !Pressed) T += dt; }
+
     public void Write(NetWriter w)
     {
         w.U8((byte)((Active ? 1 : 0) | (Done ? 2 : 0) | (Ok ? 4 : 0) | (Pressed ? 8 : 0)));
@@ -56,7 +64,10 @@ public sealed class SkillCheckState
     public void Read(NetReader r)
     {
         int f = r.U8();
+        int oldSeq = Seq; float oldT = T; bool wasActive = Active;
         Active = (f & 1) != 0; Done = (f & 2) != 0; Ok = (f & 4) != 0; Pressed = (f & 8) != 0;
         T = r.F(); Dur = r.F(); Window = r.F(); PressT = r.F(); Flash = r.F(); Seq = r.U16();
+        // v0.46: mesmo skill check e o ponteiro local já um pouco à frente → não volta para trás (ponteiro sem tremer)
+        if (wasActive && Active && !Pressed && Seq == oldSeq && oldT > T && oldT - T < 0.15f) T = oldT;
     }
 }

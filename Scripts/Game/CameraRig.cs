@@ -78,6 +78,20 @@ public partial class CameraRig : Node3D
         var basis = Basis.FromEuler(new Vector3(Pitch, Yaw, 0));
         var pos = _pivot + basis.Z * t.CameraDistance * Mathf.Clamp(UserSettings.I.CameraDistanceMult, 0.5f, 2f) + basis.X * t.CameraShoulderOffset;
         if (pos.Y < 0.35f) pos.Y = 0.35f;
+        // v0.46: arquibancada/poste/torre entre o jogador e a câmera → a câmera chega mais perto (não tampa a visão)
+        var space = GetWorld3D()?.DirectSpaceState;
+        if (space != null)
+        {
+            var q = PhysicsRayQueryParameters3D.Create(_pivot, pos, Scenery.CameraLayer);
+            var hit = space.IntersectRay(q);
+            if (hit.Count > 0)
+            {
+                var hp = (Vector3)hit["position"];
+                var dir = pos - _pivot;
+                float len = dir.Length();
+                if (len > 0.001f) pos = _pivot + dir / len * Mathf.Max(0.3f, (hp - _pivot).Length() - t.CameraCollisionMargin);
+            }
+        }
         if (_shake > 0.002f)
         {
             _shakeT += dt;

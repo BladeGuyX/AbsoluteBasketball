@@ -209,6 +209,17 @@
     "sub": ""
   },
   {
+    "key": "CameraCollisionMargin",
+    "section": "C\u00E2mera",
+    "label": "Dist\u00E2ncia da c\u00E2mera aos obst\u00E1culos",
+    "desc": "Arquibancadas, postes e torre n\u00E3o tampam a vis\u00E3o: a c\u00E2mera para esta dist\u00E2ncia (m) antes deles.",
+    "min": 0.05,
+    "max": 1.5,
+    "step": 0.05,
+    "default": 0.35,
+    "sub": ""
+  },
+  {
     "key": "MouseDegPerPixel",
     "section": "C\u00E2mera",
     "label": "Sensibilidade base do mouse",
@@ -2461,6 +2472,17 @@
     "max": 0.5,
     "step": 0.005,
     "default": 0.085,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "BoltDuelMinWindow",
+    "section": "Bolt",
+    "label": "Ult: janela m\u00EDnima do skill check",
+    "desc": "A janela do Duelo encolhe a cada rodada, mas nunca fica menor que isto (s). Abaixo de ~0,03 s ela fica menor que um quadro do jogo e o acerto vira sorte.",
+    "min": 0.01,
+    "max": 0.2,
+    "step": 0.005,
+    "default": 0.035,
     "sub": "Habilidades"
   },
   {
