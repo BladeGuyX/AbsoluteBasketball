@@ -356,3 +356,7 @@ Implementação (Claude): a aposta vale também para lance livre (é uma cesta);
 ## Revisões do usuário (v0.44)
 - Aposta Certeira: trevo vermelho quando é penalidade (80% de zerar = alvo adversário), verde quando é bônus; recarga 60 s; ícone diferente do da Sorte Infinita.
 - Muralha de Aço: recarga 40 s; a bola de quem entra com ela cai para dentro da área de 3 (dá para pegar de volta e pontuar lá de dentro).
+
+## Revisões do usuário (v0.45)
+- Muralha de Aço: quem sai da área de 3 com a bola a deixa cair para fora (entrando, continua caindo para dentro).
+- Drible Relâmpago: recarga 30 s. Arremesso Arriscado: recarga 35 s. Impulso Descuidado: 85% de sucesso, recarga 15 s. Ícone da Investida refeito.

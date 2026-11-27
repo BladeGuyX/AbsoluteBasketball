@@ -379,7 +379,21 @@ public sealed class AbilityScenario
         }
         bool dropped = Ev("WALL_DROP") > wd0 && M.Ball.Holder != e0 && e0.BallLockoutTimer > t.IronWallDropLockout - 0.1f;
         foreach (var _ in Wait(0.6f)) yield return 0;
-        dropped &= !M.Geo.IsThree(M.Ball.GlobalPosition, def); // v0.44: caiu do lado de dentro
+        dropped &= !M.Geo.IsThree(M.Ball.GlobalPosition, def); // v0.44: entrando, caiu do lado de dentro
+        // v0.45: saindo com a bola, ela cai para fora
+        foreach (var _ in Wait(0.6f)) yield return 0;
+        P.Ab.WallT = 5f;
+        Place(e0, rimD.X + inward * (M.Geo.ThreePt - 1.0f), 0.5f, null);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int wd1 = Ev("WALL_DROP");
+        for (int i = 1; i <= 10; i++)
+        {
+            e0.GlobalPosition = new Vector3(rimD.X + inward * (M.Geo.ThreePt - 1.0f + 0.2f * i), e0.GlobalPosition.Y, 0.5f);
+            yield return 0;
+        }
+        foreach (var _ in Wait(0.6f)) yield return 0;
+        dropped &= Ev("WALL_DROP") > wd1 && M.Geo.IsThree(M.Ball.GlobalPosition, def);
         P.Ab.WallT = 0;
         if (!dropped) GD.Print($"[ABIL] muralha: derrubou={dropped} ev={Ev("WALL_DROP") - wd0} dono={(M.Ball.Holder == e0)} lock={e0.BallLockoutTimer:0.00} wall={M.Geo.Wall[def]} tres={M.Geo.IsThree(e0.GlobalPosition, def)} pos={e0.GlobalPosition} fase={M.Phase}");
         Rec("muralha_de_aco", wallOn && blocked && stillOn && inside && dropped);

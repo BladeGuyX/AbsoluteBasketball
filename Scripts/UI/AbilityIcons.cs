@@ -154,10 +154,19 @@ public static class AbilityIcons
             }
             case AbIcon.Charge:
             {
-                // ombreira avançando com linhas de velocidade
-                for (int i = 0; i < 3; i++) ci.DrawLine(P(-0.65f, -0.3f + i * 0.3f), P(-0.25f, -0.3f + i * 0.3f), A(new Color(1, 1, 1, 0.6f)), lw * 0.7f, true);
-                ci.DrawColoredPolygon(new[] { P(-0.15f, 0.45f), P(-0.15f, -0.1f), P(0.05f, -0.42f), P(0.45f, -0.3f), P(0.62f, 0.05f), P(0.5f, 0.45f) }, A(new Color("dfe5ec")));
-                ci.DrawLine(P(0.05f, -0.42f), P(0.2f, 0.45f), A(new Color(0.3f, 0.33f, 0.38f)), lw * 0.6f, true);
+                // v0.45: seta grossa prateada avançando (linhas de velocidade atrás) e um estouro amarelo na ponta
+                var steel = A(new Color("dfe5ec"));
+                var dark = A(new Color(0.3f, 0.33f, 0.38f));
+                for (int i = 0; i < 3; i++) ci.DrawLine(P(-0.68f, -0.24f + i * 0.24f), P(-0.4f, -0.24f + i * 0.24f), A(new Color(1, 1, 1, 0.65f)), lw * 0.7f, true);
+                var arrow = new[] { P(-0.32f, -0.16f), P(0.1f, -0.16f), P(0.1f, -0.38f), P(0.5f, 0f), P(0.1f, 0.38f), P(0.1f, 0.16f), P(-0.32f, 0.16f) };
+                ci.DrawColoredPolygon(arrow, steel);
+                ci.DrawPolyline(new[] { arrow[0], arrow[1], arrow[2], arrow[3], arrow[4], arrow[5], arrow[6], arrow[0] }, dark, lw * 0.5f, true);
+                var gold = A(new Color("ffd23f"));
+                for (int i = 0; i < 5; i++)
+                {
+                    float a2 = -1.1f + i * 0.55f;
+                    ci.DrawLine(P(0.58f, 0f) + new Vector2(Mathf.Cos(a2), Mathf.Sin(a2)) * r * 0.08f, P(0.58f, 0f) + new Vector2(Mathf.Cos(a2), Mathf.Sin(a2)) * r * 0.24f, gold, lw * 0.55f, true);
+                }
                 break;
             }
             case AbIcon.Shield:

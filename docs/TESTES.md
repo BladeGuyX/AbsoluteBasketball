@@ -4,6 +4,17 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.45 — Muralha, ícone da Investida, recargas
+
+1. **Muralha de Aço:** com ela de pé, **entre** na área de 3 com a bola → a bola cai para **dentro**; **saia** da área de 3 com a bola → a bola cai para **fora**. Nos dois casos, 1 s sem poder pegá-la.
+2. Ícone novo da **Investida** (seta prateada com linhas de velocidade e um estouro na ponta).
+3. **Drible Relâmpago** (Bolt): recarga **30 s**.
+4. **Arremesso Arriscado** (Luck): recarga **35 s**.
+5. **Impulso Descuidado** (Luck): **85%** de chance de dar certo e recarga de **15 s**.
+6. Online: os dois na v0.45.
+
+---
+
 ## v0.44 — trevo vermelho, ícone da Aposta Certeira, Muralha
 
 1. **Aposta Certeira:** aposte num **adversário** → o trevo em cima dele fica **vermelho** (80% de zerar). Aposte em você ou num aliado → **verde** (80% de dobrar). Todo mundo vê a mesma cor.

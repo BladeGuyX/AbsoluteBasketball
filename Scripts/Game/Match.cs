@@ -923,17 +923,19 @@ public partial class Match : Node3D
             // teletransporte (Swap, início de round...) não conta como atravessar
             bool crossed = _wasThree.TryGetValue(p, out var prev) && prev.Three != three
                            && ((p.GlobalPosition - prev.Pos) with { Y = 0 }).Length() < 1.5f;
-            bool was = prev.Three;
             _wasThree[p] = (three, p.GlobalPosition);
             if (!crossed || !AbilitiesOn || Ball.Holder != p || !Geo.Wall[hoop] || p.Ab.Indestructible || p.Flight != FlightKind.None) continue;
-            // v0.44: a bola cai sempre para DENTRO da área de 3 (dá para pegá-la depois e pontuar lá de dentro)
+            // v0.44: entrando, a bola cai para DENTRO da área de 3 (dá para pegá-la depois e pontuar lá de dentro);
+            // v0.45: saindo, ela cai para FORA
             var rim = Geo.RimCenter[hoop];
-            var inward = (rim - p.GlobalPosition) with { Y = 0 };
-            inward = inward.LengthSquared() > 1e-4f ? inward.Normalized() : Vector3.Left;
+            var dir = (rim - p.GlobalPosition) with { Y = 0 };
+            dir = dir.LengthSquared() > 1e-4f ? dir.Normalized() : Vector3.Left;
+            bool entering = prev.Three; // estava fora (área de 3) e passou para dentro
+            if (!entering) dir = -dir;
             p.CancelShot(false); p.CancelPass();
-            var dropAt = Ball.GlobalPosition + inward * 0.8f;
-            if (Geo.IsThree(dropAt, hoop)) dropAt = (p.GlobalPosition with { Y = Ball.GlobalPosition.Y }) + inward * 1.2f;
-            Ball.Drop(dropAt, inward * 1.4f + Vector3.Up * 1.2f);
+            var dropAt = Ball.GlobalPosition + dir * 0.8f;
+            if (Geo.IsThree(dropAt, hoop) == entering) dropAt = (p.GlobalPosition with { Y = Ball.GlobalPosition.Y }) + dir * 1.2f;
+            Ball.Drop(dropAt, dir * 1.4f + Vector3.Up * 1.2f);
             p.BallLockoutTimer = Mathf.Max(p.BallLockoutTimer, Tuning.I.IronWallDropLockout);
             Sfx.Play3D(this, "fx_clang", Ball.GlobalPosition);
             LogEvent("WALL_DROP", p);

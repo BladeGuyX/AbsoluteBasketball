@@ -446,13 +446,13 @@ public sealed class Tuning
     [Param(SLuck, "Precisão", "Estrelas de Precisão do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarPrecision = 2f;
     [Param(SLuck, "Salto", "Estrelas de Salto do Luck.", 1, 5, 1, Sub = Star)] public float LuckStarJump = 2f;
     [Param(SLuck, "(1) Arremesso Arriscado: chance de errar", "Chance (0–1) do Arremesso Arriscado errar.", 0, 1, 0.01f, Sub = Hab)] public float LuckRiskyMissChance = 0.3f;
-    [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 30f;
+    [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 35f;
     [Param(SLuck, "(2) Aposta Certeira: chance de dobrar (aliado)", "Chance (0–1) da próxima cesta valer o dobro quando o alvo é aliado (ou o próprio Luck). Senão, a cesta não vale nada.", 0, 1, 0.01f, Sub = Hab)] public float LuckBetAllyDoubleChance = 0.8f;
     [Param(SLuck, "(2) Aposta Certeira: chance de dobrar (adversário)", "Chance (0–1) da próxima cesta valer o dobro quando o alvo é adversário. Senão, a cesta não vale nada.", 0, 1, 0.01f, Sub = Hab)] public float LuckBetEnemyDoubleChance = 0.2f;
     [Param(SLuck, "(2) Aposta Certeira: recarga", "Segundos de recarga da Aposta Certeira.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 60f;
-    [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.8f;
+    [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.85f;
     [Param(SLuck, "(3) Impulso Descuidado: atordoamento do tropeço", "Segundos atordoado quando o Luck tropeça.", 0, 10, 0.25f, Sub = Hab)] public float LuckTripStun = 2.5f;
-    [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 12f;
+    [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 15f;
     [Param(SLuck, "Ult: duração", "Segundos do modo apostador (Sorte Infinita).", 2, 40, 0.5f, Sub = Hab)] public float LuckModeDuration = 12f;
     [Param(SLuck, "Ult: bônus nos atributos", "Bônus (fração) em todos os valores dos atributos de estrela no modo apostador. 0,15 = +15%.", 0, 1, 0.01f, Sub = Hab)] public float LuckModeBonus = 0.15f;
     [Param(SLuck, "Ult: pontos a mais por cesta", "Pontos a mais em cada cesta do Luck no modo apostador (cada aposta ganha soma mais este valor).", 0, 5, 1, Sub = Hab)] public float LuckModePoints = 1f;
@@ -476,7 +476,7 @@ public sealed class Tuning
     [Param(SBolt, "(1) Drible Relâmpago: alcance", "Distância máxima (m) até o adversário que o Bolt está olhando.", 1, 15, 0.5f, Sub = Hab)] public float BoltDribbleRange = 5f;
     [Param(SBolt, "(1) Drible Relâmpago: distância na frente", "Quantos metros o Bolt sai na frente do adversário driblado.", 0.5f, 10, 0.25f, Sub = Hab)] public float BoltDribbleAhead = 3f;
     [Param(SBolt, "(1) Drible Relâmpago: atordoamento", "Segundos que o adversário driblado fica atordoado.", 0, 10, 0.25f, Sub = Hab)] public float BoltDribbleStun = 1f;
-    [Param(SBolt, "(1) Drible Relâmpago: recarga", "Segundos de recarga do Drible Relâmpago.", 1, 90, 0.5f, Sub = Hab)] public float BoltDribbleCooldown = 25f;
+    [Param(SBolt, "(1) Drible Relâmpago: recarga", "Segundos de recarga do Drible Relâmpago.", 1, 90, 0.5f, Sub = Hab)] public float BoltDribbleCooldown = 30f;
     [Param(SBolt, "(2) Swap: recarga", "Segundos de recarga do Swap.", 1, 90, 0.5f, Sub = Hab)] public float BoltSwapCooldown = 45f;
     [Param(SBolt, "(3) Arranha-Céu: impulso", "Velocidade vertical (m/s) do pulo. Altura ≈ v²/(2·gravidade dos jogadores).", 5, 40, 0.5f, Sub = Hab)] public float BoltSkyJumpVel = 16f;
     [Param(SBolt, "(3) Arranha-Céu: raio do atordoamento", "Adversários a até esta distância (m) quando ele pula ficam atordoados.", 0, 10, 0.25f, Sub = Hab)] public float BoltSkyStunRadius = 3.25f;
