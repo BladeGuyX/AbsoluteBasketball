@@ -43,7 +43,7 @@ public partial class Hud : CanvasLayer
         _msg = UiKit.Outlined("", 64, Colors.White, outline: 18);
         UiKit.Anchor(_msg, 0.5f, 0, 0.5f, 0, -600, 190, 600, 290);
         root.AddChild(_msg);
-        // v0.27: linha menor embaixo da mensagem (ex.: cesta roubada pelo "Não me Decepciona")
+        // v0.27: linha menor embaixo da mensagem (ex.: resultado da Aposta Certeira)
         _sub = UiKit.Outlined("", 34, Colors.White, outline: 12);
         UiKit.Anchor(_sub, 0.5f, 0, 0.5f, 0, -900, 290, 900, 345);
         root.AddChild(_sub);

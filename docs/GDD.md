@@ -344,3 +344,11 @@ Implementação (Claude): `Ab.RealmT`/`AbductT`/`CurseT` (snapshot, `NetProtocol
 - Quem está num Realm não pode usar habilidade que leve ao Realm: nada de Domínio durante outro Domínio, nem Realm durante o Domínio; a Abdução só pega quem não está em nenhum Realm (durante um Domínio, ninguém), mas o One pode abduzir estando no Realm.
 - Realm: 3 s, recarga 25 s. Iron: Muralha de Aço com recarga de 45 s.
 - Bots não podem agir como se vissem os jogadores invisíveis para eles.
+
+## Revisões do usuário (v0.43) — prevalecem sobre as anteriores
+- One: Abdução dura 2 s e recarrega em 50 s quando o time adversário tem só 1 jogador; Maldição tira 50% dos atributos quando o time adversário (o do alvo) tem só 1 jogador.
+- Iron: Muralha de Aço com recarga de 35 s; adversário que atravessar a muralha com a bola (no chão ou no ar) a solta na hora e não pode pegá-la de volta por 1 s. Investida atordoa por 5 s.
+- Cesta de 3 ou de 2: decidida pela última posição em que o arremessador esteve no chão, não pela posição na hora de soltar.
+- Luck: "Não me Decepciona" foi substituída pela **Aposta Certeira**: o Luck escolhe qualquer jogador (adversário, aliado ou ele mesmo) no mesmo menu; a próxima cesta desse jogador (as de cutscene não contam) tem 20% de valer o dobro e 80% de não valer nada se o alvo for adversário, e 80% / 20% se for aliado. O trevo fica na cabeça do alvo, visível para todos, até ele fazer a cesta. Não dá para usar se algum jogador do time adversário já estiver com o trevo. Recarga 50 s.
+
+Implementação (Claude): a aposta vale também para lance livre (é uma cesta); um jogador que já está com trevo não pode receber outro; quem atravessa a muralha só perde a bola se ela estiver de pé e ele não for o Iron Indestrutível; teletransportes (Swap, início de round) não contam como atravessar.

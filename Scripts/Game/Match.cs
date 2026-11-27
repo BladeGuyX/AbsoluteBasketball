@@ -344,7 +344,7 @@ public partial class Match : Node3D
         if (IsHost) NetSession.I?.HostHud(1, text, dur, color, false, -1);
     }
 
-    /// <summary>v0.27: linha menor embaixo da mensagem (ex.: cesta roubada pelo "Não me Decepciona").</summary>
+    /// <summary>v0.27: linha menor embaixo da mensagem (ex.: resultado da Aposta Certeira).</summary>
     void UiSub(string text, float dur, Color color)
     {
         Hud?.ShowSub(text, dur, color);
@@ -431,6 +431,7 @@ public partial class Match : Node3D
             p.ServerTick(inp, dt);
         }
         foreach (var p in Players) p.ApplyQueuedRelocate(); // Swap do Bolt
+        if (!cut) CheckWallCarry();
         TestModeTick();
         if (cut)
         {
@@ -482,37 +483,28 @@ public partial class Match : Node3D
         var t = Tuning.I;
         int team = CourtGeo.ScoringTeamForHoop(hoop);
         bool freeThrow = Ball.FreeThrow;
-        bool three = !freeThrow && Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotOrigin, hoop);
+        bool three = !freeThrow && Ball.State == BallState.Shot && Geo.IsThree(Ball.ShotFloorPos, hoop); // v0.43: último lugar em que pisou
         int pts = Mathf.RoundToInt(freeThrow ? t.FreeThrowPoints : three ? t.PointsOutside : t.PointsInside);
         var thrower = Ball.LastThrower;
-        bool betStolen = false;
         if (AbilitiesOn && thrower != null && team == thrower.Team)
         {
             // Luck (modo apostador): as cestas dele valem mais
             if (thrower.CharacterId == Characters.Luck) pts += thrower.Ab.ModePoints;
-            // v0.41: amaldiçoado pelo One = cestas valem menos
+            // v0.41: amaldiçoado pelo One = cestas valem menos (v0.42: lance livre não)
             if (thrower.Ab.CurseT > 0 && !freeThrow) { pts = Mathf.Max(0, pts - Mathf.RoundToInt(t.OneCursePointLoss)); LogEvent("SCORE_CURSED", thrower); }
             thrower.Ab.AddUlt(t.UltBonusScore);
-            // Luck "Não me Decepciona": a cesta do adversário marcado vai para o time do Luck
-            foreach (var q in Players)
-            {
-                if (q.Team == thrower.Team || q.CharacterId != Characters.Luck || q.Ab.BetT <= 0 || q.Ab.BetTarget != thrower.Id || Characters.Immune(thrower, q)) continue;
-                team = q.Team;
-                betStolen = true;
-                q.Ab.BetT = 0; q.Ab.BetTarget = 0;
-                LogEvent("BET_WIN", q, thrower);
-                Sfx.Play3D(this, "fx_luckwin", thrower.GlobalPosition + Vector3.Up * 2f);
-                break;
-            }
         }
-        // v0.38: alvo do "Não me Decepciona" que não pontuou a tempo — esta cesta (do time dele) vale o dobro
-        bool doubled = false;
-        if (AbilitiesOn && thrower != null && !freeThrow && !betStolen && thrower.Ab.DoubleNext && team == thrower.Team)
+        // v0.43: Aposta Certeira do Luck — a cesta do jogador com o trevo dobra ou zera
+        int bet = 0; // 1 = dobrou, 2 = zerou
+        if (AbilitiesOn && thrower != null && thrower.Ab.BetBy != 0 && team == thrower.Team)
         {
-            pts *= 2;
-            doubled = true;
-            thrower.Ab.DoubleNext = false;
-            LogEvent("SCORE_DOUBLE", thrower);
+            var luck = ById(thrower.Ab.BetBy);
+            bool ally = luck == null || luck.Team == thrower.Team;
+            float chance = ally ? t.LuckBetAllyDoubleChance : t.LuckBetEnemyDoubleChance;
+            bet = Rng.Randf() < chance ? 1 : 2;
+            pts = bet == 1 ? pts * 2 : 0;
+            thrower.Ab.BetBy = 0;
+            LogEvent(bet == 1 ? "BET_DOUBLE" : "BET_ZERO", luck, thrower);
         }
         // v0.27: enterrada carrega mais a ultimate que as outras cestas
         if (AbilitiesOn && thrower != null && Ball.FromDunk && thrower.Team == CourtGeo.ScoringTeamForHoop(hoop))
@@ -523,18 +515,17 @@ public partial class Match : Node3D
         Ball.Vel = new Vector3(Ball.Vel.X * 0.15f, Ball.Vel.Y * 0.4f, Ball.Vel.Z * 0.15f);
         Sfx.Play3D(this, "swish", Geo.RimCenter[hoop], -2);
         Sfx.Play2D(this, "score_t" + team, -7); // cada tela toca "cesta feita" ou "cesta sofrida" (Sfx.LocalTeam)
-        if (betStolen)
-        {
-            // v0.27: aviso claro para todos — a cesta do alvo foi para o outro time
-            UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.4f, Palette.Team[team]);
-            UiSub($"A cesta de {thrower.PlayerName} foi para o time {Palette.TeamName[team]}", 2.6f, new Color("5fe08a"));
-            Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
-        }
-        else if (doubled)
+        if (bet == 1)
         {
             UiMessage($"+{pts}  {Palette.TeamName[team]}!", 2.2f, Palette.Team[team]);
-            UiSub($"A cesta de {thrower.PlayerName} valeu o dobro", 2.4f, new Color("ffd23f"));
+            UiSub($"Aposta: a cesta de {thrower.PlayerName} valeu o dobro", 2.4f, new Color("5fe08a"));
             Sfx.Play3D(this, "fx_betwin", Geo.RimCenter[hoop]);
+        }
+        else if (bet == 2)
+        {
+            UiMessage($"+0  {Palette.TeamName[team]}", 2.2f, Palette.Team[team]);
+            UiSub($"Aposta: a cesta de {thrower.PlayerName} não valeu nada", 2.4f, new Color("ff6b6b"));
+            Sfx.Play3D(this, "fx_lucklose", Geo.RimCenter[hoop]);
         }
         else UiMessage($"+{pts}  {Palette.TeamName[team]}!", 1.6f, Palette.Team[team]);
         LogEvent(freeThrow ? "SCORE_FT" : Ball.LastThrower != null && Ball.LastThrower.Flight == FlightKind.None && Ball.ShotOrigin.Y < 0.5f ? "SCORE_SHOT" : "SCORE_OTHER", Ball.LastThrower);
@@ -919,6 +910,34 @@ public partial class Match : Node3D
     /// <summary>v0.41: algum Domínio das Sombras ativo (a quadra toda fica no Realm).</summary>
     public bool AnyDomain => AbilitiesOn && Players.Any(q => q.Ab != null && q.Ab.Domain);
 
+    readonly Dictionary<Player, (bool Three, Vector3 Pos)> _wasThree = new();
+
+    /// <summary>v0.43: adversário que atravessa a Muralha de Aço com a bola (no chão ou no ar) a deixa cair na hora e não pode
+    /// pegá-la de volta por IronWallDropLockout (o Iron Indestrutível passa normalmente).</summary>
+    void CheckWallCarry()
+    {
+        foreach (var p in Players)
+        {
+            int hoop = CourtGeo.AttackHoop(p.Team);
+            bool three = Geo.IsThree(p.GlobalPosition, hoop);
+            // teletransporte (Swap, início de round...) não conta como atravessar
+            bool crossed = _wasThree.TryGetValue(p, out var prev) && prev.Three != three
+                           && ((p.GlobalPosition - prev.Pos) with { Y = 0 }).Length() < 1.5f;
+            bool was = prev.Three;
+            _wasThree[p] = (three, p.GlobalPosition);
+            if (!crossed || !AbilitiesOn || Ball.Holder != p || !Geo.Wall[hoop] || p.Ab.Indestructible || p.Flight != FlightKind.None) continue;
+            var rim = Geo.RimCenter[hoop];
+            var back = (p.GlobalPosition - rim) with { Y = 0 };
+            back = back.LengthSquared() > 1e-4f ? back.Normalized() : Vector3.Right;
+            if (!was) back = -back; // saindo: a bola fica do lado de dentro
+            p.CancelShot(false); p.CancelPass();
+            Ball.Drop(Ball.GlobalPosition + back * 0.45f, back * 1.6f + Vector3.Up * 1.2f);
+            p.BallLockoutTimer = Mathf.Max(p.BallLockoutTimer, Tuning.I.IronWallDropLockout);
+            Sfx.Play3D(this, "fx_clang", Ball.GlobalPosition);
+            LogEvent("WALL_DROP", p);
+        }
+    }
+
     /// <summary>v0.35: pose curta avisando que <paramref name="owner"/> usou a ultimate (para ults que não são cutscene).</summary>
     public bool StartUltPose(Player owner) => StartCutscene(CutKind.UltPose, owner, null);
 
@@ -1044,7 +1063,7 @@ public partial class Match : Node3D
         if (FtShooter == p) EndFreeThrows();
         _bots.Remove(p); _dummies.Remove(p);
         Players.Remove(p);
-        foreach (var q in Players) if (q.Ab.BetTarget == p.Id) { q.Ab.BetTarget = 0; q.Ab.BetT = 0; }
+        foreach (var q in Players) if (q.Ab.BetBy == p.Id) q.Ab.BetBy = 0;
         if (IsHost) NetSession.I?.HostPlayerRemoved(p.Id);
         p.QueueFree();
         RefreshNames();
@@ -1398,6 +1417,7 @@ public partial class Match : Node3D
             if (ClientSkillHold <= 0) ClientSkillMuteT = 0.6f; // o flash do host chega atrasado: não mostrar de novo
         }
         else if (ClientSkillMuteT > 0) ClientSkillMuteT -= dt;
+        if (!Cut.Active && ClientSkillHold <= 0) ClientSkillSeq = -1; // v0.43: fora da cutscene o número do último aperto não vale mais
         NetSession.I?.SendInput(inp);
 
         if (_snaps.Count > 0)

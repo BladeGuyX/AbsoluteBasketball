@@ -98,7 +98,6 @@ public partial class AbilityBar : Control
         {
             (Characters.King, 0) => a.EyeT > 0 ? a.EyeT / Mathf.Max(t.KingEyeDuration, 0.1f) : a.EyeArmed ? 1f : 0f,
             (Characters.King, 1) => Mathf.Max(0, a.PresenceT) / Mathf.Max(t.KingPresenceDuration, 0.1f),
-            (Characters.Luck, 1) => Mathf.Max(0, a.BetT) / Mathf.Max(t.LuckBetDuration, 0.1f),
             (Characters.Luck, 3) => Mathf.Clamp(Mathf.Max(0, a.ModeT) / Mathf.Max(t.LuckModeDuration, 0.1f), 0, 1),
             (Characters.Iron, 0) => Mathf.Max(0, a.WallT) / Mathf.Max(t.IronWallDuration, 0.1f),
             (Characters.Iron, 2) => a.Charging ? 1f - Mathf.Clamp(a.ChargeT / Mathf.Max(t.IronChargeDuration, 0.1f), 0, 1) : 0f,

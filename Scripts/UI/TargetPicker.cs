@@ -5,7 +5,7 @@ using Godot;
 namespace AB;
 
 /// <summary>
-/// v0.26: menu para escolher um jogador adversário (Luck: "Não me Decepciona"; Bolt: ultimate "Duelo").
+/// v0.26: menu para escolher um jogador adversário (Luck: "Aposta Certeira" — qualquer jogador; Bolt: ultimate "Duelo"; One: "Maldição").
 /// v0.27: virou um painel com o cursor do mouse solto — passe o mouse em cima do adversário e clique nele. No controle (ou nas
 /// setinhas ←/→ do teclado) dá para navegar e confirmar com arremesso/salto. Cancelar: passe, Esc, clicar fora, o botão
 /// "Cancelar" ou a mesma tecla de novo. Fecha sozinho depois de alguns segundos. A escolha vai no input
@@ -104,7 +104,7 @@ public partial class TargetPicker : Control
             {
                 if (!Characters.NeedsTarget(lp.CharacterId, s) || !Input.IsActionJustPressed(SlotActions[s])) continue;
                 if (!lp.Ab.Ready(s) || (s == 3 && !lp.HasBall)) continue;
-                _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp) && RealmView.Alpha(M, lp, q) > 0.01f).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
+                _list = Candidates(M, lp, s);
                 if (_list.Count == 0) continue;
                 _slot = s; _sel = 0; _hover = -1; _open = 0; IsOpen = true;
                 break;
@@ -141,8 +141,17 @@ public partial class TargetPicker : Control
     {
         var lp = M?.LocalPlayer;
         if (lp == null) return;
-        _list = M.Players.Where(q => q.Team != lp.Team && !Characters.Immune(q, lp) && RealmView.Alpha(M, lp, q) > 0.01f).OrderBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
+        _list = Candidates(M, lp, slot);
         _slot = slot; _sel = 0; _hover = 1; _open = 0; IsOpen = _list.Count > 0;
+    }
+
+    /// <summary>Quem aparece no menu: adversários que você vê (v0.43: Aposta Certeira = qualquer jogador sem trevo, até você).</summary>
+    static List<Player> Candidates(Match m, Player lp, int slot)
+    {
+        bool any = Characters.TargetsAnyone(lp.CharacterId, slot);
+        if (any && !PlayerAbilities.CanBet(lp)) return new List<Player>();
+        return m.Players.Where(q => (any ? q.Ab.BetBy == 0 : q.Team != lp.Team) && !Characters.Immune(q, lp) && (q == lp || RealmView.Alpha(m, lp, q) > 0.01f))
+            .OrderBy(q => q == lp ? 1 : 0).ThenBy(q => q.GlobalPosition.DistanceSquaredTo(lp.GlobalPosition)).ToList();
     }
 
     void Close() { IsOpen = false; _slot = Mathf.Max(_slot, 0); _hover = -1; _blockUntil = Time.GetTicksMsec() + 180; }
@@ -174,7 +183,7 @@ public partial class TargetPicker : Control
         // v0.28: com poucos adversários o painel fica pelo menos da largura do título e da dica (antes o texto vazava)
         string hintTxt = Hint();
         float titleW = 110 * s + Mathf.Max(fb.GetStringSize(ab.Name, HorizontalAlignment.Left, -1, (int)(34 * s)).X,
-                                           f.GetStringSize("Clique no adversário escolhido", HorizontalAlignment.Left, -1, (int)(20 * s)).X) + 80 * s;
+                                           f.GetStringSize("Clique no jogador escolhido", HorizontalAlignment.Left, -1, (int)(20 * s)).X) + 80 * s;
         float hintW = f.GetStringSize(hintTxt, HorizontalAlignment.Left, -1, (int)(17 * s)).X + 110 * s;
         pw = Mathf.Max(pw, Mathf.Max(titleW, hintW));
         float ph = rows * ch + (rows - 1) * gap + 230 * s;
@@ -186,7 +195,7 @@ public partial class TargetPicker : Control
         float ty = _panel.Position.Y + 58 * s;
         AbilityIcons.Draw(this, ab.Icon, new Vector2(_panel.Position.X + 64 * s, ty), 30 * s, ab.Color, a);
         DrawString(fb, new Vector2(_panel.Position.X + 110 * s, ty - 4 * s), ab.Name, HorizontalAlignment.Left, -1, (int)(34 * s), new Color(1, 1, 1, a));
-        DrawString(f, new Vector2(_panel.Position.X + 112 * s, ty + 26 * s), "Clique no adversário escolhido", HorizontalAlignment.Left, -1, (int)(20 * s), new Color(0.75f, 0.82f, 0.95f, a));
+        DrawString(f, new Vector2(_panel.Position.X + 112 * s, ty + 26 * s), "Clique no jogador escolhido", HorizontalAlignment.Left, -1, (int)(20 * s), new Color(0.75f, 0.82f, 0.95f, a));
 
         float y0 = _panel.Position.Y + 120 * s;
         for (int i = 0; i < n; i++)

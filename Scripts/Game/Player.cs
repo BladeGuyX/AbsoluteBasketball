@@ -1,3 +1,4 @@
+using System.Linq;
 using Godot;
 
 namespace AB;
@@ -21,6 +22,8 @@ public partial class Player : CharacterBody3D
     public bool IsLocalHuman;
     public Match M;
     public Vector3 HomePos;          // posição do início do round (bonecos voltam para cá)
+    /// <summary>v0.43: onde estava a última vez que pisou no chão (a cesta vale 3 por aqui, não pela posição no ar).</summary>
+    public Vector3 LastFloorPos;
 
     // ---- estado ----
     public float Yaw;
@@ -148,7 +151,12 @@ public partial class Player : CharacterBody3D
         if (Ab != null)
         {
             float k = 1f;
-            if (Ab.CurseT > 0) k *= Mathf.Clamp(Tuning.I.OneCurseStatMult, 0.05f, 1f);
+            if (Ab.CurseT > 0)
+            {
+                // v0.43: time do amaldiçoado com só 1 jogador = perde mais (OneCurseStatMult1v1)
+                bool alone = M != null && M.Players.Count(q => q.Team == Team) == 1;
+                k *= Mathf.Clamp(alone ? Tuning.I.OneCurseStatMult1v1 : Tuning.I.OneCurseStatMult, 0.05f, 1f);
+            }
             if (M != null && M.DomainAgainst(this) != null) k *= Mathf.Clamp(Tuning.I.OneUltEnemyStatMult, 0.05f, 1f);
             if (k < 0.999f) St = St.Scaled(k);
             if (Ab.RealmSpeed) St.Speed *= 1f + Mathf.Max(0f, Tuning.I.OneRealmSpeedBonus);
@@ -164,7 +172,7 @@ public partial class Player : CharacterBody3D
         id = Characters.Clamp(id);
         if (id == CharacterId) return;
         CharacterId = id;
-        if (Ab != null) { Ab.OnRoundReset(); Ab.EyeT = 0; Ab.PresenceT = 0; Ab.ModeT = 0; Ab.ModeBonus = 0; Ab.BetT = 0; Ab.BetTarget = 0; Ab.UltT = 0; Ab.WallT = 0; }
+        if (Ab != null) { Ab.OnRoundReset(); Ab.EyeT = 0; Ab.PresenceT = 0; Ab.ModeT = 0; Ab.ModeBonus = 0; Ab.UltT = 0; Ab.WallT = 0; }
         if (_rig is CharacterVisual cv) cv.Remove(); else _visual?.QueueFree();
         _rig = CharacterVisual.Available ? new CharacterVisual(this) : new PlayerRig(this, Team);
         _visual = _rig.Root;
@@ -361,6 +369,8 @@ public partial class Player : CharacterBody3D
                 M.OnLanded(this);
             }
         }
+
+        if (!Airborne && IsOnFloor()) LastFloorPos = GlobalPosition;
 
         // ---------- roubo: acertou alguém? ----------
         if (StealDash > 0) CheckStealHit();
@@ -789,6 +799,7 @@ public partial class Player : CharacterBody3D
     public void Teleport(Vector3 pos, float yaw, bool setHome = true)
     {
         GlobalPosition = pos;
+        LastFloorPos = pos;
         if (setHome) HomePos = pos;
         Velocity = Vector3.Zero;
         Yaw = yaw;

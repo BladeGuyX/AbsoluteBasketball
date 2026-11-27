@@ -13,6 +13,7 @@ public sealed class SkillCheckState
     public float T, Dur, Window, PressT, Flash, Since;
     /// <summary>Muda a cada skill check novo (o cliente sabe se o resultado que ele mostra é deste ou do anterior).</summary>
     public int Seq;
+    static int _seqGen;
 
     public void Reset() { Active = Done = Ok = Pressed = false; T = Dur = PressT = Flash = Since = 0; Window = 0.1f; }
 
@@ -20,7 +21,7 @@ public sealed class SkillCheckState
     {
         Active = true; Done = false; Ok = false; Pressed = false;
         T = -Mathf.Max(prep, 0f); Dur = Mathf.Max(dur, 0.08f); Window = Mathf.Max(window, 0.01f); PressT = 0; Since = 0;
-        Seq++;
+        Seq = ++_seqGen & 0x7fff; // v0.43: único entre A e B (antes cada um contava o seu e o número de um batia com o do outro)
     }
 
     /// <summary>Host: avança e julga o aperto do jogador.</summary>

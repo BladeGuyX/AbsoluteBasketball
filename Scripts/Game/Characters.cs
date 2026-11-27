@@ -66,9 +66,9 @@ public static class Characters
                 new() { Name = "Arremesso Arriscado", Icon = AbIcon.Dice, Color = LuckGreen,
                     Short = "Arremessa direto na cesta (pode errar).",
                     Full = "Só com a bola e no lado adversário da quadra. Arremessa na hora direto na cesta do oponente. Pode ser bloqueado e tem {%LuckRiskyMissChance} de chance de errar. Recarga: {LuckRiskyCooldown} s." },
-                new() { Name = "Não me Decepciona", Icon = AbIcon.Target, Color = LuckGreen,
-                    Short = "Escolha um adversário: a cesta dele vale para você.",
-                    Full = "Abre um menu para escolher (com o mouse) um jogador adversário. Se ele fizer uma cesta nos próximos {LuckBetDuration} s, os pontos vão para o time do Luck e todo mundo é avisado. Se ele NÃO fizer, a próxima cesta dele vale o dobro (para o time dele; brilho dourado em volta dele). Só o time do Luck vê o trevo verde em cima do alvo — o outro time só descobre na cesta. Recarga: {LuckBetCooldown} s." },
+                new() { Name = "Aposta Certeira", Icon = AbIcon.Clover, Color = LuckGreen,
+                    Short = "Aposta na próxima cesta de um jogador: dobra ou zera.",
+                    Full = "Abre o menu para escolher qualquer jogador (adversário, aliado ou o próprio Luck). A próxima cesta dele (as de cutscene não contam) tem {%LuckBetAllyDoubleChance} de chance de valer o dobro e o resto de não valer nada se ele for do time do Luck; se for adversário, só {%LuckBetEnemyDoubleChance} de chance de dobrar. Todo mundo vê o trevo verde na cabeça dele até ele fazer a cesta. Não dá para usar enquanto algum adversário estiver com o trevo. Recarga: {LuckBetCooldown} s." },
                 new() { Name = "Impulso Descuidado", Icon = AbIcon.Dash, Color = LuckGreen,
                     Short = "Impulso para frente que rouba a bola (pode tropeçar).",
                     Full = "{%LuckDashChance} de chance de dar um impulso para onde você está olhando. Sem a bola, passar por quem está com ela durante o impulso rouba a bola. Senão, o Luck tropeça e fica atordoado por {LuckTripStun} s. Recarga: {LuckDashCooldown} s." },
@@ -107,7 +107,7 @@ public static class Characters
             {
                 new() { Name = "Muralha de Aço", Icon = AbIcon.Wall, Color = IronSilver,
                     Short = "Muralha na sua linha de 3 que barra a bola.",
-                    Full = "Na hora, surge uma muralha prateada e meio transparente, bem alta, em cima da linha de 3 inteira do time do Iron. Os jogadores atravessam livremente (até com a bola), mas a bola bate nela como numa parede: arremessos e passes de fora não passam. Quem entrar com a bola ainda pode arremessar lá de dentro. Dura {IronWallDuration} s. Recarga: {IronWallCooldown} s." },
+                    Full = "Na hora, surge uma muralha prateada e meio transparente, bem alta, em cima da linha de 3 inteira do time do Iron. A bola bate nela como numa parede: arremessos e passes de fora não passam. Os jogadores atravessam, mas o adversário que passar por ela com a bola (no chão ou no ar) a deixa cair na hora e não pode pegá-la de volta por {IronWallDropLockout} s. Dura {IronWallDuration} s. Recarga: {IronWallCooldown} s." },
                 new() { Name = "Pancada", Icon = AbIcon.Bonk, Color = IronSilver,
                     Short = "Pancada na cabeça de um adversário perto (sem a bola).",
                     Full = "Só com um adversário a até {IronBonkRange} m. O Iron dá uma pancada na cabeça do adversário mais perto de onde ele está olhando, que fica atordoado por {IronBonkStun} s. Não pode ser usada em quem está com a bola, mas o Iron pode usar estando com ela. Recarga: {IronBonkCooldown} s." },
@@ -131,10 +131,10 @@ public static class Characters
                     Full = "Só sem a bola e fora de qualquer Realm (não dá durante um Domínio das Sombras). O One entra no Realm por até {OneRealmDuration} s: fica {%OneRealmSpeedBonus} mais rápido, os adversários não o veem (os aliados o veem transparente) e ele vê todo mundo transparente. Lá ele atravessa os jogadores e não pode interagir com eles nem com a bola (mas pode usar as outras habilidades). Sai na hora apertando a habilidade de novo, pulando ou tentando roubar (a ação acontece normalmente). Se sair dentro de alguém, é empurrado só o bastante para fora. Recarga: {OneRealmCooldown} s (depois de sair)." },
                 new() { Name = "Abdução", Icon = AbIcon.Abduct, Color = OnePurple,
                     Short = "Puxa um jogador sem a bola para o Realm.",
-                    Full = "O jogador sem a bola (aliado ou adversário) a até {OneAbductRange} m mais perto de onde você está olhando some em partículas roxas e fica {OneAbductDuration} s no Realm: só pode andar e correr (nem habilidades), não interage com ninguém nem com a bola, não vê quem está fora e ninguém de fora o vê (nem os aliados dele). Só vale em quem não está em nenhum Realm (nem durante um Domínio das Sombras); o One pode usá-la estando no Realm. Se o One também estiver no Realm, os dois se veem normalmente. Outro One abduzido mantém o bônus de velocidade do Realm. Recarga: {OneAbductCooldown} s." },
+                    Full = "O jogador sem a bola (aliado ou adversário) a até {OneAbductRange} m mais perto de onde você está olhando some em partículas roxas e fica {OneAbductDuration} s no Realm ({OneAbductDuration1v1} s se o time adversário tiver só 1 jogador): só pode andar e correr (nem habilidades), não interage com ninguém nem com a bola, não vê quem está fora e ninguém de fora o vê (nem os aliados dele). Só vale em quem não está em nenhum Realm (nem durante um Domínio das Sombras); o One pode usá-la estando no Realm. Se o One também estiver no Realm, os dois se veem normalmente. Outro One abduzido mantém o bônus de velocidade do Realm. Recarga: {OneAbductCooldown} s ({OneAbductCooldown1v1} s contra 1 adversário)." },
                 new() { Name = "Maldição", Icon = AbIcon.Skull, Color = OnePurple,
                     Short = "Escolha um adversário: atributos menores e cestas valem menos.",
-                    Full = "Abre um menu para escolher um adversário. Por {OneCurseDuration} s ele fica com {%OneCurseStatMult} de todos os atributos e as cestas dele valem {OneCursePointLoss} ponto(s) a menos (lance livre não muda). Todo mundo vê uma caveirinha em cima dele. Recarga: {OneCurseCooldown} s." },
+                    Full = "Abre um menu para escolher um adversário. Por {OneCurseDuration} s ele fica com {%OneCurseStatMult} de todos os atributos ({%OneCurseStatMult1v1} se o time dele tiver só 1 jogador) e as cestas dele valem {OneCursePointLoss} ponto(s) a menos (lance livre não muda). Todo mundo vê uma caveirinha em cima dele. Recarga: {OneCurseCooldown} s." },
                 new() { Name = "Domínio das Sombras", Icon = AbIcon.Shadow, Color = new Color("ffd23f"),
                     Short = "A quadra vira o Realm: o time do One fica invisível para o adversário.",
                     Full = "Ultimate (não dá para usar estando no Realm nem com outro Domínio ativo). Uma cena mostra a quadra sendo engolida pelas sombras e todos vão para o Realm por {OneUltDuration} s (todo mundo continua jogando e interagindo normalmente). Só o One que usou fica {%OneRealmSpeedBonus} mais rápido. O time adversário fica com {%OneUltEnemyStatMult} dos atributos, as recargas e a barra da ultimate deles correm {%OneUltEnemyCdSlow} mais devagar e eles não veem nenhum jogador do time do One — só a bola (que parece flutuar na mão de quem eles não veem)." },
@@ -212,6 +212,9 @@ public static class Characters
     }
 
     /// <summary>A habilidade abre o menu de escolher um adversário (Luck 2, ultimate do Bolt).</summary>
+    /// <summary>v0.43: a Aposta Certeira do Luck pode escolher qualquer jogador (aliado, adversário ou ele mesmo).</summary>
+    public static bool TargetsAnyone(int id, int slot) => Clamp(id) == Luck && slot == 1;
+
     public static bool NeedsTarget(int id, int slot) => (Clamp(id) == Luck && slot == 1) || (Clamp(id) == Bolt && slot == 3) || (Clamp(id) == One && slot == 2);
 
     /// <summary>v0.37: o Iron no modo Indestrutível não sofre habilidades de adversários (<paramref name="by"/>).</summary>

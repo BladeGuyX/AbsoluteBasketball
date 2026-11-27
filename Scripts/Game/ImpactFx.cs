@@ -135,7 +135,6 @@ public partial class ImpactFx : Node3D
             case "fx_trip": Dust(this, pos with { Y = 0 }, 0.8f); Sfx.PlayLocal3D(this, "fail", pos, -5f); break;
             case "fx_bet":
                 // v0.27: só o time do Luck vê quem foi marcado (o alvo é o jogador logo abaixo da deixa)
-                if (BetHiddenHere(pos)) break;
                 Ring(pos, Green, 1.2f, 0.5f, true); Sfx.PlayLocal3D(this, "chime", pos, -8f, 0.8f); break;
             case "fx_betwin":
                 // v0.27: a cesta do alvo foi para o time do Luck — efeito grande no aro, para todo mundo

@@ -4,6 +4,21 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.43 — Aposta Certeira, Muralha que derruba a bola, cesta de 3 pela posição no chão
+
+1. **Luck — Aposta Certeira (2)** (substitui o "Não me Decepciona"): o menu agora mostra **todo mundo**, inclusive você e os aliados. Escolha alguém: aparece um **trevo verde na cabeça dele para todos**, até ele fazer uma cesta.
+2. Aposte num **aliado ou em você**: a próxima cesta dele tem 80% de chance de valer **o dobro** ("Aposta: ... valeu o dobro") e 20% de **não valer nada** ("+0").
+3. Aposte num **adversário**: só 20% de chance de dobrar e 80% de zerar.
+4. Com algum adversário de trevo, a habilidade não abre o menu (nem para escolher aliado). Cestas das cutscenes de ultimate não usam a aposta.
+5. **Muralha de Aço:** recarga **35 s**. Com a muralha de pé, entre (ou saia) pela linha de 3 do Iron **com a bola**, andando ou pulando: a bola **cai na hora** e você não pode pegá-la de volta por 1 s.
+6. **Investida:** quem é atropelado fica atordoado **5 s**.
+7. **Cesta de 3:** pule de fora da linha de 3, caia lá dentro e arremesse no ar: vale **3** (conta onde você pisou pela última vez). O contrário (pular de dentro e arremessar por cima da linha) vale 2.
+8. **One num 1x1** (time adversário com 1 jogador): Abdução dura **2 s** e recarrega em **50 s**; Maldição deixa o alvo com **50%** dos atributos (em 2x2 ou mais continua 70%, 3 s e 40 s).
+9. **Duelo online:** peça ao amigo para testar o Duelo de novo, tanto como Bolt quanto como alvo, e várias vezes seguidas: acertando o skill check, ele não pode mais perder.
+10. Online: os dois na v0.43.
+
+---
+
 ## v0.42 — ajustes do One (e Muralha do Iron)
 
 1. **Maldição:** dura **15 s**, recarga **40 s**, o alvo fica com **70%** dos atributos (antes 50%). Cesta de 2 do amaldiçoado vale 1; **lance livre continua valendo 1**.

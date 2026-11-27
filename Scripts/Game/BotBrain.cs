@@ -324,7 +324,7 @@ public sealed class BotBrain
         return false;
     }
 
-    /// <summary>Sem a bola: Presença, Não me Decepciona, Impulso, Arranha-Céu, Swap e a ult do Luck.</summary>
+    /// <summary>Sem a bola: Presença, Aposta Certeira, Impulso, Arranha-Céu, Swap e a ult do Luck.</summary>
     void AbilitiesOffBall(ref PlayerInput inp, float dt)
     {
         if (P.Stun > 0) return;
@@ -335,6 +335,13 @@ public sealed class BotBrain
         bool roll = R.Randf() < AbChance;
         if (P.CharacterId == Characters.Luck)
         {
+            // v0.43: Aposta Certeira — aposta em si mesmo ou no aliado com a bola (80% de dobrar)
+            if (a.Cd[1] <= 0 && roll && R.Randf() < 0.4f && PlayerAbilities.CanBet(P))
+            {
+                var hb = M.Ball.Holder;
+                var tg = hb != null && hb.Team == P.Team && hb.Ab.BetBy == 0 ? hb : P.Ab.BetBy == 0 ? P : null;
+                if (tg != null) { inp.Target = (byte)tg.Id; inp.TargetSlot = 1; return; }
+            }
             if (a.ModeT <= 0 && a.Ult >= 0.999f && roll) { inp.Pressed |= Btn.Ult; return; }
             if (a.ModeT > 0 && a.ModeT < 3f && R.Randf() < GambleChance) { inp.Pressed |= Btn.Ult; return; }
         }
@@ -350,8 +357,7 @@ public sealed class BotBrain
                 if (a.Cd[1] <= 0 && dist < T.KingPresenceRadius * 0.8f && (h.ChargingShot || toRim < 11f) && roll) inp.Pressed |= Btn.Ab2;
                 break;
             case Characters.Luck:
-                if (a.Cd[1] <= 0 && toRim < 13f && roll) { inp.Target = (byte)h.Id; inp.TargetSlot = 1; }
-                else if (a.Cd[2] <= 0 && dist > 1f && dist < 4.5f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
+                if (a.Cd[2] <= 0 && dist > 1f && dist < 4.5f && P.IsOnFloor() && roll) { inp.AimYaw = ShotMath.YawOf(rel); inp.Pressed |= Btn.Ab3; }
                 break;
             case Characters.Iron:
             {

@@ -53,11 +53,11 @@ public sealed class AbilityScenario
         P.CharacterId = character;
         P.UpdateStats();
         for (int i = 0; i < 3; i++) P.Ab.Cd[i] = 0;
-        P.Ab.EyeT = 0; P.Ab.PresenceT = 0; P.Ab.BetT = 0; P.Ab.BetTarget = 0; P.Ab.ModeT = 0; P.Ab.ModeBonus = 0;
+        P.Ab.EyeT = 0; P.Ab.PresenceT = 0; P.Ab.ModeT = 0; P.Ab.ModeBonus = 0;
         P.Ab.UltT = 0; P.Ab.WallT = 0; P.Ab.TiredT = 0; P.Ab.BonkT = 0; P.Ab.BlockCatch = false; P.Ab.EndCharge();
         P.UpdateStats();
         P.Ab.RealmT = 0;
-        foreach (var q in M.Players) { q.Stun = 0; q.StealFail = 0; q.Ab.AbductT = 0; q.Ab.CurseT = 0; q.UpdateStats(); }
+        foreach (var q in M.Players) { q.Stun = 0; q.StealFail = 0; q.Ab.AbductT = 0; q.Ab.CurseT = 0; q.Ab.BetBy = 0; q.UpdateStats(); }
         P.Stamina = P.St.StaminaMax;
     }
 
@@ -186,32 +186,42 @@ public sealed class AbilityScenario
         bool ownHalfBlocked = M.Ball.Holder == P && P.Ab.Cd[0] <= 0;
         Rec("arremesso_arriscado", riskyIn && M.Score[P.Team] == mySc && ownHalfBlocked);
 
-        // ---------------- Luck 2: Não me Decepciona (cesta do adversário marcado vai para o Luck) ----------------
+        // ---------------- Luck 2: Aposta Certeira (v0.43): trevo no alvo; a próxima cesta dele dobra ou zera ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
         Reset(Characters.Luck);
+        float keepEnemy = t.LuckBetEnemyDoubleChance, keepAlly = t.LuckBetAllyDoubleChance;
+        t.LuckBetEnemyDoubleChance = 0f; t.LuckBetAllyDoubleChance = 1f; // sorteio fixo no teste
         Place(e0, spot.X, spot.Z, rim1); Place(P, -spot.X, 0, null); Place(e1, 0, 6f); Place(ally, 0, -6f);
         M.Ball.GiveTo(e0);
         _inp.Target = (byte)e0.Id; _inp.TargetSlot = 1; yield return 0;
-        bool marked = P.Ab.BetTarget == e0.Id && P.Ab.BetT > 0;
-        int luckSc = M.Score[P.Team], eSc = M.Score[e0.Team];
+        bool marked = e0.Ab.BetBy == P.Id && P.Ab.Cd[1] > 0;
+        // com um adversário de trevo, não dá para apostar de novo (nem num aliado)
+        P.Ab.Cd[1] = 0;
+        _inp.Target = (byte)ally.Id; _inp.TargetSlot = 1; yield return 0;
+        bool blocked = ally.Ab.BetBy == 0 && P.Ab.Cd[1] <= 0;
+        int eSc = M.Score[e0.Team], zero0 = Ev("BET_ZERO");
         e0.TestShot();
-        n = 0; while (M.Score[P.Team] == luckSc && n++ < 240) yield return 0;
-        bool betWin = marked && M.Score[P.Team] > luckSc && M.Score[e0.Team] == eSc && Ev("BET_WIN") > 0;
-        // v0.38: não fez a cesta a tempo → a próxima cesta dele vale o dobro (para o time dele)
+        n = 0; while (Ev("BET_ZERO") == zero0 && n++ < 240) yield return 0;
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        bool zeroed = Ev("BET_ZERO") > zero0 && M.Score[e0.Team] == eSc && e0.Ab.BetBy == 0;
+        // aposta em si mesmo (aliado): a cesta dobra
         foreach (var _ in WaitPlaying()) yield return 0;
         Reset(Characters.Luck);
-        Place(e0, spot.X, spot.Z, rim1); Place(P, -spot.X, 0, null);
-        M.Ball.GiveTo(e0);
-        _inp.Target = (byte)e0.Id; _inp.TargetSlot = 1; yield return 0;
-        foreach (var _ in Wait(t.LuckBetDuration + 0.3f)) yield return 0;
-        bool doubleOn = e0.Ab.DoubleNext && P.Ab.BetT <= 0 && Ev("BET_DOUBLE") > 0;
-        luckSc = M.Score[P.Team]; eSc = M.Score[e0.Team];
-        e0.TestShot();
-        n = 0; while (M.Score[e0.Team] == eSc && n++ < 240) yield return 0;
-        int basePts = Mathf.RoundToInt(M.Geo.IsThree(e0.GlobalPosition, CourtGeo.AttackHoop(e0.Team)) ? t.PointsOutside : t.PointsInside);
-        bool doubled = M.Score[e0.Team] - eSc == 2 * basePts && M.Score[P.Team] == luckSc && !e0.Ab.DoubleNext;
-        if (!(betWin && doubleOn && doubled)) GD.Print($"[ABIL] nao_me_decepciona: ganhou={betWin} dobro_ligado={doubleOn} dobrou={doubled} ({M.Score[e0.Team] - eSc} pts)");
-        Rec("nao_me_decepciona", betWin && doubleOn && doubled);
+        var rimL = Rim(P.Team);
+        var spotL = rimL - new Vector3(CourtGeo.HoopSign(CourtGeo.AttackHoop(P.Team)) * 4f, 0, 0); spotL.Y = 0;
+        Place(P, spotL.X, spotL.Z, rimL); Place(e0, -spotL.X, 6f); Place(e1, -spotL.X, -6f); Place(ally, 0, 8f);
+        M.Ball.GiveTo(P);
+        _inp.Target = (byte)P.Id; _inp.TargetSlot = 1; yield return 0;
+        bool self = P.Ab.BetBy == P.Id;
+        int myBet = M.Score[P.Team], dbl0 = Ev("BET_DOUBLE");
+        P.TestShot();
+        n = 0; while (Ev("BET_DOUBLE") == dbl0 && n++ < 240) yield return 0;
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        bool doubled = Ev("BET_DOUBLE") > dbl0 && M.Score[P.Team] - myBet == 2 * Mathf.RoundToInt(t.PointsInside) && P.Ab.BetBy == 0;
+        t.LuckBetEnemyDoubleChance = keepEnemy; t.LuckBetAllyDoubleChance = keepAlly;
+        bool okBet = marked && blocked && zeroed && self && doubled;
+        if (!okBet) GD.Print($"[ABIL] aposta_certeira: marcou={marked} bloqueou={blocked} zerou={zeroed} si_mesmo={self} dobrou={doubled}");
+        Rec("aposta_certeira", okBet);
 
         // ---------------- Luck 3: Impulso Descuidado (rouba passando / tropeça) ----------------
         foreach (var _ in WaitPlaying()) yield return 0;
@@ -354,7 +364,23 @@ public sealed class AbilityScenario
         int n = 0; while (M.Score[e0.Team] == sc0 && n++ < 200) yield return 0;
         bool inside = M.Score[e0.Team] > sc0;
         if (!(wallOn && blocked && stillOn && inside)) GD.Print($"[ABIL] muralha: on={wallOn} barrou={blocked} ainda={stillOn} dentro={inside}");
-        Rec("muralha_de_aco", wallOn && blocked && stillOn && inside);
+        // v0.43: atravessar a muralha com a bola = a bola cai e ele não pega de volta por um tempo
+        foreach (var _ in WaitPlaying()) yield return 0;
+        Reset(Characters.Iron);
+        P.Ab.WallT = 5f;
+        Place(e0, rimD.X + inward * (M.Geo.ThreePt + 1.0f), 0.5f, rimD);
+        M.Ball.GiveTo(e0);
+        foreach (var _ in Wait(0.1f)) yield return 0;
+        int wd0 = Ev("WALL_DROP");
+        for (int i = 1; i <= 10; i++)   // anda para dentro atravessando a linha de 3
+        {
+            e0.GlobalPosition = new Vector3(rimD.X + inward * (M.Geo.ThreePt + 1.0f - 0.2f * i), e0.GlobalPosition.Y, 0.5f);
+            yield return 0;
+        }
+        bool dropped = Ev("WALL_DROP") > wd0 && M.Ball.Holder != e0 && e0.BallLockoutTimer > t.IronWallDropLockout - 0.1f;
+        P.Ab.WallT = 0;
+        if (!dropped) GD.Print($"[ABIL] muralha: derrubou={dropped} ev={Ev("WALL_DROP") - wd0} dono={(M.Ball.Holder == e0)} lock={e0.BallLockoutTimer:0.00} wall={M.Geo.Wall[def]} tres={M.Geo.IsThree(e0.GlobalPosition, def)} pos={e0.GlobalPosition} fase={M.Phase}");
+        Rec("muralha_de_aco", wallOn && blocked && stillOn && inside && dropped);
 
         // ---- (2) Pancada: atordoa quem está perto (o Iron pode estar com a bola); não vale em quem tem a bola ----
         foreach (var _ in WaitPlaying()) yield return 0;

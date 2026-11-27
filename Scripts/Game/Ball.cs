@@ -16,7 +16,9 @@ public partial class Ball : Node3D
     public Vector3 Vel;
     public Player LastThrower;
     public int ThrowTeam = -1;     // time de quem arremessou/passou (para bloqueio)
-    public Vector3 ShotOrigin;     // pés de quem arremessou (2 ou 3 pontos)
+    public Vector3 ShotOrigin;     // pés de quem arremessou na hora de soltar
+    /// <summary>v0.43: onde quem arremessou pisou pela última vez (2 ou 3 pontos).</summary>
+    public Vector3 ShotFloorPos;
     public Player PassTarget;
     public float FlightTime;
     public bool FreeThrow;         // lance livre: se entrar vale FreeThrowPoints (some ao tocar o chão / ser pega)
@@ -137,6 +139,7 @@ void fragment() {
         LastThrower = by;
         ThrowTeam = by.Team;
         ShotOrigin = by.GlobalPosition;
+        ShotFloorPos = by.Airborne ? by.LastFloorPos : by.GlobalPosition;
         _noScoreHoop = -1;
         FreeThrow = false;
         NoScore = false;

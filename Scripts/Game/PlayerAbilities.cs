@@ -26,8 +26,7 @@ public sealed class PlayerAbilities
     public float PresenceT;                       // King 2: Presença Implacável
     public bool PerfectDribble;                   // King 3: o drible atual é o Drible Perfeito
     public float JinxFlash;                       // arremesso afetado pela Presença: borda vermelha na tela deste jogador
-    public int BetTarget; public float BetT;      // Luck 2: adversário marcado e tempo restante
-    public bool DoubleNext;                       // v0.38: alvo do "Não me Decepciona" que não fez cesta a tempo — a próxima cesta dele vale o dobro
+    public int BetBy;                             // v0.43: Aposta Certeira — Id do Luck que apostou NESTE jogador (0 = sem trevo)
     public float DashT;                           // Luck 3: impulso
     public float ModeT, ModeBonus;                // Luck ult: modo apostador
     public int ModeWins, ModeGambles;
@@ -55,7 +54,7 @@ public sealed class PlayerAbilities
 
     public bool Enabled => M != null && M.AbilitiesOn && !P.IsDummy;
     public bool Ready(int slot) => slot < 3 ? Cd[slot] <= 0 : (Ult >= 0.999f && UltT <= 0) || (Char == Characters.Luck && ModeT > 0);
-    public float CdFrac(int slot) => slot < 3 ? Mathf.Clamp(Cd[slot] / Mathf.Max(Characters.Cooldown(Char, slot), 0.01f), 0, 1) : 0;
+    public float CdFrac(int slot) => slot < 3 ? Mathf.Clamp(Cd[slot] / Mathf.Max(CooldownFor(slot), 0.01f), 0, 1) : 0;
 
     /// <summary>Bônus instantâneo na barra da ultimate (bloqueio, passe, roubo, cesta). Não enche com a ult ativa.</summary>
     public void AddUlt(float v)
@@ -84,22 +83,6 @@ public sealed class PlayerAbilities
         if (EyeT > 0) EyeT -= dt;
         if (PresenceT > 0) PresenceT -= dt;
         if (JinxFlash > 0) JinxFlash -= dt;
-        if (BetT > 0)
-        {
-            BetT -= dt;
-            if (BetT <= 0)
-            {
-                // v0.38: o alvo não fez a cesta nos segundos da aposta → a próxima cesta dele vale o dobro (para o time dele)
-                var tgt = M?.Players.FirstOrDefault(q => q.Id == BetTarget);
-                if (tgt != null && tgt.Team != P.Team)
-                {
-                    tgt.Ab.DoubleNext = true;
-                    Sfx.Play3D(M, "fx_betx2", tgt.GlobalPosition + Vector3.Up * 2.4f);
-                    M.LogEvent("BET_DOUBLE", P, tgt);
-                }
-                BetTarget = 0;
-            }
-        }
         if (DashT > 0) DashT -= dt;
         if (ModeT > 0) { ModeT -= dt; if (ModeT <= 0) EndMode(); }
         if (PerfectDribble && !P.IsDribbling) PerfectDribble = false;
@@ -124,7 +107,14 @@ public sealed class PlayerAbilities
         if (inp.Target > 0) TryTarget(inp.TargetSlot, inp.Target);
     }
 
-    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f : Characters.Cooldown(Char, slot);
+    void StartCd(int slot) => Cd[slot] = M.Cfg.TestMode && NoCd ? 0f : CooldownFor(slot);
+
+    /// <summary>v0.43: quantos jogadores tem o time adversário deste jogador.</summary>
+    int OppCount => M?.Players.Count(q => q.Team != P.Team) ?? 2;
+
+    /// <summary>Recarga cheia da habilidade (v0.43: a Abdução tem outra recarga contra só 1 adversário).</summary>
+    public float CooldownFor(int slot) =>
+        Char == Characters.One && slot == 1 && OppCount == 1 ? T.OneAbductCooldown1v1 : Characters.Cooldown(Char, slot);
 
     /// <summary>v0.39: Muralhas de Aço que a bola lançada por <paramref name="thrower"/> atravessa (bit = cesta): o Iron
     /// Indestrutível não é afetado por nenhuma habilidade adversária, nem pela muralha do outro time.</summary>
@@ -174,13 +164,17 @@ public sealed class PlayerAbilities
     void TryTarget(int slot, int targetId)
     {
         var tgt = M.Players.FirstOrDefault(q => q.Id == targetId);
-        if (tgt == null || tgt.Team == P.Team || Characters.Immune(tgt, P)) return;
+        if (tgt == null || Characters.Immune(tgt, P)) return;
         if (Char == Characters.Luck && slot == 1 && Cd[1] <= 0)
         {
-            BetTarget = tgt.Id; BetT = T.LuckBetDuration; StartCd(1);
+            // v0.43: Aposta Certeira — qualquer jogador sem trevo; não dá com algum adversário já com o trevo
+            if (!CanBet(P) || tgt.Ab.BetBy != 0) return;
+            tgt.Ab.BetBy = P.Id; StartCd(1);
             Sfx.Play3D(M, "fx_bet", tgt.GlobalPosition + Vector3.Up * 2.4f);
-            M.LogEvent("ABILITY", P, tgt);
+            M.LogEvent("BET", P, tgt);
+            return;
         }
+        if (tgt.Team == P.Team) return;
         else if (Char == Characters.One && slot == 2 && Cd[2] <= 0)
         {
             tgt.Ab.CurseT = T.OneCurseDuration; StartCd(2);
@@ -192,6 +186,9 @@ public sealed class PlayerAbilities
             Ult = 0; M.LogEvent("ULT", P, tgt);
         }
     }
+
+    /// <summary>v0.43: Aposta Certeira liberada? (nenhum adversário do Luck com o trevo na cabeça)</summary>
+    public static bool CanBet(Player luck) => luck?.M != null && !luck.M.Players.Any(q => q.Team != luck.Team && q.Ab != null && q.Ab.BetBy != 0);
 
     bool CanStartCutscene() => P.HasBall && M.Phase == MatchPhase.Playing && !P.Airborne && !P.ChargingShot && !P.ChargingPass;
 
@@ -607,7 +604,7 @@ public sealed class PlayerAbilities
         q.StealDash = 0; q.ChargingJump = false;
         q.Ab.DashT = 0;
         if (q.Ab.Charging) q.Ab.EndCharge();
-        q.Ab.AbductT = T.OneAbductDuration;
+        q.Ab.AbductT = OppCount == 1 ? T.OneAbductDuration1v1 : T.OneAbductDuration; // v0.43: contra 1 adversário dura menos
         Sfx.Play3D(M, "fx_abduct", q.GlobalPosition + Vector3.Up);
         M.LogEvent("ABDUCT", P, q);
         return true;
@@ -636,39 +633,38 @@ public sealed class PlayerAbilities
 
     public struct NetData
     {
-        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, BetT, DashT, ModeT, ModeBonus, WallT, BonkT, ChargeT, TiredT, UltT, RealmT, AbductT, CurseT;
-        public byte Flags, BetTarget, ModeWins;
+        public float Cd0, Cd1, Cd2, Ult, EyeT, PresenceT, JinxFlash, DashT, ModeT, ModeBonus, WallT, BonkT, ChargeT, TiredT, UltT, RealmT, AbductT, CurseT;
+        public byte Flags, BetBy, ModeWins;
     }
 
     public NetData Capture() => new()
     {
-        Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash, BetT = BetT,
-        DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetTarget = (byte)Mathf.Clamp(BetTarget, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
+        Cd0 = Cd[0], Cd1 = Cd[1], Cd2 = Cd[2], Ult = Ult, EyeT = EyeT, PresenceT = PresenceT, JinxFlash = JinxFlash,
+        DashT = DashT, ModeT = ModeT, ModeBonus = ModeBonus, BetBy = (byte)Mathf.Clamp(BetBy, 0, 255), ModeWins = (byte)Mathf.Clamp(ModeWins, 0, 255),
         WallT = WallT, BonkT = BonkT, ChargeT = ChargeT, TiredT = TiredT, UltT = UltT, RealmT = RealmT, AbductT = AbductT, CurseT = CurseT,
-        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0) | (DoubleNext ? 32 : 0)),
+        Flags = (byte)((EyeArmed ? 1 : 0) | (PerfectDribble ? 2 : 0) | (SkyJump ? 4 : 0) | (NoCd ? 8 : 0) | (BlockCatch ? 16 : 0)),
     };
 
     public static void Write(NetWriter w, in NetData d)
     {
-        w.F(d.Cd0); w.F(d.Cd1); w.F(d.Cd2); w.F(d.Ult); w.F(d.EyeT); w.F(d.PresenceT); w.F(d.JinxFlash); w.F(d.BetT); w.F(d.DashT);
-        w.F(d.ModeT); w.F(d.ModeBonus); w.U8(d.Flags); w.U8(d.BetTarget); w.U8(d.ModeWins);
+        w.F(d.Cd0); w.F(d.Cd1); w.F(d.Cd2); w.F(d.Ult); w.F(d.EyeT); w.F(d.PresenceT); w.F(d.JinxFlash); w.F(d.DashT);
+        w.F(d.ModeT); w.F(d.ModeBonus); w.U8(d.Flags); w.U8(d.BetBy); w.U8(d.ModeWins);
         w.F(d.WallT); w.F(d.BonkT); w.F(d.ChargeT); w.F(d.TiredT); w.F(d.UltT); w.F(d.RealmT); w.F(d.AbductT); w.F(d.CurseT);
     }
 
     public static NetData Read(NetReader r) => new()
     {
-        Cd0 = r.F(), Cd1 = r.F(), Cd2 = r.F(), Ult = r.F(), EyeT = r.F(), PresenceT = r.F(), JinxFlash = r.F(), BetT = r.F(), DashT = r.F(),
-        ModeT = r.F(), ModeBonus = r.F(), Flags = r.U8(), BetTarget = r.U8(), ModeWins = r.U8(),
+        Cd0 = r.F(), Cd1 = r.F(), Cd2 = r.F(), Ult = r.F(), EyeT = r.F(), PresenceT = r.F(), JinxFlash = r.F(), DashT = r.F(),
+        ModeT = r.F(), ModeBonus = r.F(), Flags = r.U8(), BetBy = r.U8(), ModeWins = r.U8(),
         WallT = r.F(), BonkT = r.F(), ChargeT = r.F(), TiredT = r.F(), UltT = r.F(), RealmT = r.F(), AbductT = r.F(), CurseT = r.F(),
     };
 
     public void Apply(in NetData d)
     {
         Cd[0] = d.Cd0; Cd[1] = d.Cd1; Cd[2] = d.Cd2; Ult = d.Ult; EyeT = d.EyeT; PresenceT = d.PresenceT; JinxFlash = d.JinxFlash;
-        BetT = d.BetT; DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetTarget = d.BetTarget; ModeWins = d.ModeWins;
+        DashT = d.DashT; ModeT = d.ModeT; ModeBonus = d.ModeBonus; BetBy = d.BetBy; ModeWins = d.ModeWins;
         EyeArmed = (d.Flags & 1) != 0; PerfectDribble = (d.Flags & 2) != 0; SkyJump = (d.Flags & 4) != 0; NoCd = (d.Flags & 8) != 0;
         WallT = d.WallT; BonkT = d.BonkT; ChargeT = d.ChargeT; TiredT = d.TiredT; UltT = d.UltT; BlockCatch = (d.Flags & 16) != 0;
-        DoubleNext = (d.Flags & 32) != 0;
         RealmT = d.RealmT; AbductT = d.AbductT; CurseT = d.CurseT;
     }
 }

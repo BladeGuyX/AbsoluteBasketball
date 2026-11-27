@@ -5,7 +5,7 @@ namespace AB;
 /// <summary>
 /// v0.26: efeitos contínuos das habilidades em volta de um jogador (lê o estado replicado, então funciona no cliente):
 /// partículas vermelhas (Presença Implacável do King), brilho vermelho na cabeça (Olho do Rei esperando), partículas verdes
-/// (modo apostador do Luck), trevo verde em cima de quem foi marcado pelo "Não me Decepciona", faíscas azuis no ar
+/// (modo apostador do Luck), trevo verde em cima de quem tem a Aposta Certeira do Luck (v0.43), faíscas azuis no ar
 /// (Arranha-Céu), anel do chão claro em quem vai ser trocado (Swap, só na tela do Bolt — v0.27) e setinha amarela em quem está selecionado
 /// no menu de escolher adversário.
 /// </summary>
@@ -92,16 +92,15 @@ public partial class AbilityAura : Node3D
         _sky.Emitting = a.SkyJump && P.Airborne;
         _eye.Emitting = a.EyeT > 0 || a.EyeArmed;
         _steel.Emitting = a.Indestructible;
-        _gold.Emitting = a.DoubleNext;
+        _gold.Emitting = false;
         _shadow.Emitting = a.Phased || a.Domain;
         _skull.Visible = a.CurseT > 0;
         if (_skull.Visible) { _skull.Rotation = new Vector3(0, Mathf.Sin(_t * 1.6f) * 0.6f, 0); _skull.Position = new Vector3(0, 2.75f + 0.06f * Mathf.Sin(_t * 3f), 0); }
 
-        // marcado pelo "Não me Decepciona" de algum Luck adversário — v0.27: só o time do Luck vê (o alvo não sabe)
+        // Aposta Certeira (v0.43): trevo visível para todos
         var lp = P.M.LocalPlayer;
         bool marked = false;
-        foreach (var q in P.M.Players)
-            if (q.Team != P.Team && q.Ab != null && q.Ab.BetT > 0 && q.Ab.BetTarget == P.Id && (lp == null || lp.Team == q.Team)) { marked = true; break; }
+        marked = a.BetBy != 0; // v0.43: Aposta Certeira — todo mundo vê o trevo até ele fazer a cesta
         _clover.Visible = marked;
         if (marked) { _clover.Rotation = new Vector3(0, _t * 3f, 0); _clover.Position = new Vector3(0, 2.75f + 0.06f * Mathf.Sin(_t * 4f), 0); }
 

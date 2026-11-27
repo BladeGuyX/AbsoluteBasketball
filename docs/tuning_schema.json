@@ -2046,21 +2046,32 @@
     "sub": "Habilidades"
   },
   {
-    "key": "LuckBetDuration",
+    "key": "LuckBetAllyDoubleChance",
     "section": "Luck",
-    "label": "(2) N\u00E3o me Decepciona: dura\u00E7\u00E3o",
-    "desc": "Segundos em que a cesta do advers\u00E1rio escolhido conta para o time do Luck.",
-    "min": 1,
-    "max": 60,
-    "step": 0.5,
-    "default": 5,
+    "label": "(2) Aposta Certeira: chance de dobrar (aliado)",
+    "desc": "Chance (0\u20131) da pr\u00F3xima cesta valer o dobro quando o alvo \u00E9 aliado (ou o pr\u00F3prio Luck). Sen\u00E3o, a cesta n\u00E3o vale nada.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.8,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "LuckBetEnemyDoubleChance",
+    "section": "Luck",
+    "label": "(2) Aposta Certeira: chance de dobrar (advers\u00E1rio)",
+    "desc": "Chance (0\u20131) da pr\u00F3xima cesta valer o dobro quando o alvo \u00E9 advers\u00E1rio. Sen\u00E3o, a cesta n\u00E3o vale nada.",
+    "min": 0,
+    "max": 1,
+    "step": 0.01,
+    "default": 0.2,
     "sub": "Habilidades"
   },
   {
     "key": "LuckBetCooldown",
     "section": "Luck",
-    "label": "(2) N\u00E3o me Decepciona: recarga",
-    "desc": "Segundos de recarga do N\u00E3o me Decepciona.",
+    "label": "(2) Aposta Certeira: recarga",
+    "desc": "Segundos de recarga da Aposta Certeira.",
     "min": 1,
     "max": 120,
     "step": 0.5,
@@ -2592,7 +2603,7 @@
     "min": 1,
     "max": 120,
     "step": 0.5,
-    "default": 45,
+    "default": 35,
     "sub": "Habilidades"
   },
   {
@@ -2647,7 +2658,7 @@
     "min": 0,
     "max": 10,
     "step": 0.25,
-    "default": 4,
+    "default": 5,
     "sub": "Habilidades"
   },
   {
@@ -2704,6 +2715,17 @@
     "step": 0.01,
     "default": 0.15,
     "sub": "Habilidades"
+  },
+  {
+    "key": "IronWallDropLockout",
+    "section": "Iron",
+    "label": "Muralha: sem pegar a bola depois de derrubar",
+    "desc": "Advers\u00E1rio que atravessa a Muralha de A\u00E7o com a bola (no ch\u00E3o ou no ar) a deixa cair na hora e n\u00E3o pode peg\u00E1-la de volta por este tempo (s).",
+    "min": 0,
+    "max": 5,
+    "step": 0.1,
+    "default": 1,
+    "sub": "Avan\u00E7ado"
   },
   {
     "key": "IronWallHeight",
@@ -2987,6 +3009,39 @@
     "desc": "Quanto mais devagar as recargas (e a barra da ultimate) do time advers\u00E1rio correm durante o Dom\u00EDnio (0,5 = 50% mais devagar).",
     "min": 0,
     "max": 0.95,
+    "step": 0.05,
+    "default": 0.5,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "OneAbductDuration1v1",
+    "section": "One",
+    "label": "(2) Abdu\u00E7\u00E3o contra 1 advers\u00E1rio: dura\u00E7\u00E3o",
+    "desc": "Dura\u00E7\u00E3o da Abdu\u00E7\u00E3o quando o time advers\u00E1rio tem s\u00F3 1 jogador.",
+    "min": 0.5,
+    "max": 20,
+    "step": 0.25,
+    "default": 2,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "OneAbductCooldown1v1",
+    "section": "One",
+    "label": "(2) Abdu\u00E7\u00E3o contra 1 advers\u00E1rio: recarga",
+    "desc": "Recarga da Abdu\u00E7\u00E3o quando o time advers\u00E1rio tem s\u00F3 1 jogador.",
+    "min": 1,
+    "max": 120,
+    "step": 0.5,
+    "default": 50,
+    "sub": "Habilidades"
+  },
+  {
+    "key": "OneCurseStatMult1v1",
+    "section": "One",
+    "label": "(3) Maldi\u00E7\u00E3o contra 1 advers\u00E1rio: atributos restantes",
+    "desc": "Fra\u00E7\u00E3o que sobra dos atributos do amaldi\u00E7oado quando o time dele tem s\u00F3 1 jogador (0,5 = perde 50%).",
+    "min": 0.1,
+    "max": 1,
     "step": 0.05,
     "default": 0.5,
     "sub": "Habilidades"
