@@ -14,6 +14,7 @@ public partial class AbilityAura : Node3D
     public Player P;
     CpuParticles3D _red, _green, _sky, _eye, _steel, _gold, _shadow;
     Node3D _clover, _pick, _skull;
+    StandardMaterial3D _cloverMat;
     float _t, _swapK;
 
     public override void _Ready()
@@ -42,7 +43,8 @@ public partial class AbilityAura : Node3D
         AddChild(_skull);
 
         _clover = new Node3D { Position = new Vector3(0, 2.75f, 0), Visible = false };
-        var g = Mat.Unshaded(new Color("3ccf6e"));
+        // v0.44: material próprio (muda de cor: verde = bônus, vermelho = penalidade)
+        var g = _cloverMat = new StandardMaterial3D { ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded, AlbedoColor = new Color("3ccf6e") };
         for (int i = 0; i < 4; i++)
         {
             float a = i * Mathf.Tau / 4f;
@@ -102,6 +104,13 @@ public partial class AbilityAura : Node3D
         bool marked = false;
         marked = a.BetBy != 0; // v0.43: Aposta Certeira — todo mundo vê o trevo até ele fazer a cesta
         _clover.Visible = marked;
+        if (marked)
+        {
+            // v0.44: aposta de um Luck adversário = 80% de zerar → trevo vermelho; do próprio time = 80% de dobrar → verde
+            var bettor = P.M.ById(a.BetBy);
+            bool penalty = bettor != null && bettor.Team != P.Team;
+            _cloverMat.AlbedoColor = penalty ? new Color("e8313a") : new Color("3ccf6e");
+        }
         if (marked) { _clover.Rotation = new Vector3(0, _t * 3f, 0); _clover.Position = new Vector3(0, 2.75f + 0.06f * Mathf.Sin(_t * 4f), 0); }
 
         // v0.27: alvo do Swap = anel do chão bem mais claro, sempre que você é o Bolt e o Swap está pronto (só nesta tela)

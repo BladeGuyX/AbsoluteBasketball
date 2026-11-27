@@ -64,6 +64,24 @@ public static class AbilityIcons
                 for (int i = 0; i < 4; i++) { float a = i * Mathf.Tau / 4f + Mathf.Pi / 4f; ci.DrawCircle(c + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r * 0.25f, r * 0.24f, A(new Color("3ccf6e").Lightened(0.3f))); }
                 ci.DrawLine(P(0, 0), P(0.15f, 0.6f), A(new Color("3ccf6e").Lightened(0.3f)), lw, true);
                 break;
+            case AbIcon.Chip:
+            {
+                // v0.44: ficha de aposta (Aposta Certeira) — a ult do Luck continua com o trevo
+                var white = A(new Color("f4f4f2"));
+                var green = A(new Color("1f7a43"));
+                ci.DrawCircle(c, r * 0.6f, green);
+                for (int i = 0; i < 6; i++)   // listras brancas da borda da ficha
+                {
+                    float a = i * Mathf.Tau / 6f;
+                    ci.DrawArc(c, r * 0.52f, a - 0.2f, a + 0.2f, 6, white, r * 0.14f, true);
+                }
+                ci.DrawCircle(c, r * 0.4f, white);
+                var f = ThemeDB.FallbackFont;
+                int fs = Mathf.Max(9, (int)(r * 0.5f));
+                var sz = f.GetStringSize("2x", HorizontalAlignment.Left, -1, fs);
+                ci.DrawString(f, c + new Vector2(-sz.X / 2, fs * 0.35f), "2x", HorizontalAlignment.Left, -1, fs, green);
+                break;
+            }
             case AbIcon.Lightning:
                 ci.DrawColoredPolygon(new[] { P(0.12f, -0.65f), P(-0.38f, 0.08f), P(-0.02f, 0.08f), P(-0.15f, 0.65f), P(0.38f, -0.12f), P(0.04f, -0.12f) }, A(new Color("fff27a")));
                 break;

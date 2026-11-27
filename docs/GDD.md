@@ -352,3 +352,7 @@ Implementação (Claude): `Ab.RealmT`/`AbductT`/`CurseT` (snapshot, `NetProtocol
 - Luck: "Não me Decepciona" foi substituída pela **Aposta Certeira**: o Luck escolhe qualquer jogador (adversário, aliado ou ele mesmo) no mesmo menu; a próxima cesta desse jogador (as de cutscene não contam) tem 20% de valer o dobro e 80% de não valer nada se o alvo for adversário, e 80% / 20% se for aliado. O trevo fica na cabeça do alvo, visível para todos, até ele fazer a cesta. Não dá para usar se algum jogador do time adversário já estiver com o trevo. Recarga 50 s.
 
 Implementação (Claude): a aposta vale também para lance livre (é uma cesta); um jogador que já está com trevo não pode receber outro; quem atravessa a muralha só perde a bola se ela estiver de pé e ele não for o Iron Indestrutível; teletransportes (Swap, início de round) não contam como atravessar.
+
+## Revisões do usuário (v0.44)
+- Aposta Certeira: trevo vermelho quando é penalidade (80% de zerar = alvo adversário), verde quando é bônus; recarga 60 s; ícone diferente do da Sorte Infinita.
+- Muralha de Aço: recarga 40 s; a bola de quem entra com ela cai para dentro da área de 3 (dá para pegar de volta e pontuar lá de dentro).

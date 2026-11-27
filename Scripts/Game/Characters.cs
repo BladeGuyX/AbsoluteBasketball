@@ -3,7 +3,7 @@ using Godot;
 namespace AB;
 
 /// <summary>Ícone desenhado (sem imagem) de cada habilidade — ver <see cref="AbilityIcons"/>.</summary>
-public enum AbIcon { Eye, Aura, PerfectDribble, Crown, Dice, Target, Dash, Clover, Lightning, Swap, Tower, Duel, Wall, Bonk, Charge, Shield, Realm, Abduct, Skull, Shadow }
+public enum AbIcon { Eye, Aura, PerfectDribble, Crown, Dice, Target, Dash, Clover, Lightning, Swap, Tower, Duel, Wall, Bonk, Charge, Shield, Realm, Abduct, Skull, Shadow, Chip }
 
 /// <summary>Uma habilidade (slots 0–2) ou a ultimate (slot 3) de um personagem.</summary>
 public sealed class AbilityDef
@@ -66,9 +66,9 @@ public static class Characters
                 new() { Name = "Arremesso Arriscado", Icon = AbIcon.Dice, Color = LuckGreen,
                     Short = "Arremessa direto na cesta (pode errar).",
                     Full = "Só com a bola e no lado adversário da quadra. Arremessa na hora direto na cesta do oponente. Pode ser bloqueado e tem {%LuckRiskyMissChance} de chance de errar. Recarga: {LuckRiskyCooldown} s." },
-                new() { Name = "Aposta Certeira", Icon = AbIcon.Clover, Color = LuckGreen,
+                new() { Name = "Aposta Certeira", Icon = AbIcon.Chip, Color = LuckGreen,
                     Short = "Aposta na próxima cesta de um jogador: dobra ou zera.",
-                    Full = "Abre o menu para escolher qualquer jogador (adversário, aliado ou o próprio Luck). A próxima cesta dele (as de cutscene não contam) tem {%LuckBetAllyDoubleChance} de chance de valer o dobro e o resto de não valer nada se ele for do time do Luck; se for adversário, só {%LuckBetEnemyDoubleChance} de chance de dobrar. Todo mundo vê o trevo verde na cabeça dele até ele fazer a cesta. Não dá para usar enquanto algum adversário estiver com o trevo. Recarga: {LuckBetCooldown} s." },
+                    Full = "Abre o menu para escolher qualquer jogador (adversário, aliado ou o próprio Luck). A próxima cesta dele (as de cutscene não contam) tem {%LuckBetAllyDoubleChance} de chance de valer o dobro e o resto de não valer nada se ele for do time do Luck; se for adversário, só {%LuckBetEnemyDoubleChance} de chance de dobrar. Todo mundo vê o trevo na cabeça dele até ele fazer a cesta: verde se a chance maior é de dobrar, vermelho se é de zerar. Não dá para usar enquanto algum adversário estiver com o trevo. Recarga: {LuckBetCooldown} s." },
                 new() { Name = "Impulso Descuidado", Icon = AbIcon.Dash, Color = LuckGreen,
                     Short = "Impulso para frente que rouba a bola (pode tropeçar).",
                     Full = "{%LuckDashChance} de chance de dar um impulso para onde você está olhando. Sem a bola, passar por quem está com ela durante o impulso rouba a bola. Senão, o Luck tropeça e fica atordoado por {LuckTripStun} s. Recarga: {LuckDashCooldown} s." },

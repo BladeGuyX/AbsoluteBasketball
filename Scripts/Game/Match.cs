@@ -926,12 +926,14 @@ public partial class Match : Node3D
             bool was = prev.Three;
             _wasThree[p] = (three, p.GlobalPosition);
             if (!crossed || !AbilitiesOn || Ball.Holder != p || !Geo.Wall[hoop] || p.Ab.Indestructible || p.Flight != FlightKind.None) continue;
+            // v0.44: a bola cai sempre para DENTRO da área de 3 (dá para pegá-la depois e pontuar lá de dentro)
             var rim = Geo.RimCenter[hoop];
-            var back = (p.GlobalPosition - rim) with { Y = 0 };
-            back = back.LengthSquared() > 1e-4f ? back.Normalized() : Vector3.Right;
-            if (!was) back = -back; // saindo: a bola fica do lado de dentro
+            var inward = (rim - p.GlobalPosition) with { Y = 0 };
+            inward = inward.LengthSquared() > 1e-4f ? inward.Normalized() : Vector3.Left;
             p.CancelShot(false); p.CancelPass();
-            Ball.Drop(Ball.GlobalPosition + back * 0.45f, back * 1.6f + Vector3.Up * 1.2f);
+            var dropAt = Ball.GlobalPosition + inward * 0.8f;
+            if (Geo.IsThree(dropAt, hoop)) dropAt = (p.GlobalPosition with { Y = Ball.GlobalPosition.Y }) + inward * 1.2f;
+            Ball.Drop(dropAt, inward * 1.4f + Vector3.Up * 1.2f);
             p.BallLockoutTimer = Mathf.Max(p.BallLockoutTimer, Tuning.I.IronWallDropLockout);
             Sfx.Play3D(this, "fx_clang", Ball.GlobalPosition);
             LogEvent("WALL_DROP", p);

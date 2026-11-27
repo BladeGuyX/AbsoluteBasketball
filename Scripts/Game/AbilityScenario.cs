@@ -378,6 +378,8 @@ public sealed class AbilityScenario
             yield return 0;
         }
         bool dropped = Ev("WALL_DROP") > wd0 && M.Ball.Holder != e0 && e0.BallLockoutTimer > t.IronWallDropLockout - 0.1f;
+        foreach (var _ in Wait(0.6f)) yield return 0;
+        dropped &= !M.Geo.IsThree(M.Ball.GlobalPosition, def); // v0.44: caiu do lado de dentro
         P.Ab.WallT = 0;
         if (!dropped) GD.Print($"[ABIL] muralha: derrubou={dropped} ev={Ev("WALL_DROP") - wd0} dono={(M.Ball.Holder == e0)} lock={e0.BallLockoutTimer:0.00} wall={M.Geo.Wall[def]} tres={M.Geo.IsThree(e0.GlobalPosition, def)} pos={e0.GlobalPosition} fase={M.Phase}");
         Rec("muralha_de_aco", wallOn && blocked && stillOn && inside && dropped);

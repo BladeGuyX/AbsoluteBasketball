@@ -449,7 +449,7 @@ public sealed class Tuning
     [Param(SLuck, "(1) Arremesso Arriscado: recarga", "Segundos de recarga do Arremesso Arriscado.", 1, 90, 0.5f, Sub = Hab)] public float LuckRiskyCooldown = 30f;
     [Param(SLuck, "(2) Aposta Certeira: chance de dobrar (aliado)", "Chance (0–1) da próxima cesta valer o dobro quando o alvo é aliado (ou o próprio Luck). Senão, a cesta não vale nada.", 0, 1, 0.01f, Sub = Hab)] public float LuckBetAllyDoubleChance = 0.8f;
     [Param(SLuck, "(2) Aposta Certeira: chance de dobrar (adversário)", "Chance (0–1) da próxima cesta valer o dobro quando o alvo é adversário. Senão, a cesta não vale nada.", 0, 1, 0.01f, Sub = Hab)] public float LuckBetEnemyDoubleChance = 0.2f;
-    [Param(SLuck, "(2) Aposta Certeira: recarga", "Segundos de recarga da Aposta Certeira.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 50f;
+    [Param(SLuck, "(2) Aposta Certeira: recarga", "Segundos de recarga da Aposta Certeira.", 1, 120, 0.5f, Sub = Hab)] public float LuckBetCooldown = 60f;
     [Param(SLuck, "(3) Impulso Descuidado: chance de dar certo", "Chance (0–1) de dar o impulso. Se não der, o Luck tropeça.", 0, 1, 0.01f, Sub = Hab)] public float LuckDashChance = 0.8f;
     [Param(SLuck, "(3) Impulso Descuidado: atordoamento do tropeço", "Segundos atordoado quando o Luck tropeça.", 0, 10, 0.25f, Sub = Hab)] public float LuckTripStun = 2.5f;
     [Param(SLuck, "(3) Impulso Descuidado: recarga", "Segundos de recarga do Impulso Descuidado.", 1, 60, 0.5f, Sub = Hab)] public float LuckDashCooldown = 12f;
@@ -501,7 +501,7 @@ public sealed class Tuning
     [Param(SIron, "Precisão", "Estrelas de Precisão do Iron.", 1, 5, 1, Sub = Star)] public float IronStarPrecision = 3f;
     [Param(SIron, "Salto", "Estrelas de Salto do Iron.", 1, 5, 1, Sub = Star)] public float IronStarJump = 5f;
     [Param(SIron, "(1) Muralha de Aço: duração", "Segundos que a muralha fica de pé na linha de 3 do time do Iron.", 1, 20, 0.5f, Sub = Hab)] public float IronWallDuration = 5f;
-    [Param(SIron, "(1) Muralha de Aço: recarga", "Segundos de recarga da Muralha de Aço.", 1, 120, 0.5f, Sub = Hab)] public float IronWallCooldown = 35f;
+    [Param(SIron, "(1) Muralha de Aço: recarga", "Segundos de recarga da Muralha de Aço.", 1, 120, 0.5f, Sub = Hab)] public float IronWallCooldown = 40f;
     [Param(SIron, "(2) Pancada: alcance", "Distância máxima (m) até o adversário para a Pancada.", 0.5f, 8, 0.25f, Sub = Hab)] public float IronBonkRange = 3f;
     [Param(SIron, "(2) Pancada: atordoamento", "Segundos atordoado de quem leva a Pancada.", 0, 10, 0.25f, Sub = Hab)] public float IronBonkStun = 3f;
     [Param(SIron, "(2) Pancada: recarga", "Segundos de recarga da Pancada.", 1, 120, 0.5f, Sub = Hab)] public float IronBonkCooldown = 30f;

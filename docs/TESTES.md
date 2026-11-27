@@ -4,6 +4,16 @@ Rodar sempre pelo `Build\AbsoluteBasketball.exe`. Os mais recentes ficam no topo
 
 ---
 
+## v0.44 — trevo vermelho, ícone da Aposta Certeira, Muralha
+
+1. **Aposta Certeira:** aposte num **adversário** → o trevo em cima dele fica **vermelho** (80% de zerar). Aposte em você ou num aliado → **verde** (80% de dobrar). Todo mundo vê a mesma cor.
+2. Recarga da Aposta Certeira: **60 s**.
+3. Ícone novo da Aposta Certeira (ficha verde com "2x"); a ult Sorte Infinita continua com o trevo.
+4. **Muralha de Aço:** recarga **40 s**. Entre pela linha de 3 com a bola e a muralha de pé: a bola cai **para dentro** da área de 3 — dá para pegá-la de novo depois de 1 s e fazer a cesta lá de dentro. Saindo com a bola, ela também fica do lado de dentro.
+5. Online: os dois na v0.44.
+
+---
+
 ## v0.43 — Aposta Certeira, Muralha que derruba a bola, cesta de 3 pela posição no chão
 
 1. **Luck — Aposta Certeira (2)** (substitui o "Não me Decepciona"): o menu agora mostra **todo mundo**, inclusive você e os aliados. Escolha alguém: aparece um **trevo verde na cabeça dele para todos**, até ele fazer uma cesta.
